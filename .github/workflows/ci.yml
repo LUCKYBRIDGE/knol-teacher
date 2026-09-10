@@ -49,14 +49,14 @@ jobs:
           $releaseVersion = (Get-Content -LiteralPath "release/release-version.txt" -Raw).Trim()
           ./scripts/validate-user-facing-release-notes.ps1 -Version $releaseVersion
 
-      - name: Validate startup packaging policy
+      - name: Validate single-file packaging policy
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           [xml]$project = Get-Content -LiteralPath "src/KnolTeacher.Desktop/KnolTeacher.Desktop.csproj" -Raw
           $compression = [string]$project.Project.PropertyGroup.EnableCompressionInSingleFile
-          if ($compression -ne "false") {
-              throw "EnableCompressionInSingleFile must remain false so the startup-optimized package is not silently recompressed. Found: $compression"
+          if ($compression -ne "true") {
+              throw "EnableCompressionInSingleFile must remain true until a measured Windows startup benchmark justifies the package-size regression. Found: $compression"
           }
 
       - name: Publish official local single-file package
