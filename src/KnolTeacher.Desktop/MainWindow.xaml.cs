@@ -23,17 +23,67 @@ using MessageBoxResult = System.Windows.MessageBoxResult;
 using MessageBoxImage = System.Windows.MessageBoxImage;
 using MessageBox = System.Windows.MessageBox;
 using Button = System.Windows.Controls.Button;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KnolTeacher.Desktop;
 
 public partial class MainWindow : FluentWindow
 {
-    private readonly StudentDisplayWindow _studentDisplayWindow;
-    private readonly ScreenDrawingOverlayWindow _screenDrawingOverlayWindow;
-    private readonly VisualizerWindow _visualizerWindow;
-    private readonly ClassroomTimerWindow _timerWindow;
-    private readonly StudentPickerWindow _pickerWindow;
-    private readonly FloatingToolbarWindow _dockWindow;
+    private readonly IServiceProvider _services;
+
+    private StudentDisplayWindow? _studentDisplayWindowInstance;
+    private StudentDisplayWindow _studentDisplayWindow => _studentDisplayWindowInstance ??= _services.GetRequiredService<StudentDisplayWindow>();
+
+    private ScreenDrawingOverlayWindow? _screenDrawingOverlayWindowInstance;
+    private ScreenDrawingOverlayWindow _screenDrawingOverlayWindow => _screenDrawingOverlayWindowInstance ??= _services.GetRequiredService<ScreenDrawingOverlayWindow>();
+
+    private VisualizerWindow? _visualizerWindowInstance;
+    private VisualizerWindow _visualizerWindow => _visualizerWindowInstance ??= _services.GetRequiredService<VisualizerWindow>();
+
+    private ClassroomTimerWindow? _timerWindowInstance;
+    private ClassroomTimerWindow _timerWindow => _timerWindowInstance ??= _services.GetRequiredService<ClassroomTimerWindow>();
+
+    private StudentPickerWindow? _pickerWindowInstance;
+    private StudentPickerWindow _pickerWindow => _pickerWindowInstance ??= _services.GetRequiredService<StudentPickerWindow>();
+
+    private FloatingToolbarWindow? _dockWindowInstance;
+    private FloatingToolbarWindow _dockWindow => _dockWindowInstance ??= _services.GetRequiredService<FloatingToolbarWindow>();
+
+    private SchoolScaleWindow? _schoolScaleWindowInstance;
+    private SchoolScaleWindow _schoolScaleWindow => _schoolScaleWindowInstance ??= _services.GetRequiredService<SchoolScaleWindow>();
+
+    private NoiseTrafficLightWindow? _noiseTrafficLightWindowInstance;
+    private NoiseTrafficLightWindow _noiseTrafficLightWindow => _noiseTrafficLightWindowInstance ??= _services.GetRequiredService<NoiseTrafficLightWindow>();
+
+    private WorkdayCalculatorWindow? _workdayCalculatorWindowInstance;
+    private WorkdayCalculatorWindow _workdayCalculatorWindow => _workdayCalculatorWindowInstance ??= _services.GetRequiredService<WorkdayCalculatorWindow>();
+
+    private SmartSeatShuffleWindow? _smartSeatShuffleWindowInstance;
+    private SmartSeatShuffleWindow _smartSeatShuffleWindow => _smartSeatShuffleWindowInstance ??= _services.GetRequiredService<SmartSeatShuffleWindow>();
+
+    private ClassroomSoundboardWindow? _soundboardWindowInstance;
+    private ClassroomSoundboardWindow _soundboardWindow => _soundboardWindowInstance ??= _services.GetRequiredService<ClassroomSoundboardWindow>();
+
+    private DigitalSignatureWindow? _signatureWindowInstance;
+    private DigitalSignatureWindow _signatureWindow => _signatureWindowInstance ??= _services.GetRequiredService<DigitalSignatureWindow>();
+
+    private TemplateShareWindow? _templateShareWindowInstance;
+    private TemplateShareWindow _templateShareWindow
+    {
+        get
+        {
+            if (_templateShareWindowInstance == null)
+            {
+                _templateShareWindowInstance = _services.GetRequiredService<TemplateShareWindow>();
+                _templateShareWindowInstance.DataChanged += OnExternalDataChanged;
+            }
+            return _templateShareWindowInstance;
+        }
+    }
+
+    private ClassroomHubWindow? _classroomHubWindowInstance;
+    private ClassroomHubWindow _classroomHubWindow => _classroomHubWindowInstance ??= _services.GetRequiredService<ClassroomHubWindow>();
+
     private readonly IDisplayManager _displayManager;
     private readonly INeisService _neisService;
     private readonly IDesktopCleanerService _cleanerService;
@@ -46,15 +96,9 @@ public partial class MainWindow : FluentWindow
     private readonly IQrCodeService _qrCodeService;
     private readonly INeisCommentBatchService _neisCommentBatchService;
     private readonly ISiteBookmarkService _siteBookmarkService;
-    private readonly SchoolScaleWindow _schoolScaleWindow;
-    private readonly NoiseTrafficLightWindow _noiseTrafficLightWindow;
     private readonly IWeatherService _weatherService;
-    private readonly WorkdayCalculatorWindow _workdayCalculatorWindow;
-    private readonly SmartSeatShuffleWindow _smartSeatShuffleWindow;
-    private readonly ClassroomSoundboardWindow _soundboardWindow;
     private readonly IAcademicCalendarService _academicCalendarService;
     private readonly ITrayService _trayService;
-    private readonly DigitalSignatureWindow _signatureWindow;
     private readonly IEarlyLeaveCalculatorService _earlyLeaveCalculatorService;
     private readonly IUpdateService _updateService;
     private readonly DispatcherTimer _statusTimer;
@@ -74,28 +118,15 @@ public partial class MainWindow : FluentWindow
     private readonly List<MainWidgetCard> _mainWidgets = new();
     private readonly IStartupService _startupService;
     private readonly IDataShareService _dataShareService;
-    private readonly TemplateShareWindow _templateShareWindow;
-    private readonly ClassroomHubWindow _classroomHubWindow;
     private readonly IStudentManagerService _studentManagerService;
     private int _tutorialStep = 1;
 
     public MainWindow(
+        IServiceProvider services,
         MainViewModel viewModel,
-        StudentDisplayWindow studentDisplayWindow,
-        ScreenDrawingOverlayWindow screenDrawingOverlayWindow,
-        VisualizerWindow visualizerWindow,
-        ClassroomTimerWindow timerWindow,
-        StudentPickerWindow pickerWindow,
-        FloatingToolbarWindow dockWindow,
-        SchoolScaleWindow schoolScaleWindow,
-        NoiseTrafficLightWindow noiseTrafficLightWindow,
         IWeatherService weatherService,
-        WorkdayCalculatorWindow workdayCalculatorWindow,
-        SmartSeatShuffleWindow smartSeatShuffleWindow,
-        ClassroomSoundboardWindow soundboardWindow,
         IAcademicCalendarService academicCalendarService,
         ITrayService trayService,
-        DigitalSignatureWindow signatureWindow,
         IEarlyLeaveCalculatorService earlyLeaveCalculatorService,
         IUpdateService updateService,
         IDisplayManager displayManager,
@@ -112,26 +143,13 @@ public partial class MainWindow : FluentWindow
         ISiteBookmarkService siteBookmarkService,
         IStartupService startupService,
         IDataShareService dataShareService,
-        TemplateShareWindow templateShareWindow,
-        ClassroomHubWindow classroomHubWindow,
         IStudentManagerService studentManagerService)
     {
+        _services = services;
         DataContext = viewModel;
-        _studentDisplayWindow = studentDisplayWindow;
-        _screenDrawingOverlayWindow = screenDrawingOverlayWindow;
-        _visualizerWindow = visualizerWindow;
-        _timerWindow = timerWindow;
-        _pickerWindow = pickerWindow;
-        _dockWindow = dockWindow;
-        _schoolScaleWindow = schoolScaleWindow;
-        _noiseTrafficLightWindow = noiseTrafficLightWindow;
         _weatherService = weatherService;
-        _workdayCalculatorWindow = workdayCalculatorWindow;
-        _smartSeatShuffleWindow = smartSeatShuffleWindow;
-        _soundboardWindow = soundboardWindow;
         _academicCalendarService = academicCalendarService;
         _trayService = trayService;
-        _signatureWindow = signatureWindow;
         _earlyLeaveCalculatorService = earlyLeaveCalculatorService;
         _updateService = updateService;
         _displayManager = displayManager;
@@ -148,9 +166,6 @@ public partial class MainWindow : FluentWindow
         _siteBookmarkService = siteBookmarkService;
         _startupService = startupService;
         _dataShareService = dataShareService;
-        _templateShareWindow = templateShareWindow;
-        _templateShareWindow.DataChanged += OnExternalDataChanged;
-        _classroomHubWindow = classroomHubWindow;
         _studentManagerService = studentManagerService;
 
         InitializeComponent();
@@ -2804,6 +2819,16 @@ public partial class MainWindow : FluentWindow
         if (BtnReturnDashboard != null) BtnReturnDashboard.Visibility = Visibility.Collapsed;
         NavBtnToday.Background = (Brush)FindResource("BeigeAccentSoft");
         NavBtnToday.Foreground = (Brush)FindResource("BeigeAccent");
+    }
+
+    private void BtnOpenWeeklyTimetable_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = _services.GetRequiredService<WeeklyTimetableWindow>();
+        dlg.Owner = this;
+        if (dlg.ShowDialog() == true)
+        {
+            RefreshTimetable();
+        }
     }
 
     private void BtnTimetableMore_Click(object sender, RoutedEventArgs e)

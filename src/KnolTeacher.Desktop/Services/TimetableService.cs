@@ -14,11 +14,24 @@ public interface ITimetableService
     event Action? OnTimetableChanged;
 
     List<PeriodItem> GetTodaySchedule();
+    List<PeriodItem> GetScheduleForDay(string dayKey);
     List<PeriodItem> GetPeriods();
     void SavePeriods(List<PeriodItem> periods);
     void ShiftAllPeriods(int minutesDelta);
+
+    Dictionary<string, List<Dictionary<string, string>>> GetWeeklyTimetable();
+    Dictionary<string, List<Dictionary<string, string>>> GetBaseTimetable();
+    void SaveWeeklyTimetable(Dictionary<string, List<Dictionary<string, string>>> timetable);
+    void SaveBaseTimetable(Dictionary<string, List<Dictionary<string, string>>> timetable);
+    void ResetWeeklyToBase();
+    void SaveCurrentWeeklyAsBase();
+
     void UpdatePeriodSubject(string dayKey, int lessonIndex, string subject, string tag = "담임");
+    void UpdateBasePeriodSubject(string dayKey, int lessonIndex, string subject, string tag = "담임");
     void UpdateTodayPeriodSubject(int lessonIndex, string subject, string tag = "담임");
+    void SwapPeriods(string dayKey, int lessonIndexA, int lessonIndexB);
+    void SwapAcrossDays(string dayA, int lessonA, string dayB, int lessonB);
+
     void TogglePeriodAlarm(int periodNumber);
     void SetAllAlarms(bool enabled);
     void SaveSettings();
@@ -30,10 +43,12 @@ public class TimetableService : ITimetableService
     private readonly IConfigService _configService;
     private readonly string _periodsFile;
     private readonly string _timetableFile;
+    private readonly string _baseTimetableFile;
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
 
     private List<PeriodItem> _periods = new();
     private Dictionary<string, List<Dictionary<string, string>>> _weeklyTimetable = new();
+    private Dictionary<string, List<Dictionary<string, string>>> _baseTimetable = new();
 
     public TimetableSettings Settings => _configService.TimetableSettings;
 
@@ -46,8 +61,10 @@ public class TimetableService : ITimetableService
         _configService = configService;
         _periodsFile = Path.Combine(_configService.ConfigDir, "schedule_periods.json");
         _timetableFile = Path.Combine(_configService.ConfigDir, "custom_timetable.json");
+        _baseTimetableFile = Path.Combine(_configService.ConfigDir, "base_timetable.json");
 
         LoadPeriods();
+        LoadBaseTimetable();
         LoadWeeklyTimetable();
     }
 
@@ -83,25 +100,9 @@ public class TimetableService : ITimetableService
         SavePeriods(_periods);
     }
 
-    private void LoadWeeklyTimetable()
+    private Dictionary<string, List<Dictionary<string, string>>> CreateDefaultTimetable()
     {
-        if (File.Exists(_timetableFile))
-        {
-            try
-            {
-                string json = File.ReadAllText(_timetableFile);
-                var dict = JsonSerializer.Deserialize<Dictionary<string, List<Dictionary<string, string>>>>(json, _jsonOptions);
-                if (dict != null && dict.Count > 0)
-                {
-                    _weeklyTimetable = dict;
-                    return;
-                }
-            }
-            catch { }
-        }
-
-        // Standard default schedule
-        _weeklyTimetable = new Dictionary<string, List<Dictionary<string, string>>>
+        return new Dictionary<string, List<Dictionary<string, string>>>
         {
             ["mon"] = new()
             {
@@ -154,7 +155,151 @@ public class TimetableService : ITimetableService
                 new() { ["subject"] = "", ["tag"] = "담임" }
             }
         };
-        SaveWeeklyTimetable();
+    }
+
+    private static Dictionary<string, List<Dictionary<string, string>>> CloneTimetable(Dictionary<string, List<Dictionary<string, string>>> source)
+    {
+        var result = new Dictionary<string, List<Dictionary<string, string>>>();
+        foreach (var kvp in source)
+        {
+            var list = new List<Dictionary<string, string>>();
+            foreach (var item in kvp.Value)
+            {
+                list.Add(new Dictionary<string, string>(item));
+            }
+            result[kvp.Key] = list;
+        }
+        return result;
+    }
+
+    private void LoadBaseTimetable()
+    {
+        if (File.Exists(_baseTimetableFile))
+        {
+            try
+            {
+                string json = File.ReadAllText(_baseTimetableFile);
+                var dict = JsonSerializer.Deserialize<Dictionary<string, List<Dictionary<string, string>>>>(json, _jsonOptions);
+                if (dict != null && dict.Count > 0)
+                {
+                    _baseTimetable = dict;
+                    return;
+                }
+            }
+            catch { }
+        }
+
+        _baseTimetable = CreateDefaultTimetable();
+        SaveBaseTimetable(_baseTimetable);
+    }
+
+    private void LoadWeeklyTimetable()
+    {
+        if (File.Exists(_timetableFile))
+        {
+            try
+            {
+                string json = File.ReadAllText(_timetableFile);
+                var dict = JsonSerializer.Deserialize<Dictionary<string, List<Dictionary<string, string>>>>(json, _jsonOptions);
+                if (dict != null && dict.Count > 0)
+                {
+                    _weeklyTimetable = dict;
+                    return;
+                }
+            }
+            catch { }
+        }
+
+        _weeklyTimetable = CloneTimetable(_baseTimetable);
+        SaveWeeklyTimetable(_weeklyTimetable);
+    }
+
+    public Dictionary<string, List<Dictionary<string, string>>> GetWeeklyTimetable() => CloneTimetable(_weeklyTimetable);
+    public Dictionary<string, List<Dictionary<string, string>>> GetBaseTimetable() => CloneTimetable(_baseTimetable);
+
+    public void SaveWeeklyTimetable(Dictionary<string, List<Dictionary<string, string>>> timetable)
+    {
+        _weeklyTimetable = CloneTimetable(timetable);
+        try
+        {
+            string json = JsonSerializer.Serialize(_weeklyTimetable, _jsonOptions);
+            File.WriteAllText(_timetableFile, json);
+            OnTimetableChanged?.Invoke();
+        }
+        catch { }
+    }
+
+    public void SaveBaseTimetable(Dictionary<string, List<Dictionary<string, string>>> timetable)
+    {
+        _baseTimetable = CloneTimetable(timetable);
+        try
+        {
+            string json = JsonSerializer.Serialize(_baseTimetable, _jsonOptions);
+            File.WriteAllText(_baseTimetableFile, json);
+            OnTimetableChanged?.Invoke();
+        }
+        catch { }
+    }
+
+    public void ResetWeeklyToBase()
+    {
+        SaveWeeklyTimetable(_baseTimetable);
+    }
+
+    public void SaveCurrentWeeklyAsBase()
+    {
+        SaveBaseTimetable(_weeklyTimetable);
+    }
+
+    public void SwapPeriods(string dayKey, int lessonIndexA, int lessonIndexB)
+    {
+        if (!_weeklyTimetable.ContainsKey(dayKey)) return;
+        var list = _weeklyTimetable[dayKey];
+        while (list.Count <= Math.Max(lessonIndexA, lessonIndexB))
+        {
+            list.Add(new() { ["subject"] = "", ["tag"] = "담임" });
+        }
+
+        var temp = list[lessonIndexA];
+        list[lessonIndexA] = list[lessonIndexB];
+        list[lessonIndexB] = temp;
+
+        SaveWeeklyTimetable(_weeklyTimetable);
+    }
+
+    public void SwapAcrossDays(string dayA, int lessonA, string dayB, int lessonB)
+    {
+        if (!_weeklyTimetable.ContainsKey(dayA)) _weeklyTimetable[dayA] = new();
+        if (!_weeklyTimetable.ContainsKey(dayB)) _weeklyTimetable[dayB] = new();
+
+        var listA = _weeklyTimetable[dayA];
+        var listB = _weeklyTimetable[dayB];
+
+        while (listA.Count <= lessonA) listA.Add(new() { ["subject"] = "", ["tag"] = "담임" });
+        while (listB.Count <= lessonB) listB.Add(new() { ["subject"] = "", ["tag"] = "담임" });
+
+        var temp = listA[lessonA];
+        listA[lessonA] = listB[lessonB];
+        listB[lessonB] = temp;
+
+        SaveWeeklyTimetable(_weeklyTimetable);
+    }
+
+    public void UpdateBasePeriodSubject(string dayKey, int lessonIndex, string subject, string tag = "담임")
+    {
+        if (!_baseTimetable.ContainsKey(dayKey)) _baseTimetable[dayKey] = new();
+        while (_baseTimetable[dayKey].Count <= lessonIndex)
+        {
+            _baseTimetable[dayKey].Add(new() { ["subject"] = "", ["tag"] = "담임" });
+        }
+
+        _baseTimetable[dayKey][lessonIndex] = new Dictionary<string, string>
+        {
+            ["subject"] = subject.Trim(),
+            ["tag"] = tag
+        };
+
+        SaveBaseTimetable(_baseTimetable);
     }
 
     public List<PeriodItem> GetPeriods() => _periods;
@@ -264,6 +409,52 @@ public class TimetableService : ITimetableService
         Settings.EnablePeriodAlarm = enabled;
         SaveSettings();
         SavePeriods(_periods);
+    }
+
+    public List<PeriodItem> GetScheduleForDay(string dayKey)
+    {
+        var subjectsData = _weeklyTimetable.TryGetValue(dayKey, out var subs) ? subs : new();
+        var result = new List<PeriodItem>();
+        int lessonIdx = 0;
+
+        foreach (var p in _periods)
+        {
+            if (p.Period == 7 && !Settings.EnablePeriod7) continue;
+
+            var copy = new PeriodItem
+            {
+                Period = p.Period,
+                Name = p.Name,
+                Start = p.Start,
+                End = p.End,
+                IsLunch = p.IsLunch,
+                AlarmEnabled = p.AlarmEnabled
+            };
+
+            if (p.IsLunch)
+            {
+                copy.Subject = "🍱 점심식사 및 휴식";
+                copy.Tag = "점심";
+            }
+            else
+            {
+                if (lessonIdx < subjectsData.Count)
+                {
+                    copy.Subject = subjectsData[lessonIdx].TryGetValue("subject", out var s) ? s : "";
+                    copy.Tag = subjectsData[lessonIdx].TryGetValue("tag", out var t) ? t : "담임";
+                }
+                else
+                {
+                    copy.Subject = "자율수업";
+                    copy.Tag = "담임";
+                }
+                lessonIdx++;
+            }
+
+            result.Add(copy);
+        }
+
+        return result;
     }
 
     public List<PeriodItem> GetTodaySchedule()

@@ -89,6 +89,7 @@ public partial class App : Application
                 services.AddSingleton<DigitalSignatureWindow>();
                 services.AddTransient<TemplateShareWindow>();
                 services.AddSingleton<ClassroomHubWindow>();
+                services.AddTransient<WeeklyTimetableWindow>();
             })
             .Build();
     }
@@ -123,6 +124,7 @@ public partial class App : Application
 
             base.OnStartup(e);
             BootLog("base.OnStartup done");
+            ShowSplash();
 
             // 2. Start DI Host
             _host.Start();
@@ -148,6 +150,7 @@ public partial class App : Application
             BootLog("Showing MainWindow...");
             mainWindow.Show();
             mainWindow.Activate();
+            CloseSplash();
             BootLog("MainWindow shown successfully");
 
             // 5. Initialize Global Hotkeys & Tool Handlers
@@ -382,6 +385,81 @@ public partial class App : Application
         base.OnExit(e);
     }
 
+    private static Window? _splashWindow;
+
+    private static void ShowSplash()
+    {
+        try
+        {
+            var win = new Window
+            {
+                WindowStyle = WindowStyle.None,
+                AllowsTransparency = true,
+                Background = System.Windows.Media.Brushes.Transparent,
+                Topmost = true,
+                ShowInTaskbar = false,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Width = 320,
+                Height = 100,
+                Content = new System.Windows.Controls.Border
+                {
+                    Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#0F172A")),
+                    CornerRadius = new CornerRadius(14),
+                    BorderBrush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#38BDF8")),
+                    BorderThickness = new Thickness(1.5),
+                    Padding = new Thickness(18, 14, 18, 14),
+                    Effect = new System.Windows.Media.Effects.DropShadowEffect
+                    {
+                        BlurRadius = 24,
+                        Opacity = 0.5,
+                        ShadowDepth = 5,
+                        Color = System.Windows.Media.Colors.Black
+                    },
+                    Child = new System.Windows.Controls.StackPanel
+                    {
+                        Orientation = System.Windows.Controls.Orientation.Vertical,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        Children =
+                        {
+                            new System.Windows.Controls.StackPanel
+                            {
+                                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                                HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                                Margin = new Thickness(0, 0, 0, 6),
+                                Children =
+                                {
+                                    new System.Windows.Controls.TextBlock { Text = "✨", FontSize = 16, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center },
+                                    new System.Windows.Controls.TextBlock { Text = "놀티쳐 (KnolTeacher)", FontSize = 15, FontWeight = FontWeights.Bold, Foreground = System.Windows.Media.Brushes.White, VerticalAlignment = VerticalAlignment.Center }
+                                }
+                            },
+                            new System.Windows.Controls.TextBlock
+                            {
+                                Text = "프로그램을 시작하는 중입니다...",
+                                FontSize = 11,
+                                Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#94A3B8")),
+                                HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+                            }
+                        }
+                    }
+                }
+            };
+            win.Show();
+            _splashWindow = win;
+        }
+        catch { }
+    }
+
+    private static void CloseSplash()
+    {
+        try
+        {
+            _splashWindow?.Close();
+            _splashWindow = null;
+        }
+        catch { }
+    }
+
     private static void BringExistingInstanceToFront()
     {
         try
@@ -396,6 +474,15 @@ public partial class App : Application
             foreach (var p in processes)
             {
                 IntPtr hWnd = p.MainWindowHandle;
+                int retry = 0;
+                while (hWnd == IntPtr.Zero && retry < 8)
+                {
+                    System.Threading.Thread.Sleep(200);
+                    p.Refresh();
+                    hWnd = p.MainWindowHandle;
+                    retry++;
+                }
+
                 if (hWnd != IntPtr.Zero)
                 {
                     if (NativeMethods.IsIconic(hWnd))
