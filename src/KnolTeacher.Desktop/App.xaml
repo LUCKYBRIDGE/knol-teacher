@@ -24,6 +24,19 @@
             <SolidColorBrush x:Key="BeigeLunchBg" Color="#EFF6FF" />
             <SolidColorBrush x:Key="BeigeLunchBorder" Color="#DBEAFE" />
             <SolidColorBrush x:Key="BeigeLunchText" Color="#2563EB" />
+
+            <!-- 🖥️ Dual Monitor Launcher Palette (정갈한 모노크롬 화이트 & 슬레이트 테두리 + 실행 시 딥 블루) -->
+            <SolidColorBrush x:Key="BeigeDualMonitorBtnBg" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="BeigeDualMonitorBtnBorder" Color="#64748B" />
+            <SolidColorBrush x:Key="BeigeDualMonitorBtnHover" Color="#F1F5F9" />
+            <SolidColorBrush x:Key="BeigeDualMonitorBtnPressed" Color="#E2E8F0" />
+            <SolidColorBrush x:Key="BeigeDualMonitorBadgeBg" Color="#F1F5F9" />
+            <SolidColorBrush x:Key="BeigeDualMonitorBadgeFg" Color="#475569" />
+            <SolidColorBrush x:Key="BeigeDualMonitorActiveBg" Color="#2563EB" />
+            <SolidColorBrush x:Key="BeigeDualMonitorActiveBorder" Color="#1D4ED8" />
+            <SolidColorBrush x:Key="BeigeDualMonitorActiveFg" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="BeigeDualMonitorActiveBadgeBg" Color="#1E40AF" />
+            <SolidColorBrush x:Key="BeigeDualMonitorActiveBadgeFg" Color="#FFFFFF" />
             <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
 
             <!-- Global Font: Malgun Gothic for crisp Korean typography -->

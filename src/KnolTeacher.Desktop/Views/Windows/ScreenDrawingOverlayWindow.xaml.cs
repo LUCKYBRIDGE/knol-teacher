@@ -15,10 +15,13 @@ namespace KnolTeacher.Desktop.Views.Windows;
 public partial class ScreenDrawingOverlayWindow : Window
 {
     private readonly IConfigService? _configService;
+    private readonly IDisplayManager? _displayManager;
+    private readonly MultiTouchInkHelper _multiTouch;
 
-    public ScreenDrawingOverlayWindow(IConfigService? configService = null)
+    public ScreenDrawingOverlayWindow(IConfigService? configService = null, IDisplayManager? displayManager = null)
     {
         _configService = configService;
+        _displayManager = displayManager;
         InitializeComponent();
 
         OverlayInkCanvas.DefaultDrawingAttributes = new DrawingAttributes
@@ -32,7 +35,7 @@ public partial class ScreenDrawingOverlayWindow : Window
 
         // Disable Windows Touch Stylus Press-and-Hold circle lag
         Stylus.SetIsPressAndHoldEnabled(OverlayInkCanvas, false);
-        Stylus.SetIsFlicksEnabled(OverlayInkCanvas, false);
+        _multiTouch = new MultiTouchInkHelper(OverlayInkCanvas);
 
         // ESC key to close
         PreviewKeyDown += (s, e) =>
@@ -47,28 +50,43 @@ public partial class ScreenDrawingOverlayWindow : Window
 
     public bool IsBoardMode { get; private set; }
 
-    public void FreezeAndShow()
+    public void FreezeAndShow(int? monitorIndex = null)
     {
         try
         {
             IsBoardMode = false;
             if (TxtStudioTitle != null) TxtStudioTitle.Text = "🖼️ 화면 주석 판서 (Alt+2)";
 
-            // 1. Get current monitor under mouse cursor
-            var rect = NativeMethods.GetCurrentMonitorRect();
-            int left = rect.Left;
-            int top = rect.Top;
-            int width = rect.Right - rect.Left;
-            int height = rect.Bottom - rect.Top;
-
-            CaptureScreenToFreezeImage(left, top, width, height);
+            int left, top, width, height;
+            var screens = _displayManager?.GetScreens();
+            if (monitorIndex.HasValue && screens != null && screens.Count > monitorIndex.Value && monitorIndex.Value >= 0)
+            {
+                var s = screens[monitorIndex.Value];
+                left = (int)s.Bounds.Left;
+                top = (int)s.Bounds.Top;
+                width = (int)s.Bounds.Width;
+                height = (int)s.Bounds.Height;
+            }
+            else
+            {
+                // Fallback: current monitor under mouse
+                var rect = NativeMethods.GetCurrentMonitorRect();
+                left = rect.Left;
+                top = rect.Top;
+                width = rect.Right - rect.Left;
+                height = rect.Bottom - rect.Top;
+            }
 
             OverlayInkCanvas.Strokes.Clear();
             if (RbBgScreen != null) RbBgScreen.IsChecked = true;
             if (BoardBackground != null) BoardBackground.Visibility = Visibility.Collapsed;
-            if (FreezeImage != null) FreezeImage.Visibility = Visibility.Visible;
 
-            // 2. Position window exactly over the targeted monitor
+            Left = left;
+            Top = top;
+            Width = width;
+            Height = height;
+
+            // Position window exactly over the targeted monitor
             Show();
             var helper = new System.Windows.Interop.WindowInteropHelper(this);
             NativeMethods.SetWindowPos(helper.Handle, IntPtr.Zero, left, top, width, height, NativeMethods.SWP_SHOWWINDOW | NativeMethods.SWP_NOZORDER);
@@ -78,27 +96,39 @@ public partial class ScreenDrawingOverlayWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"화면 캡처 실패: {ex.Message}", "판서 오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"화면 판서 실행 실패: {ex.Message}", "판서 오류", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
-    public void ShowBoardMode(string theme = "chalkboard")
+    public void ShowBoardMode(string theme = "chalkboard", int? monitorIndex = null)
     {
         try
         {
             IsBoardMode = true;
 
-            var rect = NativeMethods.GetCurrentMonitorRect();
-            int left = rect.Left;
-            int top = rect.Top;
-            int width = rect.Right - rect.Left;
-            int height = rect.Bottom - rect.Top;
-
-            if (FreezeImage != null)
+            int left, top, width, height;
+            var screens = _displayManager?.GetScreens();
+            if (monitorIndex.HasValue && screens != null && screens.Count > monitorIndex.Value && monitorIndex.Value >= 0)
             {
-                FreezeImage.Source = null;
-                FreezeImage.Visibility = Visibility.Collapsed;
+                var s = screens[monitorIndex.Value];
+                left = (int)s.Bounds.Left;
+                top = (int)s.Bounds.Top;
+                width = (int)s.Bounds.Width;
+                height = (int)s.Bounds.Height;
             }
+            else
+            {
+                var rect = NativeMethods.GetCurrentMonitorRect();
+                left = rect.Left;
+                top = rect.Top;
+                width = rect.Right - rect.Left;
+                height = rect.Bottom - rect.Top;
+            }
+
+            Left = left;
+            Top = top;
+            Width = width;
+            Height = height;
 
             if (BoardBackground != null)
             {
@@ -143,49 +173,6 @@ public partial class ScreenDrawingOverlayWindow : Window
         }
     }
 
-    private void CaptureScreenToFreezeImage(int left, int top, int width, int height)
-    {
-        using var bmp = new Bitmap(width, height);
-        using (var g = Graphics.FromImage(bmp))
-        {
-            g.CopyFromScreen(left, top, 0, 0, bmp.Size, CopyPixelOperation.SourceCopy);
-        }
-
-        using var ms = new MemoryStream();
-        bmp.Save(ms, ImageFormat.Png);
-        ms.Position = 0;
-        var bitmapImage = new BitmapImage();
-        bitmapImage.BeginInit();
-        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-        bitmapImage.StreamSource = ms;
-        bitmapImage.EndInit();
-        bitmapImage.Freeze();
-        FreezeImage.Source = bitmapImage;
-    }
-
-    private void CaptureScreenOnDemand()
-    {
-        bool wasVisible = IsVisible;
-        if (wasVisible)
-        {
-            Visibility = Visibility.Hidden;
-            System.Threading.Thread.Sleep(50);
-        }
-
-        var rect = NativeMethods.GetCurrentMonitorRect();
-        int left = rect.Left;
-        int top = rect.Top;
-        int width = rect.Right - rect.Left;
-        int height = rect.Bottom - rect.Top;
-
-        CaptureScreenToFreezeImage(left, top, width, height);
-
-        if (wasVisible)
-        {
-            Visibility = Visibility.Visible;
-        }
-    }
-
     private RulerToolControl? _ruler;
     private TriangleRulerToolControl? _triangle;
     private ProtractorToolControl? _protractor;
@@ -197,7 +184,6 @@ public partial class ScreenDrawingOverlayWindow : Window
         _ruler = null;
         _triangle = null;
         _protractor = null;
-        FreezeImage.Source = null;
         if (BoardBackground != null) BoardBackground.Visibility = Visibility.Collapsed;
 
         // Restore toolbar states
@@ -409,7 +395,7 @@ public partial class ScreenDrawingOverlayWindow : Window
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
         if (OverlayInkCanvas == null) return;
-        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        if (_multiTouch != null) _multiTouch.IsEraserMode = false;
         OverlayInkCanvas.DefaultDrawingAttributes.IsHighlighter = false;
         OverlayInkCanvas.DefaultDrawingAttributes.Width = 4;
         OverlayInkCanvas.DefaultDrawingAttributes.Height = 4;
@@ -418,7 +404,7 @@ public partial class ScreenDrawingOverlayWindow : Window
     private void RbHighlighter_Checked(object sender, RoutedEventArgs e)
     {
         if (OverlayInkCanvas == null) return;
-        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        if (_multiTouch != null) _multiTouch.IsEraserMode = false;
         OverlayInkCanvas.DefaultDrawingAttributes.IsHighlighter = true;
         OverlayInkCanvas.DefaultDrawingAttributes.Width = 18;
         OverlayInkCanvas.DefaultDrawingAttributes.Height = 28;
@@ -426,8 +412,7 @@ public partial class ScreenDrawingOverlayWindow : Window
 
     private void RbEraser_Checked(object sender, RoutedEventArgs e)
     {
-        if (OverlayInkCanvas == null) return;
-        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
+        if (_multiTouch != null) _multiTouch.IsEraserMode = true;
     }
 
     private void BtnColor_Click(object sender, RoutedEventArgs e)
@@ -469,19 +454,10 @@ public partial class ScreenDrawingOverlayWindow : Window
             {
                 case "screen":
                     if (BoardBackground != null) BoardBackground.Visibility = Visibility.Collapsed;
-                    if (FreezeImage != null)
-                    {
-                        if (FreezeImage.Source == null)
-                        {
-                            CaptureScreenOnDemand();
-                        }
-                        FreezeImage.Visibility = Visibility.Visible;
-                    }
                     IsBoardMode = false;
                     if (TxtStudioTitle != null) TxtStudioTitle.Text = "🖼️ 화면 주석 판서 (Alt+2)";
                     break;
                 case "chalkboard":
-                    if (FreezeImage != null) FreezeImage.Visibility = Visibility.Collapsed;
                     if (BoardBackground != null)
                     {
                         BoardBackground.Visibility = Visibility.Visible;
@@ -496,7 +472,6 @@ public partial class ScreenDrawingOverlayWindow : Window
                     }
                     break;
                 case "whiteboard":
-                    if (FreezeImage != null) FreezeImage.Visibility = Visibility.Collapsed;
                     if (BoardBackground != null)
                     {
                         BoardBackground.Visibility = Visibility.Visible;
@@ -510,7 +485,6 @@ public partial class ScreenDrawingOverlayWindow : Window
                     }
                     break;
                 case "grid":
-                    if (FreezeImage != null) FreezeImage.Visibility = Visibility.Collapsed;
                     if (BoardBackground != null)
                     {
                         BoardBackground.Visibility = Visibility.Visible;
@@ -591,13 +565,33 @@ public partial class ScreenDrawingOverlayWindow : Window
                 {
                     dc.DrawRectangle(BoardBackground.Background, null, new Rect(0, 0, w, h));
                 }
-                else if (FreezeImage?.Source != null)
-                {
-                    dc.DrawImage(FreezeImage.Source, new Rect(0, 0, w, h));
-                }
                 else
                 {
-                    dc.DrawRectangle(System.Windows.Media.Brushes.White, null, new Rect(0, 0, w, h));
+                    // 화면 주석 모드: 저장 시점에 현재 화면을 배경으로 캡처 합성
+                    try
+                    {
+                        var helper = new System.Windows.Interop.WindowInteropHelper(this);
+                        var screen = System.Windows.Forms.Screen.FromHandle(helper.Handle);
+                        using var bmp = new System.Drawing.Bitmap(screen.Bounds.Width, screen.Bounds.Height);
+                        using (var g = System.Drawing.Graphics.FromImage(bmp))
+                        {
+                            g.CopyFromScreen(screen.Bounds.Left, screen.Bounds.Top, 0, 0, bmp.Size, System.Drawing.CopyPixelOperation.SourceCopy);
+                        }
+                        using var ms = new MemoryStream();
+                        bmp.Save(ms, ImageFormat.Png);
+                        ms.Position = 0;
+                        var bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.StreamSource = ms;
+                        bitmapImage.EndInit();
+                        bitmapImage.Freeze();
+                        dc.DrawImage(bitmapImage, new Rect(0, 0, w, h));
+                    }
+                    catch
+                    {
+                        dc.DrawRectangle(System.Windows.Media.Brushes.White, null, new Rect(0, 0, w, h));
+                    }
                 }
             }
             rtb.Render(dv);

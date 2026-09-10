@@ -15,13 +15,28 @@
     <Grid>
         <!-- Triangle Acrylic Shape -->
         <Polygon Points="20,240 20,20 300,240"
-                 Fill="#E6EFF6FF"
+                 Fill="#75EFF6FF"
                  Stroke="#3B82F6"
                  StrokeThickness="2">
             <Polygon.Effect>
                 <DropShadowEffect BlurRadius="16" Opacity="0.4" ShadowDepth="4"/>
             </Polygon.Effect>
         </Polygon>
+
+        <!-- Manual Rotate Handle at Corner -->
+        <Border x:Name="RotateHandleCorner"
+                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Width="32" Height="32" Margin="0,0,10,10"
+                Background="#2563EB" BorderBrush="White" BorderThickness="2" CornerRadius="16"
+                Cursor="Hand" ToolTip="손가락이나 마우스로 드래그하여 각도를 자유롭게 회전합니다"
+                MouseLeftButtonDown="RotateHandle_MouseDown"
+                MouseMove="RotateHandle_MouseMove"
+                MouseLeftButtonUp="RotateHandle_MouseUp">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="8" Opacity="0.5" ShadowDepth="2"/>
+            </Border.Effect>
+            <TextBlock Text="🔄" FontSize="14" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
 
         <!-- Inner Cutout Triangle -->
         <Polygon Points="60,200 60,100 200,200"

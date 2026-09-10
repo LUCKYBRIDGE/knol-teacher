@@ -34,6 +34,7 @@ public partial class StudentDisplayWindow : Window
     private double _currentCardOpacity = 0.95;
     private bool _isReady = false;
     private int _layoutSaveSuppressionDepth = 0;
+    private readonly MultiTouchInkHelper _multiTouchInk;
 
     public StudentDisplayWindow(
         ISoundService soundService,
@@ -70,26 +71,62 @@ public partial class StudentDisplayWindow : Window
         Stylus.SetIsPressAndHoldEnabled(BoardInkCanvas, false);
         Stylus.SetIsFlicksEnabled(BoardInkCanvas, false);
 
+        _multiTouchInk = new MultiTouchInkHelper(BoardInkCanvas);
+        _multiTouchInk.StrokeCollected += (s) => _undoStack.Clear();
+
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (s, e) => TxtClock.Text = DateTime.Now.ToString("HH:mm:ss");
         _clockTimer.Start();
         TxtClock.Text = DateTime.Now.ToString("HH:mm:ss");
 
-        BoardInkCanvas.StrokeCollected += (s, e) => _undoStack.Clear();
         WidgetCanvas.SizeChanged += OnWidgetCanvasSizeChanged;
 
         _isReady = true;
         Loaded += (s, e) =>
         {
             PositionToDefaultMonitor();
-            if (!RestoreWidgetsLayout())
-            {
-                ApplyPresetTools();
-            }
+            RestoreWidgetsLayout();
+            UpdateEmptyHint();
         };
     }
 
-    #region Widget Management & Presets
+    #region Widget Management
+
+    private BoardWidgetHost? _selectedWidget;
+
+    public BoardWidgetHost? SelectedWidget
+    {
+        get => _selectedWidget;
+        set
+        {
+            if (_selectedWidget == value) return;
+            if (_selectedWidget != null)
+            {
+                _selectedWidget.IsSelected = false;
+            }
+            _selectedWidget = value;
+            if (_selectedWidget != null)
+            {
+                _selectedWidget.IsSelected = true;
+            }
+        }
+    }
+
+    public void SelectWidget(BoardWidgetHost host)
+    {
+        SelectedWidget = host;
+    }
+
+    public void DeselectWidget()
+    {
+        SelectedWidget = null;
+    }
+
+    public void UpdateEmptyHint()
+    {
+        if (EmptyBoardHint == null) return;
+        EmptyBoardHint.Visibility = _widgets.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
 
     private bool IsLayoutSaveSuppressed => _layoutSaveSuppressionDepth > 0;
 
@@ -113,6 +150,7 @@ public partial class StudentDisplayWindow : Window
 
     public void ClearWidgets(bool saveLayout = true)
     {
+        SelectedWidget = null;
         foreach (var widget in _widgets.ToArray())
         {
             widget.DisposeContent();
@@ -121,11 +159,27 @@ public partial class StudentDisplayWindow : Window
 
         _widgets.Clear();
         UpdateDockButtonsState();
+        UpdateEmptyHint();
 
         if (saveLayout)
         {
             SaveWidgetsLayout();
         }
+    }
+
+    public void CloseWidget(BoardWidgetHost host)
+    {
+        if (host == null) return;
+        host.DisposeContent();
+        WidgetCanvas.Children.Remove(host);
+        _widgets.Remove(host);
+        if (_selectedWidget == host)
+        {
+            SelectedWidget = null;
+        }
+        UpdateDockButtonsState();
+        UpdateEmptyHint();
+        SaveWidgetsLayout();
     }
 
     public BoardWidgetHost AddWidget(string type, string title, UserControl view, double x, double y, double w, double h)
@@ -144,19 +198,15 @@ public partial class StudentDisplayWindow : Window
         Canvas.SetLeft(host, x);
         Canvas.SetTop(host, y);
 
-        host.Closed += target =>
-        {
-            WidgetCanvas.Children.Remove(target);
-            _widgets.Remove(target);
-            UpdateDockButtonsState();
-            SaveWidgetsLayout();
-        };
-
+        host.Closed += target => CloseWidget(target);
+        host.Selected += target => SelectWidget(target);
         host.MovedOrResized += _ => SaveWidgetsLayout();
 
         _widgets.Add(host);
         WidgetCanvas.Children.Add(host);
+        SelectWidget(host);
         UpdateDockButtonsState();
+        UpdateEmptyHint();
         SaveWidgetsLayout();
         return host;
     }
@@ -283,25 +333,36 @@ public partial class StudentDisplayWindow : Window
 
     public void ToggleWidget(string key)
     {
-        if (key == "pinball")
+        if (string.Equals(key, "pinball", StringComparison.OrdinalIgnoreCase))
         {
-            OpenPinballWindow();
-            return;
+            key = "picker";
         }
 
         var existing = FindWidget(key);
         if (existing != null)
         {
-            existing.DisposeContent();
-            WidgetCanvas.Children.Remove(existing);
-            _widgets.Remove(existing);
-            UpdateDockButtonsState();
-            SaveWidgetsLayout();
+            CloseWidget(existing);
         }
         else
         {
             SpawnWidget(key);
         }
+    }
+
+    public int CurrentMonitorIndex => _currentMonitorIndex;
+
+    public void ShowOnMonitor(int monitorIndex)
+    {
+        if (_displayManager != null)
+        {
+            int target = (_displayManager.ScreenCount > monitorIndex && monitorIndex >= 0) ? monitorIndex : 0;
+            _currentMonitorIndex = target;
+            _displayManager.MoveWindowToScreen(this, target, maximize: true);
+            UpdateMonitorButtonText();
+        }
+
+        Show();
+        Activate();
     }
 
     private StudentPickerWindow? _pinballWindow;
@@ -424,10 +485,9 @@ public partial class StudentDisplayWindow : Window
 
     public BoardWidgetHost? SpawnWidget(string tag, double? x = null, double? y = null)
     {
-        if (tag == "pinball")
+        if (string.Equals(tag, "pinball", StringComparison.OrdinalIgnoreCase))
         {
-            OpenPinballWindow();
-            return null;
+            tag = "picker";
         }
 
         var definition = WidgetRegistry.GetOrDefault(tag);
@@ -715,58 +775,72 @@ public partial class StudentDisplayWindow : Window
         }
     }
 
-    private void ApplyPresetTools()
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        BeginLayoutBatch();
-        try
+        if (e.Key == Key.Escape)
         {
-            ClearWidgets(saveLayout: false);
-            AddWidget("timer", "⏱️ 수업 타이머", new TimerWidgetView(_soundService), 30, 30, 340, 240);
-            AddWidget("picker", "🎯 발표자 추첨", new PickerWidgetView(_studentService, _soundService), 400, 30, 360, 280);
-            AddWidget("dice", "🎲 스마트 주사위 & 통계", new DiceWidgetView(_soundService), 30, 300, 480, 290);
-        }
-        finally
-        {
-            EndLayoutBatch(saveFinalState: true);
+            // 1. 보드 필기 모드가 켜져 있다면 해제
+            if (ToggleInkMode != null && ToggleInkMode.IsChecked == true)
+            {
+                ToggleInkMode.IsChecked = false;
+                e.Handled = true;
+                return;
+            }
+
+            // 2. 켜져 있는 수학 교구(자, 삼각자, 각도기) 닫기
+            if (CloseActiveMathTool())
+            {
+                e.Handled = true;
+                return;
+            }
+
+            // 3. 선택된 위젯이 있다면 해당 위젯 닫기
+            if (SelectedWidget != null && _widgets.Contains(SelectedWidget))
+            {
+                CloseWidget(SelectedWidget);
+                e.Handled = true;
+                return;
+            }
+
+            // 4. 선택된 위젯이 지정되지 않았으나 위젯들이 캔버스에 있다면 최상위 위젯 닫기
+            var topWidget = GetTopWidget();
+            if (topWidget != null)
+            {
+                CloseWidget(topWidget);
+                e.Handled = true;
+                return;
+            }
         }
     }
 
-    private void ApplyPresetBoard()
+    private bool CloseActiveMathTool()
     {
-        BeginLayoutBatch();
-        try
+        if (_boardRuler != null)
         {
-            ClearWidgets(saveLayout: false);
-            AddWidget("timetable", "📅 오늘의 시간표", new TimetableWidgetView(_timetableService), 30, 30, 330, 480);
-            AddWidget("meal", "🍱 오늘의 급식", new MealWidgetView(_neisService), 390, 30, 330, 480);
-            AddWidget("memo", "📝 학급 알림장", new MemoWidgetView(_configService, _ttsService), 750, 30, 380, 480);
+            BoardToolsCanvas.Children.Remove(_boardRuler);
+            _boardRuler = null;
+            return true;
         }
-        finally
+        if (_boardTriangle != null)
         {
-            EndLayoutBatch(saveFinalState: true);
+            BoardToolsCanvas.Children.Remove(_boardTriangle);
+            _boardTriangle = null;
+            return true;
         }
+        if (_boardProtractor != null)
+        {
+            BoardToolsCanvas.Children.Remove(_boardProtractor);
+            _boardProtractor = null;
+            return true;
+        }
+        return false;
     }
 
-    private void ApplyPresetSplit()
+    private BoardWidgetHost? GetTopWidget()
     {
-        BeginLayoutBatch();
-        try
-        {
-            ClearWidgets(saveLayout: false);
-            AddWidget("timer", "⏱️ 수업 타이머", new TimerWidgetView(_soundService), 30, 30, 320, 240);
-            AddWidget("picker", "🎯 발표자 추첨", new PickerWidgetView(_studentService, _soundService), 30, 290, 320, 260);
-            AddWidget("timetable", "📅 오늘의 시간표", new TimetableWidgetView(_timetableService), 380, 30, 300, 520);
-            AddWidget("meal", "🍱 오늘의 급식", new MealWidgetView(_neisService), 710, 30, 300, 520);
-        }
-        finally
-        {
-            EndLayoutBatch(saveFinalState: true);
-        }
+        if (_widgets.Count == 0) return null;
+        return _widgets.OrderByDescending(Panel.GetZIndex).FirstOrDefault();
     }
-
-    private void BtnPresetTools_Click(object sender, RoutedEventArgs e) => ApplyPresetTools();
-    private void BtnPresetBoard_Click(object sender, RoutedEventArgs e) => ApplyPresetBoard();
-    private void BtnPresetSplit_Click(object sender, RoutedEventArgs e) => ApplyPresetSplit();
 
     private void CbAddWidget_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -846,14 +920,12 @@ public partial class StudentDisplayWindow : Window
 
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
-        if (BoardInkCanvas == null) return;
-        BoardInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        if (_multiTouchInk != null) _multiTouchInk.IsEraserMode = false;
     }
 
     private void RbEraser_Checked(object sender, RoutedEventArgs e)
     {
-        if (BoardInkCanvas == null) return;
-        BoardInkCanvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
+        if (_multiTouchInk != null) _multiTouchInk.IsEraserMode = true;
     }
 
     private void BtnColor_Click(object sender, RoutedEventArgs e)

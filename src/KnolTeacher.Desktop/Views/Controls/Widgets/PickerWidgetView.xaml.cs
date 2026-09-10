@@ -137,6 +137,11 @@ public partial class PickerWidgetView : UserControl, IWidgetLifecycle
         ResetDisplay();
     }
 
+    private void BtnReset_Click(object sender, RoutedEventArgs e)
+    {
+        ResetDisplay();
+    }
+
     private async void BtnPick_Click(object sender, RoutedEventArgs e)
     {
         if (_isPicking || !_isActive || _disposed) return;

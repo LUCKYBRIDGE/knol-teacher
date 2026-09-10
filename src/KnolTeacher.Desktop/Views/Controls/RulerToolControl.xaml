@@ -12,27 +12,42 @@
         </TransformGroup>
     </UserControl.RenderTransform>
 
-    <Border Background="#E6F8FAFC" BorderBrush="#38BDF8" BorderThickness="1.5" CornerRadius="8">
+    <Border Background="#88F8FAFC" BorderBrush="#38BDF8" BorderThickness="1.5" CornerRadius="8">
         <Border.Effect>
             <DropShadowEffect BlurRadius="16" Opacity="0.4" ShadowDepth="4"/>
         </Border.Effect>
         <Grid>
             <!-- Ticks Canvas -->
-            <Canvas x:Name="CanvasTicks" Margin="10,0,10,0" Height="30" VerticalAlignment="Top"/>
+            <Canvas x:Name="CanvasTicks" Margin="10,0,50,0" Height="30" VerticalAlignment="Top"/>
 
             <!-- Center Info & Rotate Handle -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,8">
-                <TextBlock Text="📏 직선자 (0~20cm)" FontSize="11" FontWeight="Bold" Foreground="#334155" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,40,8">
+                <TextBlock Text="📏 직선자 (0~20cm)" FontSize="11" FontWeight="Bold" Foreground="#1E293B" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <Border Background="#0284C7" CornerRadius="4" Padding="6,2" Margin="0,0,6,0">
                     <TextBlock x:Name="TxtAngle" Text="0°" FontSize="11" FontWeight="Bold" Foreground="White"/>
                 </Border>
                 <Button Content="↺ -15°" Click="BtnRotateCCW_Click" Height="22" Padding="6,0" Margin="0,0,3,0" Background="#E2E8F0" Foreground="#334155" BorderThickness="0" FontSize="10" Cursor="Hand"/>
-                <Button Content="↻ +15°" Click="BtnRotateCW_Click" Height="22" Padding="6,0" Margin="0,0,12,0" Background="#E2E8F0" Foreground="#334155" BorderThickness="0" FontSize="10" Cursor="Hand"/>
-                <Button Content="0° 리셋" Click="BtnResetAngle_Click" Height="22" Padding="6,0" Margin="0,0,8,0" Background="#E2E8F0" Foreground="#334155" BorderThickness="0" FontSize="10" Cursor="Hand"/>
+                <Button Content="↻ +15°" Click="BtnRotateCW_Click" Height="22" Padding="6,0" Margin="0,0,8,0" Background="#E2E8F0" Foreground="#334155" BorderThickness="0" FontSize="10" Cursor="Hand"/>
+                <Button Content="0°" Click="BtnResetAngle_Click" Height="22" Padding="6,0" Margin="0,0,8,0" Background="#E2E8F0" Foreground="#334155" BorderThickness="0" FontSize="10" Cursor="Hand"/>
                 <Button Content="✕" Click="BtnClose_Click" Width="22" Height="22" Background="#EF4444" Foreground="White" BorderThickness="0" FontWeight="Bold" Cursor="Hand">
                     <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="11"/></Style></Button.Resources>
                 </Button>
             </StackPanel>
+
+            <!-- Right End Manual Rotate Handle -->
+            <Border x:Name="RotateHandleRight"
+                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                    Width="36" Height="36" Margin="0,0,6,0"
+                    Background="#0284C7" BorderBrush="White" BorderThickness="2" CornerRadius="18"
+                    Cursor="Hand" ToolTip="손가락이나 마우스로 드래그하여 각도를 자유롭게 회전합니다"
+                    MouseLeftButtonDown="RotateHandle_MouseDown"
+                    MouseMove="RotateHandle_MouseMove"
+                    MouseLeftButtonUp="RotateHandle_MouseUp">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" Opacity="0.5" ShadowDepth="2"/>
+                </Border.Effect>
+                <TextBlock Text="🔄" FontSize="16" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
         </Grid>
     </Border>
 </UserControl>

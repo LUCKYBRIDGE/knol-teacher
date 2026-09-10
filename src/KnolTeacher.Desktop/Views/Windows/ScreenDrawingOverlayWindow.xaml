@@ -7,15 +7,14 @@
         mc:Ignorable="d"
         Title="스마트 화면 &amp; 칠판 판서 (Alt+2)"
         WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
         Topmost="True"
         ShowInTaskbar="False"
         WindowStartupLocation="Manual">
     <Grid>
         <!-- Solid / Grid Board Background -->
         <Border x:Name="BoardBackground" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-
-        <!-- Background Freeze Image -->
-        <Image x:Name="FreezeImage" Stretch="Fill" />
 
         <!-- GPU Accelerated InkCanvas for instant, lag-free drawing -->
         <InkCanvas x:Name="OverlayInkCanvas"

@@ -10,17 +10,49 @@ namespace KnolTeacher.Desktop.Views.Controls;
 public partial class ProtractorToolControl : UserControl
 {
     private bool _isDragging = false;
+    private bool _isRotating = false;
     private Point _startPoint;
     public event Action? CloseRequested;
 
     public ProtractorToolControl()
     {
         InitializeComponent();
-        Loaded += (s, e) => DrawDegreeTicks();
+        Loaded += (s, e) =>
+        {
+            DrawDegreeTicks();
+            SetupRotateHandleTouch();
+        };
         MouseWheel += (s, e) =>
         {
             double delta = e.Delta > 0 ? 5 : -5;
             SetAngle(ProtractorRotate.Angle + delta);
+            e.Handled = true;
+        };
+    }
+
+    private void SetupRotateHandleTouch()
+    {
+        RotateHandleTop.TouchDown += (s, e) =>
+        {
+            _isRotating = true;
+            RotateHandleTop.CaptureTouch(e.TouchDevice);
+            e.Handled = true;
+        };
+        RotateHandleTop.TouchMove += (s, e) =>
+        {
+            if (_isRotating && Parent is UIElement canvas)
+            {
+                Point centerOnParent = TransformToAncestor(canvas).Transform(new Point(190, 190));
+                Point currentOnParent = e.GetTouchPoint(canvas).Position;
+                double degrees = Math.Atan2(currentOnParent.Y - centerOnParent.Y, currentOnParent.X - centerOnParent.X) * 180.0 / Math.PI + 90.0;
+                SetAngle(degrees);
+                e.Handled = true;
+            }
+        };
+        RotateHandleTop.TouchUp += (s, e) =>
+        {
+            _isRotating = false;
+            RotateHandleTop.ReleaseTouchCapture(e.TouchDevice);
             e.Handled = true;
         };
     }
@@ -30,11 +62,11 @@ public partial class ProtractorToolControl : UserControl
         CanvasDegreeTicks.Children.Clear();
         double cx = 190;
         double cy = 190;
-        double outerR = 178;
+        double outerR = 180;
 
-        for (int deg = 0; deg <= 180; deg += 2)
+        for (int deg = 0; deg <= 180; deg++)
         {
-            double rad = Math.PI * (180 - deg) / 180.0;
+            double rad = deg * Math.PI / 180.0;
             double tickLen = (deg % 10 == 0) ? 14 : ((deg % 5 == 0) ? 9 : 5);
             double innerR = outerR - tickLen;
 
@@ -87,9 +119,50 @@ public partial class ProtractorToolControl : UserControl
     private void BtnResetAngle_Click(object sender, RoutedEventArgs e) => SetAngle(0);
     private void BtnClose_Click(object sender, RoutedEventArgs e) => CloseRequested?.Invoke();
 
+    private double _startHandleAngleOffset;
+
+    private void RotateHandle_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (Parent is UIElement canvas)
+        {
+            _isRotating = true;
+            Point centerOnParent = TransformToAncestor(canvas).Transform(new Point(190, 190));
+            Point currentOnParent = e.GetPosition(canvas);
+            double mouseAngle = Math.Atan2(currentOnParent.Y - centerOnParent.Y, currentOnParent.X - centerOnParent.X) * 180.0 / Math.PI;
+            _startHandleAngleOffset = mouseAngle - ProtractorRotate.Angle;
+            RotateHandleTop.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    private void RotateHandle_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_isRotating && Parent is UIElement canvas)
+        {
+            Point centerOnParent = TransformToAncestor(canvas).Transform(new Point(190, 190));
+            Point currentOnParent = e.GetPosition(canvas);
+
+            double mouseAngle = Math.Atan2(currentOnParent.Y - centerOnParent.Y, currentOnParent.X - centerOnParent.X) * 180.0 / Math.PI;
+            SetAngle(mouseAngle - _startHandleAngleOffset);
+            e.Handled = true;
+        }
+    }
+
+    private void RotateHandle_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isRotating)
+        {
+            _isRotating = false;
+            RotateHandleTop.ReleaseMouseCapture();
+            e.Handled = true;
+        }
+    }
+
     private void Protractor_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is Button) return;
+        if (e.OriginalSource is DependencyObject dep && (RotateHandleTop.IsAncestorOf(dep) || ReferenceEquals(dep, RotateHandleTop))) return;
+
         _isDragging = true;
         _startPoint = e.GetPosition(Parent as UIElement);
         CaptureMouse();

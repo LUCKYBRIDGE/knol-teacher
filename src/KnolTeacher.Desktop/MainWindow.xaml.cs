@@ -160,7 +160,11 @@ public partial class MainWindow : FluentWindow
         _statusTimer.Tick += (s, e) => UpdatePeriodStatus();
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _clockTimer.Tick += (s, e) => UpdateBigClock();
+        _clockTimer.Tick += (s, e) =>
+        {
+            UpdateBigClock();
+            UpdateTopActionPillStates();
+        };
 
         Loaded += MainWindow_Loaded;
         Closing += (s, e) => App.BootLog($"MainWindow Closing: Cancel={e.Cancel}");
@@ -352,6 +356,71 @@ public partial class MainWindow : FluentWindow
     {
         _soundService.PlayChime();
         HudNotificationWindow.Instance.ShowToast("🔔", "집중 차임벨이 울렸습니다.");
+    }
+
+    #endregion
+
+    #region Top Action Pill Active State Synchronizer
+
+    private static readonly Brush PillBrushActiveBg = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2563EB"));
+    private static readonly Brush PillBrushActiveBorder = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1D4ED8"));
+    private static readonly Brush PillBrushActiveBadgeBg = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E40AF"));
+    private static readonly Brush PillBrushInactiveBg = Brushes.White;
+    private static readonly Brush PillBrushInactiveBorder = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"));
+    private static readonly Brush PillBrushInactiveBadgeBg = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F1F5F9"));
+    private static readonly Brush PillBrushTextMain = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A"));
+    private static readonly Brush PillBrushTextSub = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#475569"));
+    private static readonly Brush PillBrushAccent = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2563EB"));
+
+    private void UpdateTopActionPillStates()
+    {
+        // 1. 놀보드 (StudentDisplayWindow)
+        bool isBoardActive = _studentDisplayWindow != null && _studentDisplayWindow.IsVisible;
+        ApplyPillButtonState(BtnPillBoard, TxtPillBoardLabel, DotPillBoard, BadgePillBoard, TxtPillBoardBadge, isBoardActive, isPrimaryTool: true);
+
+        // 2. 화면판서 (ScreenDrawingOverlayWindow - 화면 모드)
+        bool isDrawingActive = _screenDrawingOverlayWindow != null && _screenDrawingOverlayWindow.IsVisible && !_screenDrawingOverlayWindow.IsBoardMode;
+        ApplyPillButtonState(BtnPillDrawing, TxtPillDrawingLabel, DotPillDrawing, BadgePillDrawing, TxtPillDrawingBadge, isDrawingActive);
+
+        // 3. 칠판보드 (ScreenDrawingOverlayWindow - 칠판 모드)
+        bool isBoardDrawingActive = _screenDrawingOverlayWindow != null && _screenDrawingOverlayWindow.IsVisible && _screenDrawingOverlayWindow.IsBoardMode;
+        ApplyPillButtonState(BtnPillBoardDrawing, TxtPillBoardDrawingLabel, DotPillBoardDrawing, BadgePillBoardDrawing, TxtPillBoardDrawingBadge, isBoardDrawingActive);
+
+        // 4. 타이머 (ClassroomTimerWindow)
+        bool isTimerActive = _timerWindow != null && _timerWindow.IsVisible;
+        ApplyPillButtonState(BtnPillTimer, TxtPillTimerLabel, DotPillTimer, BadgePillTimer, TxtPillTimerBadge, isTimerActive);
+
+        // 5. 추첨 (StudentPickerWindow)
+        bool isPickerActive = _pickerWindow != null && _pickerWindow.IsVisible;
+        ApplyPillButtonState(BtnPillPicker, TxtPillPickerLabel, DotPillPicker, BadgePillPicker, TxtPillPickerBadge, isPickerActive);
+    }
+
+    private void ApplyPillButtonState(Button? btn, System.Windows.Controls.TextBlock? label, System.Windows.Shapes.Ellipse? dot, Border? badge, System.Windows.Controls.TextBlock? badgeText, bool isActive, bool isPrimaryTool = false)
+    {
+        if (btn == null) return;
+
+        if (isActive)
+        {
+            btn.Background = PillBrushActiveBg;
+            btn.BorderBrush = PillBrushActiveBorder;
+            btn.BorderThickness = new Thickness(1.5);
+            btn.Foreground = Brushes.White;
+            if (label != null) label.Foreground = Brushes.White;
+            if (dot != null) dot.Visibility = Visibility.Visible;
+            if (badge != null) badge.Background = PillBrushActiveBadgeBg;
+            if (badgeText != null) badgeText.Foreground = Brushes.White;
+        }
+        else
+        {
+            btn.Background = PillBrushInactiveBg;
+            btn.BorderBrush = PillBrushInactiveBorder;
+            btn.BorderThickness = new Thickness(1.5);
+            btn.Foreground = PillBrushTextMain;
+            if (label != null) label.Foreground = PillBrushTextMain;
+            if (dot != null) dot.Visibility = Visibility.Collapsed;
+            if (badge != null) badge.Background = PillBrushInactiveBadgeBg;
+            if (badgeText != null) badgeText.Foreground = isPrimaryTool ? PillBrushAccent : PillBrushTextSub;
+        }
     }
 
     #endregion
@@ -1366,15 +1435,15 @@ public partial class MainWindow : FluentWindow
     // Tools Launch Handlers
     private void BtnLaunchBoard_Click(object sender, RoutedEventArgs e)
     {
-        if (_studentDisplayWindow.IsVisible)
+        int targetMonitor = _pendingPopupMonitorIndex ?? (_displayManager.IsDualMonitor ? 1 : 0);
+
+        if (_studentDisplayWindow.IsVisible && !_pendingPopupMonitorIndex.HasValue)
         {
             _studentDisplayWindow.Hide();
         }
         else
         {
-            _displayManager.MoveToStudentMonitor(_studentDisplayWindow, maximize: true);
-            _studentDisplayWindow.Show();
-            _studentDisplayWindow.Activate();
+            _studentDisplayWindow.ShowOnMonitor(targetMonitor);
         }
     }
 

@@ -203,7 +203,8 @@ public partial class MainWindow
                 continue;
             }
 
-            _displayManager.MoveWindowToScreen(candidate, targetMonitor, maximize: false);
+            bool maximize = candidate is StudentDisplayWindow;
+            _displayManager.MoveWindowToScreen(candidate, targetMonitor, maximize: maximize);
         }
     }
 
@@ -264,27 +265,21 @@ public partial class MainWindow
     {
         if (string.IsNullOrWhiteSpace(text)) return false;
 
-        // NolBoard, its internal widgets, screen overlays and floating docks are workspaces/tools,
-        // not ordinary popup windows. Keep them out of the right-click monitor gesture.
-        if (text.Contains("놀보드", StringComparison.Ordinal) ||
-            text.Contains("위젯", StringComparison.Ordinal) ||
-            text.Contains("화면판서", StringComparison.Ordinal) ||
-            text.Contains("칠판보드", StringComparison.Ordinal) ||
-            text.Contains("플로팅", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
         string[] popupSignals =
         {
+            "놀보드",
+            "화면판서",
+            "칠판보드",
             "타이머",
             "추첨",
+            "레이스",
             "실물화상기",
             "스마트 자리 바꾸기",
             "교실 소음 신호등",
-            "QR코드",
+            "QR",
             "학급 관리 허브",
             "사운드보드",
+            "도구바",
             "복무 계산기",
             "전자 서명",
             "전국 학교 지도",

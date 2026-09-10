@@ -55,6 +55,37 @@
             </Setter>
         </Style>
 
+        <!-- Dual Monitor Tool Launcher Button (화이트 배경 & 슬레이트 테두리 - 좌클릭 모니터1 / 우클릭 모니터2) -->
+        <Style x:Key="DockDualMonitorButtonStyle" TargetType="Button" BasedOn="{StaticResource DockButtonStyle}">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#64748B" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="Foreground" Value="#0F172A" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#F1F5F9" />
+                                <Setter TargetName="border" Property="BorderBrush" Value="#475569" />
+                                <Setter Property="Foreground" Value="#0F172A" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#E2E8F0" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Primary Accent Button (NolBoard) -->
         <Style x:Key="DockAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource DockButtonStyle}">
             <Setter Property="Background" Value="#2563EB" />
@@ -176,7 +207,7 @@
                 <!-- ══════ PRIMARY / COMPACT TOOLS (ALWAYS VISIBLE) ══════ -->
 
                 <!-- 1. NolBoard (F2) -->
-                <Button x:Name="BtnBoard" Style="{StaticResource DockAccentButtonStyle}" Click="BtnBoard_Click" ToolTip="놀보드 열기 / 닫기 (F2)">
+                <Button x:Name="BtnBoard" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnBoard_Click" MouseRightButtonUp="BtnBoard_MouseRightButtonUp" ToolTip="놀보드 (좌클릭: 모니터1 / 우클릭: 모니터2, F2)">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="📺 " FontSize="11"/>
                         <TextBlock Text="놀보드"/>
@@ -185,7 +216,7 @@
                 </Button>
 
                 <!-- 2. Screen Drawing (Alt+2) -->
-                <Button x:Name="BtnDrawScreen" Style="{StaticResource DockButtonStyle}" Click="BtnDrawScreen_Click" ToolTip="화면 위 주석 판서 (Alt+2)">
+                <Button x:Name="BtnDrawScreen" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnDrawScreen_Click" MouseRightButtonUp="BtnDrawScreen_MouseRightButtonUp" ToolTip="화면판서 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+2)">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="🖼️ " FontSize="11"/>
                         <TextBlock Text="화면판서"/>
@@ -194,7 +225,7 @@
                 </Button>
 
                 <!-- 3. Board Drawing (Alt+4) -->
-                <Button x:Name="BtnDrawBoard" Style="{StaticResource DockButtonStyle}" Click="BtnDrawBoard_Click" ToolTip="수업 칠판 보드판 (Alt+4)">
+                <Button x:Name="BtnDrawBoard" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnDrawBoard_Click" MouseRightButtonUp="BtnDrawBoard_MouseRightButtonUp" ToolTip="칠판보드 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+4)">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="🟩 " FontSize="11"/>
                         <TextBlock Text="칠판보드"/>
@@ -203,7 +234,7 @@
                 </Button>
 
                 <!-- 3. Timer (Alt+3) -->
-                <Button x:Name="BtnTimer" Style="{StaticResource DockButtonStyle}" Click="BtnTimer_Click" ToolTip="교실 집중 타이머 (Alt+3)">
+                <Button x:Name="BtnTimer" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnTimer_Click" MouseRightButtonUp="BtnTimer_MouseRightButtonUp" ToolTip="타이머 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+3)">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="⏱️ " FontSize="11"/>
                         <TextBlock Text="타이머"/>
@@ -212,7 +243,7 @@
                 </Button>
 
                 <!-- 4. Student Picker (Alt+8) -->
-                <Button x:Name="BtnPicker" Style="{StaticResource DockButtonStyle}" Click="BtnPicker_Click" ToolTip="동물 뽑기 레이스 (Alt+8)">
+                <Button x:Name="BtnPicker" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnPicker_Click" MouseRightButtonUp="BtnPicker_MouseRightButtonUp" ToolTip="동물 뽑기 레이스 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+8)">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="🎰 " FontSize="11"/>
                         <TextBlock Text="레이스"/>
@@ -246,7 +277,7 @@
                     <Separator Margin="4,4,6,4" Background="#CBD5E1"/>
 
                     <!-- Visualizer -->
-                    <Button x:Name="BtnVisualizer" Style="{StaticResource DockButtonStyle}" Click="BtnVisualizer_Click" ToolTip="스마트 실물화상기">
+                    <Button x:Name="BtnVisualizer" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnVisualizer_Click" MouseRightButtonUp="BtnVisualizer_MouseRightButtonUp" ToolTip="스마트 실물화상기 (좌클릭: 모니터1 / 우클릭: 모니터2)">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="📷 " FontSize="11"/>
                             <TextBlock Text="화상기"/>
@@ -255,7 +286,7 @@
                     </Button>
 
                     <!-- Noise Meter -->
-                    <Button x:Name="BtnNoise" Style="{StaticResource DockButtonStyle}" Click="BtnNoise_Click" ToolTip="교실 소음 신호등 (Alt+N)">
+                    <Button x:Name="BtnNoise" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnNoise_Click" MouseRightButtonUp="BtnNoise_MouseRightButtonUp" ToolTip="교실 소음 신호등 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+N)">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="🚦 " FontSize="11"/>
                             <TextBlock Text="소음"/>
@@ -264,7 +295,7 @@
                     </Button>
 
                     <!-- Soundboard -->
-                    <Button x:Name="BtnSoundboard" Style="{StaticResource DockButtonStyle}" Click="BtnSoundboard_Click" ToolTip="교실 효과음 사운드보드 (Alt+B)">
+                    <Button x:Name="BtnSoundboard" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnSoundboard_Click" MouseRightButtonUp="BtnSoundboard_MouseRightButtonUp" ToolTip="교실 효과음 사운드보드 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+B)">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="🔔 " FontSize="11"/>
                             <TextBlock Text="효과음"/>
@@ -273,7 +304,7 @@
                     </Button>
 
                     <!-- Seat Shuffle -->
-                    <Button x:Name="BtnSeat" Style="{StaticResource DockButtonStyle}" Click="BtnSeat_Click" ToolTip="스마트 자리 바꾸기 &amp; 동물 아바타">
+                    <Button x:Name="BtnSeat" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnSeat_Click" MouseRightButtonUp="BtnSeat_MouseRightButtonUp" ToolTip="스마트 자리 바꾸기 (좌클릭: 모니터1 / 우클릭: 모니터2)">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="🪑 " FontSize="11"/>
                             <TextBlock Text="자리"/>
@@ -282,7 +313,7 @@
                     </Button>
 
                     <!-- Digital Signature -->
-                    <Button x:Name="BtnSignature" Style="{StaticResource DockButtonStyle}" Click="BtnSignature_Click" ToolTip="전자서명 &amp; 도장 생성기 (Alt+S)">
+                    <Button x:Name="BtnSignature" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnSignature_Click" MouseRightButtonUp="BtnSignature_MouseRightButtonUp" ToolTip="전자서명 &amp; 도장 생성기 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+S)">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="🔏 " FontSize="11"/>
                             <TextBlock Text="서명"/>

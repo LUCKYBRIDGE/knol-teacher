@@ -10,14 +10,46 @@ namespace KnolTeacher.Desktop.Views.Controls;
 public partial class RulerToolControl : UserControl
 {
     private bool _isDragging = false;
+    private bool _isRotating = false;
     private Point _startPoint;
     public event Action? CloseRequested;
 
     public RulerToolControl()
     {
         InitializeComponent();
-        Loaded += (s, e) => DrawTicks();
+        Loaded += (s, e) =>
+        {
+            DrawTicks();
+            SetupRotateHandleTouch();
+        };
         MouseWheel += RulerToolControl_MouseWheel;
+    }
+
+    private void SetupRotateHandleTouch()
+    {
+        RotateHandleRight.TouchDown += (s, e) =>
+        {
+            _isRotating = true;
+            RotateHandleRight.CaptureTouch(e.TouchDevice);
+            e.Handled = true;
+        };
+        RotateHandleRight.TouchMove += (s, e) =>
+        {
+            if (_isRotating && Parent is UIElement canvas)
+            {
+                Point centerOnParent = TransformToAncestor(canvas).Transform(new Point(ActualWidth / 2.0, ActualHeight / 2.0));
+                Point currentOnParent = e.GetTouchPoint(canvas).Position;
+                double degrees = Math.Atan2(currentOnParent.Y - centerOnParent.Y, currentOnParent.X - centerOnParent.X) * 180.0 / Math.PI;
+                SetAngle(degrees);
+                e.Handled = true;
+            }
+        };
+        RotateHandleRight.TouchUp += (s, e) =>
+        {
+            _isRotating = false;
+            RotateHandleRight.ReleaseTouchCapture(e.TouchDevice);
+            e.Handled = true;
+        };
     }
 
     private void RulerToolControl_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -30,7 +62,7 @@ public partial class RulerToolControl : UserControl
     private void DrawTicks()
     {
         CanvasTicks.Children.Clear();
-        double totalLength = 440; // 0 to 20 cm => 22 px per cm
+        double totalLength = 400; // 0 to 20 cm => 20 px per cm
         double pxPerMm = totalLength / 200.0;
 
         for (int mm = 0; mm <= 200; mm++)
@@ -82,9 +114,50 @@ public partial class RulerToolControl : UserControl
     private void BtnResetAngle_Click(object sender, RoutedEventArgs e) => SetAngle(0);
     private void BtnClose_Click(object sender, RoutedEventArgs e) => CloseRequested?.Invoke();
 
+    private double _startHandleAngleOffset;
+
+    private void RotateHandle_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (Parent is UIElement canvas)
+        {
+            _isRotating = true;
+            Point centerOnParent = TransformToAncestor(canvas).Transform(new Point(ActualWidth / 2.0, ActualHeight / 2.0));
+            Point currentOnParent = e.GetPosition(canvas);
+            double mouseAngle = Math.Atan2(currentOnParent.Y - centerOnParent.Y, currentOnParent.X - centerOnParent.X) * 180.0 / Math.PI;
+            _startHandleAngleOffset = mouseAngle - RulerRotate.Angle;
+            RotateHandleRight.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    private void RotateHandle_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_isRotating && Parent is UIElement canvas)
+        {
+            Point centerOnParent = TransformToAncestor(canvas).Transform(new Point(ActualWidth / 2.0, ActualHeight / 2.0));
+            Point currentOnParent = e.GetPosition(canvas);
+
+            double mouseAngle = Math.Atan2(currentOnParent.Y - centerOnParent.Y, currentOnParent.X - centerOnParent.X) * 180.0 / Math.PI;
+            SetAngle(mouseAngle - _startHandleAngleOffset);
+            e.Handled = true;
+        }
+    }
+
+    private void RotateHandle_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isRotating)
+        {
+            _isRotating = false;
+            RotateHandleRight.ReleaseMouseCapture();
+            e.Handled = true;
+        }
+    }
+
     private void Ruler_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is Button) return;
+        if (e.OriginalSource is DependencyObject dep && (RotateHandleRight.IsAncestorOf(dep) || ReferenceEquals(dep, RotateHandleRight))) return;
+
         _isDragging = true;
         _startPoint = e.GetPosition(Parent as UIElement);
         CaptureMouse();

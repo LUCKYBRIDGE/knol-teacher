@@ -36,7 +36,6 @@ dotnet publish "%PROJ_PATH%" ^
   -p:PublishReadyToRun=true ^
   -p:IncludeNativeLibrariesForSelfExtract=true ^
   -p:IncludeAllContentForSelfExtract=true ^
-  -p:EnableCompressionInSingleFile=true ^
   -p:DebugType=None ^
   -p:DebugSymbols=false ^
   -o "%RAW_DIR%"

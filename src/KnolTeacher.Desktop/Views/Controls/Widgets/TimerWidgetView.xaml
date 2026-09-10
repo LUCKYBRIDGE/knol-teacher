@@ -52,11 +52,21 @@
 
         <!-- Presets -->
         <UniformGrid Grid.Row="2" Columns="5" Margin="0,0,0,6">
-            <Button Content="1분" Click="BtnPreset_Click" Tag="60" Margin="1" Padding="0,3" Background="#334155" Foreground="White" BorderThickness="0" Cursor="Hand"/>
-            <Button Content="3분" Click="BtnPreset_Click" Tag="180" Margin="1" Padding="0,3" Background="#334155" Foreground="White" BorderThickness="0" Cursor="Hand"/>
-            <Button Content="5분" Click="BtnPreset_Click" Tag="300" Margin="1" Padding="0,3" Background="#334155" Foreground="White" BorderThickness="0" Cursor="Hand"/>
-            <Button Content="10분" Click="BtnPreset_Click" Tag="600" Margin="1" Padding="0,3" Background="#334155" Foreground="White" BorderThickness="0" Cursor="Hand"/>
-            <Button Content="40분" Click="BtnPreset_Click" Tag="2400" Margin="1" Padding="0,3" Background="#475569" Foreground="#FDE047" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+            <Button Content="1분" Click="BtnPreset_Click" Tag="60" Margin="1" Height="28" Background="#334155" Foreground="White" BorderThickness="0" Cursor="Hand">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
+            <Button Content="3분" Click="BtnPreset_Click" Tag="180" Margin="1" Height="28" Background="#334155" Foreground="White" BorderThickness="0" Cursor="Hand">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
+            <Button Content="5분" Click="BtnPreset_Click" Tag="300" Margin="1" Height="28" Background="#334155" Foreground="White" BorderThickness="0" Cursor="Hand">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
+            <Button Content="10분" Click="BtnPreset_Click" Tag="600" Margin="1" Height="28" Background="#334155" Foreground="White" BorderThickness="0" Cursor="Hand">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
+            <Button Content="40분" Click="BtnPreset_Click" Tag="2400" Margin="1" Height="28" Background="#475569" Foreground="#FDE047" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
         </UniformGrid>
 
         <!-- Controls -->

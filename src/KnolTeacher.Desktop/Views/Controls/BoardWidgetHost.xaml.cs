@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace KnolTeacher.Desktop.Views.Controls;
 
@@ -70,6 +71,18 @@ public partial class BoardWidgetHost : UserControl
         set => OuterBorder.Opacity = Math.Clamp(value, 0.2, 1.0);
     }
 
+    private bool _isSelected;
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected == value) return;
+            _isSelected = value;
+            UpdateSelectionVisual();
+        }
+    }
+
     public string Title
     {
         get => TxtTitle.Text;
@@ -95,6 +108,8 @@ public partial class BoardWidgetHost : UserControl
         }
     }
 
+    public event Action<BoardWidgetHost>? Selected;
+
     public BoardWidgetHost()
     {
         InitializeComponent();
@@ -105,10 +120,35 @@ public partial class BoardWidgetHost : UserControl
         Loaded += BoardWidgetHost_Loaded;
         Unloaded += BoardWidgetHost_Unloaded;
         IsVisibleChanged += BoardWidgetHost_IsVisibleChanged;
-        MouseDown += (s, e) => BringToFront();
+        PreviewMouseDown += (s, e) =>
+        {
+            BringToFront();
+            Selected?.Invoke(this);
+        };
+        MouseDown += (s, e) =>
+        {
+            BringToFront();
+            Selected?.Invoke(this);
+        };
         TitleBar.LostMouseCapture += (s, e) => _isDragging = false;
 
         UpdateInteractionState();
+        UpdateSelectionVisual();
+    }
+
+    private void UpdateSelectionVisual()
+    {
+        if (OuterBorder == null) return;
+        if (_isSelected)
+        {
+            OuterBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x38, 0xBD, 0xF8));
+            OuterBorder.BorderThickness = new Thickness(2.0);
+        }
+        else
+        {
+            OuterBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x47, 0x55, 0x69));
+            OuterBorder.BorderThickness = new Thickness(1.5);
+        }
     }
 
     private void ApplyWidgetDefinition()

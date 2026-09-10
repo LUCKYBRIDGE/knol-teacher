@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
@@ -114,8 +115,8 @@ public partial class App : Application
             BootLog($"Mutex createdNew: {createdNew}");
             if (!createdNew)
             {
-                BootLog("Single instance check failed, shutting down");
-                MessageBox.Show("놀티쳐가 이미 실행 중입니다.", "놀티쳐 .NET", MessageBoxButton.OK, MessageBoxImage.Information);
+                BootLog("Single instance check failed - bringing existing instance to front");
+                BringExistingInstanceToFront();
                 Shutdown();
                 return;
             }
@@ -379,5 +380,40 @@ public partial class App : Application
         catch { }
 
         base.OnExit(e);
+    }
+
+    private static void BringExistingInstanceToFront()
+    {
+        try
+        {
+            var current = System.Diagnostics.Process.GetCurrentProcess();
+            var processes = System.Diagnostics.Process.GetProcessesByName(current.ProcessName)
+                .Concat(System.Diagnostics.Process.GetProcessesByName("놀티쳐"))
+                .Concat(System.Diagnostics.Process.GetProcessesByName("KnolTeacher.Desktop"))
+                .Where(p => p.Id != current.Id)
+                .ToList();
+
+            foreach (var p in processes)
+            {
+                IntPtr hWnd = p.MainWindowHandle;
+                if (hWnd != IntPtr.Zero)
+                {
+                    if (NativeMethods.IsIconic(hWnd))
+                    {
+                        NativeMethods.ShowWindowAsync(hWnd, NativeMethods.SW_RESTORE);
+                    }
+                    else
+                    {
+                        NativeMethods.ShowWindowAsync(hWnd, NativeMethods.SW_SHOWNORMAL);
+                    }
+                    NativeMethods.SetForegroundWindow(hWnd);
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            BootLog($"BringExistingInstanceToFront error: {ex.Message}");
+        }
     }
 }

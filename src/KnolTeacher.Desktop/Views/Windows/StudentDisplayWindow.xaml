@@ -8,7 +8,8 @@
         Icon="/assets/board_icon.ico"
         ShowInTaskbar="True"
         WindowStartupLocation="Manual"
-        Background="#0B0F19">
+        Background="#0B0F19"
+        PreviewKeyDown="Window_PreviewKeyDown">
 
     <Window.Resources>
         <!-- Board Top/Dock Action Button Style -->
@@ -106,12 +107,6 @@
                 <!-- Center: Presets & Widgets & Board Themes & Drawing -->
                 <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- Preset Modes -->
-                        <TextBlock Text="모드:" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <Button Content="🎯 수업도구" Click="BtnPresetTools_Click" Style="{StaticResource BoardAccentButtonStyle}"/>
-                        <Button Content="📋 학급게시판" Click="BtnPresetBoard_Click" Style="{StaticResource BoardNavButtonStyle}"/>
-                        <Button Content="⚖️ 올인원" Click="BtnPresetSplit_Click" Style="{StaticResource BoardNavButtonStyle}" Margin="0,0,12,0"/>
-
                         <!-- Add Widget Dropdown -->
                         <TextBlock Text="+ 위젯:" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <ComboBox x:Name="CbAddWidget" Width="144" Height="32" MinHeight="32" FontSize="11" Padding="6,2" VerticalContentAlignment="Center" Margin="0,0,12,0" SelectionChanged="CbAddWidget_SelectionChanged">
@@ -122,7 +117,7 @@
                             <ComboBoxItem Content="🎲 스마트 주사위" Tag="dice"/>
                             <ComboBoxItem Content="🎡 회전 돌림판" Tag="wheel"/>
                             <ComboBoxItem Content="🏆 모둠 점수판" Tag="score"/>
-                            <ComboBoxItem Content="✏️ 칠판 판서장" Tag="drawing"/>
+                            <ComboBoxItem Content="✏️ 판서 메모장" Tag="drawing"/>
                             <ComboBoxItem Content="📅 오늘의 시간표" Tag="timetable"/>
                             <ComboBoxItem Content="🍱 오늘의 급식" Tag="meal"/>
                             <ComboBoxItem Content="📝 학급 알림장" Tag="memo"/>
@@ -157,8 +152,8 @@
                         <Separator Margin="0,8,12,8" Width="1" Background="#334155"/>
 
                         <!-- Board Themes -->
-                        <TextBlock Text="테마:" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                        <Button Content="🏫 칠판" Click="BtnGreenBoard_Click" Height="30" Padding="8,2" Margin="0,0,4,0" Background="#143628" Foreground="#86EFAC" BorderBrush="#22C55E" BorderThickness="1" FontSize="11" FontWeight="Bold" Cursor="Hand">
+                        <TextBlock Text="배경:" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <Button Content="🏫 초록칠판" Click="BtnGreenBoard_Click" Height="30" Padding="8,2" Margin="0,0,4,0" Background="#143628" Foreground="#86EFAC" BorderBrush="#22C55E" BorderThickness="1" FontSize="11" FontWeight="Bold" Cursor="Hand">
                             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                         </Button>
                         <Button Content="📋 화이트" Click="BtnWhiteBoard_Click" Height="30" Padding="8,2" Margin="0,0,4,0" Background="#F8FAFC" Foreground="#0F172A" BorderBrush="#E2E8F0" BorderThickness="1" FontSize="11" FontWeight="Bold" Cursor="Hand">
@@ -171,7 +166,7 @@
                         <Separator Margin="0,8,12,8" Width="1" Background="#334155"/>
 
                         <!-- Drawing Overlay Mode -->
-                        <ToggleButton x:Name="ToggleInkMode" Content="✏️ 전체 화면 판서" Checked="ToggleInkMode_Checked" Unchecked="ToggleInkMode_Unchecked" Height="32" Padding="10,4" Margin="0,0,8,0" Background="#1E293B" Foreground="White" FontSize="11" FontWeight="Bold" Cursor="Hand">
+                        <ToggleButton x:Name="ToggleInkMode" Content="✏️ 보드 필기" Checked="ToggleInkMode_Checked" Unchecked="ToggleInkMode_Unchecked" Height="32" Padding="10,4" Margin="0,0,8,0" Background="#1E293B" Foreground="White" FontSize="11" FontWeight="Bold" Cursor="Hand" ToolTip="보드판 위에 펜으로 자유롭게 필기합니다 (단축키: ESC로 필기 모드 해제)">
                             <ToggleButton.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></ToggleButton.Resources>
                         </ToggleButton>
 
@@ -231,8 +226,17 @@
 
             <!-- Math Tools Canvas (Ruler, Triangle, Protractor) -->
             <Canvas x:Name="BoardToolsCanvas"
-                    Background="Transparent"
                     IsHitTestVisible="True"/>
+
+            <!-- Empty Board Watermark Hint -->
+            <Border x:Name="EmptyBoardHint" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.4" Visibility="Collapsed">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="📋" FontSize="52" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                    <TextBlock Text="놀보드 캔버스" FontSize="22" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="하단 도구 바 또는 상단 '+ 위젯' 메뉴에서 원하는 도구를 클릭하여 자유롭게 띄워보세요." FontSize="13" Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock Text="(단축키: ESC - 선택된 위젯·필기 닫기 | F2 - 놀보드 닫기)" FontSize="11.5" Foreground="#64748B" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </Grid>
 
         <!-- 3. Bottom Dock Toolbar (프리미엄 Floating Action Pill Dock) -->
@@ -272,7 +276,7 @@
                             <Button x:Name="BtnToolDice" Content="🎲 주사위·통계" Click="DockToolBtn_Click" Tag="dice" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolWheel" Content="🎡 돌림판" Click="DockToolBtn_Click" Tag="wheel" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolScore" Content="🏆 모둠 점수판" Click="DockToolBtn_Click" Tag="score" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
-                            <Button x:Name="BtnToolDrawing" Content="✏️ 칠판·판서" Click="DockToolBtn_Click" Tag="drawing" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
+                            <Button x:Name="BtnToolDrawing" Content="✏️ 판서 메모장" Click="DockToolBtn_Click" Tag="drawing" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="자유롭게 이동 및 크기 조절이 가능한 미니 판서장 위젯"/>
                             <Button x:Name="BtnToolTimetable" Content="📅 오늘의 시간표" Click="DockToolBtn_Click" Tag="timetable" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolMeal" Content="🍱 오늘의 급식" Click="DockToolBtn_Click" Tag="meal" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolMemo" Content="📝 학급 알림장" Click="DockToolBtn_Click" Tag="memo" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>

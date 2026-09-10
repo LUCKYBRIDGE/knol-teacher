@@ -10,6 +10,7 @@ namespace KnolTeacher.Desktop.Views.Controls.Widgets;
 public partial class DrawingWidgetView : UserControl
 {
     private readonly Stack<Stroke> _undoStack = new();
+    private readonly MultiTouchInkHelper _multiTouch;
     private bool _isReady = false;
 
     public DrawingWidgetView()
@@ -23,7 +24,8 @@ public partial class DrawingWidgetView : UserControl
             FitToCurve = true
         };
 
-        MiniInkCanvas.StrokeCollected += (s, e) => _undoStack.Clear();
+        _multiTouch = new MultiTouchInkHelper(MiniInkCanvas);
+        _multiTouch.StrokeCollected += s => _undoStack.Clear();
         _isReady = true;
     }
 
@@ -41,14 +43,14 @@ public partial class DrawingWidgetView : UserControl
 
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
-        if (!_isReady || MiniInkCanvas == null) return;
-        MiniInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        if (!_isReady) return;
+        _multiTouch.IsEraserMode = false;
     }
 
     private void RbEraser_Checked(object sender, RoutedEventArgs e)
     {
-        if (!_isReady || MiniInkCanvas == null) return;
-        MiniInkCanvas.EditingMode = InkCanvasEditingMode.EraseByStroke;
+        if (!_isReady) return;
+        _multiTouch.IsEraserMode = true;
     }
 
     private void BtnColor_Click(object sender, RoutedEventArgs e)

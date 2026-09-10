@@ -269,6 +269,19 @@ public partial class StudentPickerWindow : Window
         }
     }
 
+    public void ShowOnMonitor(int monitorIndex)
+    {
+        if (_displayManager != null)
+        {
+            int target = (_displayManager.ScreenCount > monitorIndex && monitorIndex >= 0) ? monitorIndex : 0;
+            _currentMonitorIndex = target;
+            _displayManager.MoveWindowToScreen(this, target, maximize: false);
+            UpdateMonitorButtonText();
+        }
+        Show();
+        Activate();
+    }
+
     private void UpdateMonitorButtonText()
     {
         if (BtnSwitchMonitor != null)

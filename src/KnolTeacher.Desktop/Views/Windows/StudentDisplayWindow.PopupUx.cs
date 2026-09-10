@@ -60,21 +60,10 @@ public partial class StudentDisplayWindow
 
         _v309PopupLaunchPreferences = new PopupLaunchPreferences(_configService.ConfigDir);
 
-        // Pinball is not a board widget: it resolves to StudentPickerWindow. Keeping it in
-        // the "+ 위젯" combo was the clearest source of user confusion, so remove it there
-        // and leave the dedicated dock button as an explicit separate-window launcher.
-        for (int i = CbAddWidget.Items.Count - 1; i >= 0; i--)
-        {
-            if (CbAddWidget.Items[i] is ComboBoxItem item &&
-                string.Equals(item.Tag?.ToString(), "pinball", StringComparison.OrdinalIgnoreCase))
-            {
-                CbAddWidget.Items.RemoveAt(i);
-            }
-        }
-
+        // Pinball in the board dock toggles the picker widget inside the board, maintaining single-window workspace integrity
         BtnToolPinball.Click -= DockToolBtn_Click;
-        BtnToolPinball.Click += BtnPinballWindow_Click;
-        BtnToolPinball.MouseRightButtonUp += BtnPinballWindow_MouseRightButtonUp;
+        BtnToolPinball.Click += (s, e) => ToggleWidget("picker");
+        BtnToolPinball.ToolTip = "위젯 · 발표자 및 학생 뽑기 위젯을 놀보드 안에 열거나 닫습니다.";
 
         RefreshV309LauncherVisuals();
     }
@@ -84,11 +73,11 @@ public partial class StudentDisplayWindow
         if (!_v309WidgetUxApplied) return;
         if (FindResource("BoardNavButtonStyle") is not Style baseStyle) return;
 
-        Brush widgetIdleBackground = BrushFrom("#17313A");
-        Brush widgetIdleBorder = BrushFrom("#2F5B66");
-        Brush widgetIdleForeground = BrushFrom("#D6EEF2");
-        Brush widgetActiveBackground = BrushFrom("#0F766E");
-        Brush widgetActiveBorder = BrushFrom("#5EEAD4");
+        Brush widgetIdleBackground = BrushFrom("#1E293B");
+        Brush widgetIdleBorder = BrushFrom("#334155");
+        Brush widgetIdleForeground = BrushFrom("#94A3B8");
+        Brush widgetActiveBackground = BrushFrom("#0284C7");
+        Brush widgetActiveBorder = BrushFrom("#38BDF8");
 
         // These are the actual in-canvas widgets registered by WidgetRegistry.
         Button[] widgetButtons =
@@ -127,17 +116,15 @@ public partial class StudentDisplayWindow
             }
         }
 
-        // Pinball is deliberately styled like an ordinary window tool rather than a widget.
-        bool pinballVisible = _pinballWindow?.IsVisible == true;
+        bool pickerActive = FindWidget("picker") != null;
         BtnToolPinball.Style = baseStyle;
-        BtnToolPinball.Background = BrushFrom(pinballVisible ? "#334155" : "#1E293B");
-        BtnToolPinball.BorderBrush = BrushFrom(pinballVisible ? "#93C5FD" : "#475569");
-        BtnToolPinball.Foreground = pinballVisible ? Brushes.White : BrushFrom("#CBD5E1");
-        BtnToolPinball.BorderThickness = new Thickness(pinballVisible ? 1.5 : 1.0);
-        BtnToolPinball.FontWeight = pinballVisible ? FontWeights.Bold : FontWeights.SemiBold;
-        BtnToolPinball.ToolTip = "별도 창 도구 · 왼클릭은 모니터 1, 우클릭은 모니터 2에서 엽니다.";
+        BtnToolPinball.Background = pickerActive ? widgetActiveBackground : widgetIdleBackground;
+        BtnToolPinball.BorderBrush = pickerActive ? widgetActiveBorder : widgetIdleBorder;
+        BtnToolPinball.Foreground = pickerActive ? Brushes.White : widgetIdleForeground;
+        BtnToolPinball.BorderThickness = new Thickness(pickerActive ? 1.5 : 1.0);
+        BtnToolPinball.FontWeight = pickerActive ? FontWeights.Bold : FontWeights.SemiBold;
 
-        CbAddWidget.Background = BrushFrom("#132A32");
+        CbAddWidget.Background = BrushFrom("#1E293B");
         CbAddWidget.Foreground = widgetIdleForeground;
         CbAddWidget.BorderBrush = widgetIdleBorder;
         CbAddWidget.ToolTip = "이 목록의 도구는 별도 팝업이 아니라 놀보드 안의 위젯으로 열립니다.";

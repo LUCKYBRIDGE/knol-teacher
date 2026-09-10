@@ -43,7 +43,7 @@
         <!-- Main Outer Widget Card -->
         <Border x:Name="OuterBorder"
                 Background="#F21E293B"
-                BorderBrush="#38BDF8"
+                BorderBrush="#475569"
                 BorderThickness="1.5"
                 CornerRadius="12">
             <Border.Effect>

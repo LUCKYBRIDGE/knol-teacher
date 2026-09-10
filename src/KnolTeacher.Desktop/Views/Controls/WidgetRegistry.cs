@@ -17,7 +17,7 @@ public static class WidgetRegistry
             ["dice"] = new("dice", "🎲 스마트 주사위 & 통계", 480, 290, 360, 240),
             ["wheel"] = new("wheel", "🎡 회전 돌림판", 340, 270, 300, 230),
             ["score"] = new("score", "🏆 모둠 점수판", 360, 270, 320, 240),
-            ["drawing"] = new("drawing", "✏️ 칠판 판서장", 400, 310, 320, 260),
+            ["drawing"] = new("drawing", "✏️ 판서 메모장", 400, 310, 320, 260),
             ["timetable"] = new("timetable", "📅 오늘의 시간표", 320, 440, 280, 340),
             ["meal"] = new("meal", "🍱 오늘의 급식", 320, 440, 280, 340),
             ["memo"] = new("memo", "📝 학급 알림장", 360, 340, 300, 260),

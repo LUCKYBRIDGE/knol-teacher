@@ -57,6 +57,17 @@ public partial class ClassroomTimerWindow : Window
         }
     }
 
+    public void PositionToMonitor(int monitorIndex)
+    {
+        if (_displayManager != null)
+        {
+            int target = (_displayManager.ScreenCount > monitorIndex && monitorIndex >= 0) ? monitorIndex : 0;
+            _currentMonitorIndex = target;
+            _displayManager.MoveWindowToScreen(this, target, maximize: false);
+            UpdateMonitorButtonText();
+        }
+    }
+
     private void UpdateMonitorButtonText()
     {
         if (BtnSwitchMonitor != null)

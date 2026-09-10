@@ -1,6 +1,9 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 using KnolTeacher.Desktop.Services;
 
@@ -107,21 +110,48 @@ public partial class FloatingToolbarWindow : Window
         }
     }
 
+    private static readonly Brush DockBrushActiveBg = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2563EB"));
+    private static readonly Brush DockBrushActiveBorder = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1D4ED8"));
+    private static readonly Brush DockBrushInactiveBg = Brushes.White;
+    private static readonly Brush DockBrushInactiveBorder = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#64748B"));
+    private static readonly Brush DockBrushTextMain = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F172A"));
+
+    private void ApplyDockButtonState(Button? btn, Ellipse? dot, bool isActive)
+    {
+        if (btn == null) return;
+        if (isActive)
+        {
+            btn.Background = DockBrushActiveBg;
+            btn.BorderBrush = DockBrushActiveBorder;
+            btn.BorderThickness = new Thickness(1.5);
+            btn.Foreground = Brushes.White;
+            if (dot != null) dot.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            btn.Background = DockBrushInactiveBg;
+            btn.BorderBrush = DockBrushInactiveBorder;
+            btn.BorderThickness = new Thickness(1.5);
+            btn.Foreground = DockBrushTextMain;
+            if (dot != null) dot.Visibility = Visibility.Collapsed;
+        }
+    }
+
     private void UpdateActiveToolIndicators()
     {
         if (!IsVisible) return;
 
-        DotBoard.Visibility = _studentBoard.IsVisible ? Visibility.Visible : Visibility.Collapsed;
-        DotDrawScreen.Visibility = (_screenDrawing.IsVisible && !_screenDrawing.IsBoardMode) ? Visibility.Visible : Visibility.Collapsed;
-        DotDrawBoard.Visibility = (_screenDrawing.IsVisible && _screenDrawing.IsBoardMode) ? Visibility.Visible : Visibility.Collapsed;
-        DotTimer.Visibility = _timerWindow.IsVisible ? Visibility.Visible : Visibility.Collapsed;
-        DotPicker.Visibility = _pickerWindow.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+        ApplyDockButtonState(BtnBoard, DotBoard, _studentBoard.IsVisible);
+        ApplyDockButtonState(BtnDrawScreen, DotDrawScreen, _screenDrawing.IsVisible && !_screenDrawing.IsBoardMode);
+        ApplyDockButtonState(BtnDrawBoard, DotDrawBoard, _screenDrawing.IsVisible && _screenDrawing.IsBoardMode);
+        ApplyDockButtonState(BtnTimer, DotTimer, _timerWindow.IsVisible);
+        ApplyDockButtonState(BtnPicker, DotPicker, _pickerWindow.IsVisible);
 
-        DotVisualizer.Visibility = _visualizerWindow.IsVisible ? Visibility.Visible : Visibility.Collapsed;
-        DotNoise.Visibility = _noiseWindow.IsVisible ? Visibility.Visible : Visibility.Collapsed;
-        DotSoundboard.Visibility = _soundboardWindow.IsVisible ? Visibility.Visible : Visibility.Collapsed;
-        DotSeat.Visibility = _seatWindow.IsVisible ? Visibility.Visible : Visibility.Collapsed;
-        DotSignature.Visibility = _signatureWindow.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+        ApplyDockButtonState(BtnVisualizer, DotVisualizer, _visualizerWindow.IsVisible);
+        ApplyDockButtonState(BtnNoise, DotNoise, _noiseWindow.IsVisible);
+        ApplyDockButtonState(BtnSoundboard, DotSoundboard, _soundboardWindow.IsVisible);
+        ApplyDockButtonState(BtnSeat, DotSeat, _seatWindow.IsVisible);
+        ApplyDockButtonState(BtnSignature, DotSignature, _signatureWindow.IsVisible);
 
         if (_displayManager != null && _displayManager.IsDualMonitor)
         {
@@ -133,17 +163,39 @@ public partial class FloatingToolbarWindow : Window
         }
     }
 
+    private void MoveWindowToMonitor(Window win, int monitorIndex, bool maximize = false)
+    {
+        if (_displayManager != null)
+        {
+            int target = (_displayManager.ScreenCount > monitorIndex && monitorIndex >= 0) ? monitorIndex : 0;
+            _displayManager.MoveWindowToScreen(win, target, maximize);
+        }
+    }
+
     private void BtnBoard_Click(object sender, RoutedEventArgs e)
     {
-        if (_studentBoard.IsVisible)
+        if (_studentBoard.IsVisible && _studentBoard.CurrentMonitorIndex == 0)
         {
             _studentBoard.Hide();
         }
         else
         {
-            _displayManager?.MoveToStudentMonitor(_studentBoard, maximize: true);
-            _studentBoard.Show();
-            _studentBoard.Activate();
+            _studentBoard.ShowOnMonitor(0);
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnBoard_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_studentBoard.IsVisible && _studentBoard.CurrentMonitorIndex == target)
+        {
+            _studentBoard.Hide();
+        }
+        else
+        {
+            _studentBoard.ShowOnMonitor(target);
         }
         UpdateActiveToolIndicators();
     }
@@ -156,7 +208,22 @@ public partial class FloatingToolbarWindow : Window
         }
         else
         {
-            _screenDrawing.FreezeAndShow();
+            _screenDrawing.FreezeAndShow(0);
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnDrawScreen_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_screenDrawing.IsVisible && !_screenDrawing.IsBoardMode)
+        {
+            _screenDrawing.CloseOverlay();
+        }
+        else
+        {
+            _screenDrawing.FreezeAndShow(target);
         }
         UpdateActiveToolIndicators();
     }
@@ -169,17 +236,52 @@ public partial class FloatingToolbarWindow : Window
         }
         else
         {
-            _screenDrawing.ShowBoardMode("chalkboard");
+            _screenDrawing.ShowBoardMode("chalkboard", 0);
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnDrawBoard_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_screenDrawing.IsVisible && _screenDrawing.IsBoardMode)
+        {
+            _screenDrawing.CloseOverlay();
+        }
+        else
+        {
+            _screenDrawing.ShowBoardMode("chalkboard", target);
         }
         UpdateActiveToolIndicators();
     }
 
     private void BtnTimer_Click(object sender, RoutedEventArgs e)
     {
-        if (_timerWindow.IsVisible) _timerWindow.Hide();
+        if (_timerWindow.IsVisible)
+        {
+            _timerWindow.Hide();
+        }
         else
         {
-            _timerWindow.PositionToDefaultMonitor();
+            _timerWindow.PositionToMonitor(0);
+            _timerWindow.Show();
+            _timerWindow.Activate();
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnTimer_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_timerWindow.IsVisible)
+        {
+            _timerWindow.Hide();
+        }
+        else
+        {
+            _timerWindow.PositionToMonitor(target);
             _timerWindow.Show();
             _timerWindow.Activate();
         }
@@ -188,12 +290,28 @@ public partial class FloatingToolbarWindow : Window
 
     private void BtnPicker_Click(object sender, RoutedEventArgs e)
     {
-        if (_pickerWindow.IsVisible) _pickerWindow.Hide();
+        if (_pickerWindow.IsVisible)
+        {
+            _pickerWindow.Hide();
+        }
         else
         {
-            _displayManager?.MoveToStudentMonitor(_pickerWindow, maximize: false);
-            _pickerWindow.Show();
-            _pickerWindow.Activate();
+            _pickerWindow.ShowOnMonitor(0);
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnPicker_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_pickerWindow.IsVisible)
+        {
+            _pickerWindow.Hide();
+        }
+        else
+        {
+            _pickerWindow.ShowOnMonitor(target);
         }
         UpdateActiveToolIndicators();
     }
@@ -254,7 +372,21 @@ public partial class FloatingToolbarWindow : Window
         if (_visualizerWindow.IsVisible) _visualizerWindow.Hide();
         else
         {
-            _displayManager?.MoveToStudentMonitor(_visualizerWindow, maximize: false);
+            MoveWindowToMonitor(_visualizerWindow, 0, maximize: false);
+            _visualizerWindow.Show();
+            _visualizerWindow.Activate();
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnVisualizer_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_visualizerWindow.IsVisible) _visualizerWindow.Hide();
+        else
+        {
+            MoveWindowToMonitor(_visualizerWindow, target, maximize: false);
             _visualizerWindow.Show();
             _visualizerWindow.Activate();
         }
@@ -266,6 +398,21 @@ public partial class FloatingToolbarWindow : Window
         if (_noiseWindow.IsVisible) _noiseWindow.Hide();
         else
         {
+            MoveWindowToMonitor(_noiseWindow, 0, maximize: false);
+            _noiseWindow.Show();
+            _noiseWindow.Activate();
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnNoise_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_noiseWindow.IsVisible) _noiseWindow.Hide();
+        else
+        {
+            MoveWindowToMonitor(_noiseWindow, target, maximize: false);
             _noiseWindow.Show();
             _noiseWindow.Activate();
         }
@@ -277,19 +424,23 @@ public partial class FloatingToolbarWindow : Window
         if (_soundboardWindow.IsVisible) _soundboardWindow.Hide();
         else
         {
+            MoveWindowToMonitor(_soundboardWindow, 0, maximize: false);
             _soundboardWindow.Show();
             _soundboardWindow.Activate();
         }
         UpdateActiveToolIndicators();
     }
 
-    private void BtnSignature_Click(object sender, RoutedEventArgs e)
+    private void BtnSoundboard_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (_signatureWindow.IsVisible) _signatureWindow.Hide();
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_soundboardWindow.IsVisible) _soundboardWindow.Hide();
         else
         {
-            _signatureWindow.Show();
-            _signatureWindow.Activate();
+            MoveWindowToMonitor(_soundboardWindow, target, maximize: false);
+            _soundboardWindow.Show();
+            _soundboardWindow.Activate();
         }
         UpdateActiveToolIndicators();
     }
@@ -299,8 +450,49 @@ public partial class FloatingToolbarWindow : Window
         if (_seatWindow.IsVisible) _seatWindow.Hide();
         else
         {
+            MoveWindowToMonitor(_seatWindow, 0, maximize: false);
             _seatWindow.Show();
             _seatWindow.Activate();
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnSeat_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_seatWindow.IsVisible) _seatWindow.Hide();
+        else
+        {
+            MoveWindowToMonitor(_seatWindow, target, maximize: false);
+            _seatWindow.Show();
+            _seatWindow.Activate();
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnSignature_Click(object sender, RoutedEventArgs e)
+    {
+        if (_signatureWindow.IsVisible) _signatureWindow.Hide();
+        else
+        {
+            MoveWindowToMonitor(_signatureWindow, 0, maximize: false);
+            _signatureWindow.Show();
+            _signatureWindow.Activate();
+        }
+        UpdateActiveToolIndicators();
+    }
+
+    private void BtnSignature_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        int target = (_displayManager != null && _displayManager.IsDualMonitor) ? 1 : 0;
+        if (_signatureWindow.IsVisible) _signatureWindow.Hide();
+        else
+        {
+            MoveWindowToMonitor(_signatureWindow, target, maximize: false);
+            _signatureWindow.Show();
+            _signatureWindow.Activate();
         }
         UpdateActiveToolIndicators();
     }
