@@ -2,7 +2,8 @@
 
 ## 제품 기준
 - 공식 저장소: `LUCKYBRIDGE/knol-teacher`
-- 기준 버전: v1.0.0
+- 안정 기준선: v1.0.0
+- 현재 기능 개발선: v1.1.0
 - 플랫폼: Windows 10/11 x64, C# / .NET 8 / WPF
 - 로컬 실행파일: `놀티쳐.exe`
 - GitHub Release asset: `KnolTeacher.exe`
@@ -20,9 +21,9 @@
 - 저장 형식 변경에는 기존 데이터 보존과 복구 경로를 둔다.
 
 ## 버전과 Release
-- `Directory.Build.props`의 `KnolTeacherVersion`이 버전 SSOT이다.
-- 공개 버전 이후 desktop 코드 변경 시 다음 버전으로 올린다.
-- `release/release-version.txt`는 실제 Release 승격 때만 변경한다.
+- `Directory.Build.props`의 `KnolTeacherVersion`이 현재 개발 소스 버전의 SSOT이다.
+- `release/release-version.txt`는 실제 Stable Release로 승격된 버전만 기록한다.
+- 공개 버전 이후 desktop 코드 변경 시 다음 개발 버전으로 올린다.
 - 로컬 publish는 정확히 `놀티쳐.exe` 한 파일이어야 한다.
 - GitHub Release에는 정확히 `KnolTeacher.exe` 한 asset만 공개한다.
 - 업데이트는 이 저장소의 HTTPS Release, 크기, SHA-256, embedded FileVersion을 검증한다.
