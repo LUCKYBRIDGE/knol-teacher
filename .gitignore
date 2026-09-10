@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# User Configs & Logs
+config/*.json
+!config/default_*.json
+*.log
+
+# .NET / C# Build Outputs
+bin/
+obj/
+dist-net/
+*.user
+*.suo
+.vs/
+*.exe
+*.dll
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Temporary publish & scratch
+publish/
+scratch/
