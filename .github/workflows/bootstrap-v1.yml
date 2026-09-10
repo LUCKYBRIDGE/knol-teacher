@@ -33,8 +33,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          mkdir -p target/.github/workflows target/release target/scripts target/docs
+          mkdir -p target/release target/scripts target/docs
 
           cp source/.gitignore target/.gitignore
           cp source/KnolTeacher.sln target/KnolTeacher.sln
@@ -43,28 +42,21 @@ jobs:
           cp source/build_and_deploy_desktop.bat target/build_and_deploy_desktop.bat
           cp -a source/src target/src
           cp -a source/tests target/tests
-
-          cp source/.github/workflows/ci.yml target/.github/workflows/ci.yml
-          cp source/.github/workflows/release.yml target/.github/workflows/release.yml
-          cp source/.github/workflows/release-notes.yml target/.github/workflows/release-notes.yml
           cp source/scripts/validate-user-facing-release-notes.ps1 target/scripts/validate-user-facing-release-notes.ps1
 
-          # The previous repository history is intentionally not migrated.
-          # Legacy Python sources, historical 3.x release documents and historical
-          # release-rewrite automation are intentionally omitted from the new v1 baseline.
           rm -f target/src/KnolTeacher.Desktop/assets/race/race_bgm.wav
 
-          # Remove old version numbers from file names; partial class behavior is unchanged.
           mv target/src/KnolTeacher.Desktop/MainWindow.V309Ux.cs target/src/KnolTeacher.Desktop/MainWindow.PopupUx.cs
           mv target/src/KnolTeacher.Desktop/MainWindow.CalendarV309Ux.cs target/src/KnolTeacher.Desktop/MainWindow.CalendarUx.cs
           mv target/src/KnolTeacher.Desktop/Views/Windows/StudentDisplayWindow.V309Ux.cs target/src/KnolTeacher.Desktop/Views/Windows/StudentDisplayWindow.PopupUx.cs
 
           python3 - <<'PY'
           from pathlib import Path
-
           root = Path('target')
-          text_suffixes = {'.cs', '.xaml', '.xml', '.props', '.sln', '.json', '.md', '.yml', '.yaml', '.ps1', '.bat', '.txt', '.manifest'}
+          text_suffixes = {'.cs', '.xaml', '.xml', '.props', '.sln', '.json', '.md', '.ps1', '.bat', '.txt', '.manifest'}
           for path in root.rglob('*'):
+              if '.git' in path.parts or '.github' in path.parts:
+                  continue
               if not path.is_file() or path.suffix.lower() not in text_suffixes:
                   continue
               try:
@@ -72,7 +64,6 @@ jobs:
               except UnicodeDecodeError:
                   continue
               text = text.replace('LUCKYBRIDGE/knolteacher', 'LUCKYBRIDGE/knol-teacher')
-              text = text.replace('https://api.github.com/repos/LUCKYBRIDGE/knolteacher', 'https://api.github.com/repos/LUCKYBRIDGE/knol-teacher')
               text = text.replace('v3.0.9', 'v1.0.0').replace('3.0.9', '1.0.0')
               path.write_text(text, encoding='utf-8')
 
@@ -89,7 +80,6 @@ jobs:
           cat > target/Directory.Build.props <<'EOF'
           <Project>
             <PropertyGroup>
-              <!-- Single source of truth for the KnolTeacher desktop version. -->
               <KnolTeacherVersion>1.0.0</KnolTeacherVersion>
             </PropertyGroup>
           </Project>
@@ -98,152 +88,108 @@ jobs:
           cat > target/README.md <<'EOF'
           # 놀티쳐 (KnolTeacher) v1.0.0
 
-          교실 수업과 학급 운영을 돕는 Windows 데스크톱 도구입니다.
-
-          이 저장소는 놀티쳐의 공식 개발·배포 기준 저장소입니다. 제품 버전과 공개 이력은 **v1.0.0부터 새로 시작**합니다.
+          교실 수업과 학급 운영을 돕는 Windows 데스크톱 도구입니다. 이 저장소는 놀티쳐의 공식 개발·배포 기준 저장소이며 제품 버전과 공개 이력은 **v1.0.0부터 새로 시작**합니다.
 
           ## 주요 기능
-
-          - 수업 타이머, 일정, 알림, QR, 판서와 교실 도구를 한곳에서 사용할 수 있습니다.
-          - 놀보드 위젯을 배치하고 이동·크기 조절해 수업 화면을 구성할 수 있습니다.
-          - 학생 선택 기능은 이름 입력 없이 학생 번호만으로도 사용할 수 있습니다.
-          - 일정과 설정은 사용자 PC에 로컬로 저장하는 것을 기본으로 합니다.
-          - 듀얼 모니터 환경에서는 지원되는 독립 창을 원하는 화면에 빠르게 열 수 있습니다.
+          - 타이머, 일정, 알림, QR, 판서 등 자주 쓰는 수업 도구를 한곳에서 사용할 수 있습니다.
+          - 놀보드 위젯을 배치·이동·크기 조절해 수업 화면을 구성할 수 있습니다.
+          - 학생 이름을 입력하지 않아도 번호만으로 학생 선택 기능을 사용할 수 있습니다.
+          - 일정과 주요 설정은 사용자 PC에 로컬로 저장하는 것을 기본으로 합니다.
+          - 듀얼 모니터 환경에서 지원되는 독립 창을 원하는 화면에 빠르게 열 수 있습니다.
 
           ## 개인정보 및 저장 원칙
-
-          학생·학급 정보는 **Local-Only**를 기본 원칙으로 합니다. 핵심 수업 기능은 학생 번호만으로 사용할 수 있으며, 이름 등 개인 정보는 사용자가 명시적으로 선택한 경우에만 로컬 PC에 저장합니다. 학생 정보를 자동으로 외부 서버나 AI 서비스로 전송하지 않습니다.
+          학생·학급 정보는 **Local-Only**를 기본으로 합니다. 핵심 기능은 학생 번호만으로 사용할 수 있으며 이름 등 개인 정보는 사용자가 선택한 경우에만 로컬 PC에 저장합니다. 학생 정보를 자동으로 외부 서버나 AI 서비스로 전송하지 않습니다.
 
           ## 배포와 업데이트
-
           - Windows 10/11 x64용 self-contained 단일 실행파일로 배포합니다.
-          - GitHub Release에서 제공하는 파일명은 `KnolTeacher.exe`입니다.
-          - 사용자 PC에서 사용하는 공식 실행파일 이름은 `놀티쳐.exe`입니다.
-          - v1.0.0 이후 업데이트는 **LUCKYBRIDGE/knol-teacher** 저장소의 최신 Stable Release만 확인합니다.
-          - 업데이트 파일은 크기, SHA-256, 실행파일 내부 버전을 검증한 뒤 적용합니다.
+          - GitHub Release asset: `KnolTeacher.exe`
+          - 사용자 PC 공식 실행파일: `놀티쳐.exe`
+          - v1.0.0 이후 업데이트는 `LUCKYBRIDGE/knol-teacher`의 최신 Stable Release만 확인합니다.
+          - 업데이트 파일의 크기, SHA-256, 실행파일 내부 버전을 검증한 뒤 적용합니다.
 
           ## 프로젝트 자산
-
-          놀티쳐 전용 이미지·아이콘·레이스 시각 자산은 이 프로젝트를 위해 제작 또는 생성한 자산을 사용합니다. 공개 설명은 놀티쳐 자체의 기능과 사용 경험을 중심으로 작성합니다.
-
-          제3자 라이브러리는 각 제공자의 저작권과 라이선스를 따릅니다. 자세한 내용은 `THIRD_PARTY_NOTICES.md`를 참고하십시오.
+          놀티쳐 전용 이미지·아이콘·레이스 시각 자산은 이 프로젝트를 위해 제작 또는 생성한 자산을 사용합니다. 제3자 라이브러리는 각 제공자의 라이선스를 따릅니다. 자세한 내용은 `THIRD_PARTY_NOTICES.md`를 참고하십시오.
           EOF
 
           cat > target/AGENTS.md <<'EOF'
           # KnolTeacher Repository Rules
 
-          이 파일은 `LUCKYBRIDGE/knol-teacher`의 저장소 전체 개발 규칙이다. 현재 코드와 테스트가 실제 동작의 최우선 근거이며, 이 문서는 작업 원칙을 정의한다.
-
           ## 제품 기준
+          - 공식 저장소: `LUCKYBRIDGE/knol-teacher`
+          - 기준 버전: v1.0.0
+          - 플랫폼: Windows 10/11 x64, C# / .NET 8 / WPF
+          - 로컬 실행파일: `놀티쳐.exe`
+          - GitHub Release asset: `KnolTeacher.exe`
 
-          - 제품명: 놀티쳐 (KnolTeacher)
-          - 현재 기준 버전: v1.0.0
-          - 플랫폼: Windows 10/11 x64
-          - 기술: C# / .NET 8 / WPF
-          - 공식 로컬 실행파일: `놀티쳐.exe`
-          - GitHub Release transport asset: `KnolTeacher.exe`
-          - 공식 업데이트 저장소: `LUCKYBRIDGE/knol-teacher`
+          ## 개인정보
+          - 학생·학급 식별 정보는 Local-Only가 기본이다.
+          - 핵심 기능은 학생 번호만으로 완전하게 사용할 수 있어야 한다.
+          - 이름·개인별 기록은 선택 기능이며 필요한 경우에만 로컬 저장한다.
+          - 학생 정보를 자동으로 클라우드, 서버, AI 서비스에 전송하지 않는다.
 
-          ## 개인정보 원칙
+          ## 개발
+          - 초기 저장소 구성 이후 `main` 직접 수정 금지. branch → PR → CI → merge를 따른다.
+          - Build, 자동 테스트, single-file package 검증을 통과한 변경만 병합한다.
+          - 대규모 재작성보다 점진적 개선을 우선한다.
+          - 저장 형식 변경에는 기존 데이터 보존과 복구 경로를 둔다.
 
-          - 학생·학급의 식별 가능한 정보는 Local-Only를 기본으로 한다.
-          - 핵심 교실 기능은 학생 번호만으로 완전하게 사용할 수 있어야 한다.
-          - 이름·개인별 기록 등은 선택 기능이며 필요한 경우에만 로컬 저장한다.
-          - 학생 정보가 자동으로 클라우드, 서버, AI 서비스로 전송되지 않게 한다.
-          - 불필요한 개인정보는 새로 저장하지 않는다.
-
-          ## 개발 및 병합
-
-          - `main`을 직접 수정하지 않는다. branch → PR → CI → merge 순서를 따른다.
-          - WPF Build, 자동 테스트, single-file package 검증이 성공한 변경만 병합한다.
-          - 기존 데이터를 파괴하는 마이그레이션을 피하고, 저장 형식 변경에는 복구 경로를 둔다.
-          - 대규모 재작성보다 작은 단위의 점진적 개선을 우선한다.
-
-          ## 버전 및 Release
-
+          ## 버전과 Release
           - `Directory.Build.props`의 `KnolTeacherVersion`이 버전 SSOT이다.
-          - 공개된 버전 이후 desktop 코드가 변경되면 다음 버전으로 올린다.
-          - `release/release-version.txt`는 실제 Release를 승격할 때만 변경한다.
-          - Release tag는 중앙 버전과 정확히 일치해야 한다.
-          - 로컬 publish 결과는 정확히 `놀티쳐.exe` 한 파일이어야 한다.
+          - 공개 버전 이후 desktop 코드 변경 시 다음 버전으로 올린다.
+          - `release/release-version.txt`는 실제 Release 승격 때만 변경한다.
+          - 로컬 publish는 정확히 `놀티쳐.exe` 한 파일이어야 한다.
           - GitHub Release에는 정확히 `KnolTeacher.exe` 한 asset만 공개한다.
-          - 업데이트는 HTTPS GitHub Release, asset size, SHA-256 digest, embedded FileVersion을 검증한다.
-          - v1.0.0 이후 앱은 이 저장소의 Release만 업데이트 기준으로 사용한다.
+          - 업데이트는 이 저장소의 HTTPS Release, 크기, SHA-256, embedded FileVersion을 검증한다.
 
-          ## 사용자용 업데이트 안내
-
-          - 사용자가 실제로 체감하는 변화와 편의성을 중심으로 작성한다.
-          - PR, commit, 클래스명, 내부 구현 방식 등 개발 과정은 사용자용 안내에 노출하지 않는다.
+          ## 공개 안내와 자산
+          - 사용자 업데이트 안내는 교사가 실제로 체감하는 변화만 설명한다.
+          - 개발 과정과 내부 구현 용어는 사용자용 안내에 노출하지 않는다.
           - 외부 제품·서비스를 기능 또는 화면 구성의 구현 출처나 유사성 근거로 제시하지 않는다.
-          - 공개 안내는 놀티쳐 자체의 기능, 사용 방법, 안정성 변화만 설명한다.
-
-          ## 자산 및 제3자 구성요소
-
-          - 프로젝트 전용 시각 자산은 프로젝트를 위해 제작 또는 생성한 자산을 사용한다.
-          - 출처가 확인되지 않은 외부 이미지·음원·폰트 파일을 저장소에 추가하지 않는다.
-          - 제3자 라이브러리를 프로젝트 소유물처럼 표시하지 않으며 해당 라이선스를 존중한다.
+          - 프로젝트 시각 자산은 프로젝트를 위해 제작 또는 생성한 자산을 사용한다.
+          - 권리가 확인되지 않은 외부 이미지·음원·폰트를 저장소에 추가하지 않는다.
+          - 제3자 라이브러리는 해당 라이선스를 존중한다.
           EOF
 
           cat > target/docs/PROJECT_CONTEXT.md <<'EOF'
           # 놀티쳐 프로젝트 컨텍스트
-
-          ## 기준
-
-          - 저장소: `LUCKYBRIDGE/knol-teacher`
+          - 공식 저장소: `LUCKYBRIDGE/knol-teacher`
           - 기준 버전: v1.0.0
           - 플랫폼: Windows 10/11 x64
           - 앱: C# / .NET 8 / WPF
-          - 공식 로컬 실행파일: `놀티쳐.exe`
+          - 로컬 실행파일: `놀티쳐.exe`
           - GitHub Release asset: `KnolTeacher.exe`
 
-          ## 제품 방향
+          놀티쳐는 교사가 수업 중 자주 사용하는 타이머, 일정, 판서, QR, 학생 선택, 놀보드 위젯과 학급 운영 기능을 한 앱에서 빠르게 사용하는 것을 목표로 한다. 학생 데이터는 번호 중심·Local-Only가 기본이다.
 
-          놀티쳐는 교사가 수업 중 자주 사용하는 타이머, 일정, 판서, QR, 학생 선택, 놀보드 위젯과 학급 운영 보조 기능을 한 앱에서 빠르게 사용하는 것을 목표로 한다.
-
-          학생 데이터는 번호 중심·Local-Only가 기본이다. 이름과 개인별 정보는 선택적으로만 사용하며 자동 외부 전송을 하지 않는다.
-
-          ## 업데이트 계약
-
-          v1.0.0부터 이 저장소의 Stable Release를 기준으로 업데이트를 확인한다. 새 실행파일은 다운로드 후 크기, SHA-256, 내부 버전을 확인하며, 검증된 파일만 로컬 `놀티쳐.exe`를 교체하고 재실행한다.
+          v1.0.0부터 이 저장소의 Stable Release를 기준으로 업데이트를 확인한다. 검증된 파일만 로컬 `놀티쳐.exe`를 교체하고 재실행한다.
           EOF
 
           cat > target/docs/DEVELOPMENT_MASTER_PLAN.md <<'EOF'
           # 놀티쳐 개발 마스터 플랜
+          v1.0.0은 새 공식 저장소의 안정 기준선이다.
 
-          ## v1 기준선
-
-          v1.0.0은 새 공식 저장소의 안정 기준선이다. 이후 개발은 이 버전을 바탕으로 기능 개선과 구조 정리를 진행한다.
-
-          ## 우선 원칙
-
-          1. 교실에서 즉시 이해하고 사용할 수 있는 UX를 우선한다.
-          2. 학생·학급 데이터는 번호 중심, Local-Only, 최소 저장 원칙을 유지한다.
-          3. 놀보드 위젯과 독립 Window의 동작 방식을 명확히 구분한다.
+          1. 교실에서 즉시 이해할 수 있는 UX를 우선한다.
+          2. 학생 데이터는 번호 중심, Local-Only, 최소 저장 원칙을 유지한다.
+          3. 놀보드 위젯과 독립 Window의 동작을 명확히 구분한다.
           4. 저장은 원자적 저장과 복구 가능한 backup을 우선한다.
-          5. `MainWindow` 대형 구조는 재작성하지 않고 기능 단위로 점진 분리한다.
+          5. 대형 UI 구조는 기능 단위로 점진 분리한다.
           6. Release 전 Build, test, single-file, version, digest 검증을 모두 통과한다.
           7. 사용자 업데이트 안내는 교사가 체감하는 변화만 설명한다.
 
-          ## 다음 개발선
-
-          v1.1.0에서 UX 개선, 창/팝업 공통화, 테스트 확대와 구조적 기술부채 해소를 점진적으로 진행한다. 긴급 오류 수정은 v1.0.x patch로 분리한다.
+          다음 기능 개발선은 v1.1.0, 긴급 오류 수정은 v1.0.x patch를 사용한다.
           EOF
 
           cat > target/release/README.md <<'EOF'
           # 놀티쳐 Release 안내 규칙
-
-          `user-facing-notes.md`는 GitHub Release와 앱의 업데이트 창에 표시되는 사용자용 안내문이다.
-
+          `user-facing-notes.md`는 GitHub Release와 앱 업데이트 창에 표시되는 사용자용 안내문이다.
           - 교사가 실제로 체감하는 변화와 편의성을 중심으로 작성한다.
           - 화면에서 보이는 기능명을 우선한다.
           - 개발 내부 용어와 구현 과정은 사용자용 안내에 넣지 않는다.
           - 외부 제품·서비스를 구현 출처나 유사성의 근거로 제시하지 않는다.
-          - 보안·데이터 보호 변경은 사용자의 정보가 어디에 저장되고 어떻게 보호되는지 중심으로 설명한다.
-          - 릴리스 전 `scripts/validate-user-facing-release-notes.ps1` 검증을 통과해야 한다.
+          - 데이터 보호 변경은 사용자의 정보가 어디에 저장되고 어떻게 보호되는지 중심으로 설명한다.
           EOF
 
           printf '1.0.0\n' > target/release/release-version.txt
-
           cat > target/release/user-facing-notes.md <<'EOF'
           놀티쳐 v1.0.0 업데이트
 
@@ -261,7 +207,7 @@ jobs:
 
           더 안전한 저장과 업데이트
           - 주요 설정과 학급 데이터는 로컬 PC에 안전하게 저장하고 손상 시 복구할 수 있도록 보완했습니다.
-          - 새 버전은 파일 무결성과 실제 버전을 확인한 뒤 적용하고, 적용이 끝나면 새 실행파일로 다시 시작합니다.
+          - 새 버전은 파일 무결성과 실제 버전을 확인한 뒤 적용하고 새 실행파일로 다시 시작합니다.
           EOF
 
           cat > target/LICENSE <<'EOF'
@@ -270,8 +216,7 @@ jobs:
           Unless a separate written license states otherwise, the original source code,
           documentation, and project-specific assets in this repository may not be copied,
           modified, distributed, sublicensed, or used to create derivative works without
-          prior written permission from the copyright holder, except where applicable law
-          permits otherwise.
+          prior written permission from the copyright holder, except where applicable law permits otherwise.
 
           Third-party libraries and components are excluded from this notice and remain
           subject to their respective copyright and license terms.
@@ -279,38 +224,18 @@ jobs:
 
           cat > target/ASSET_NOTICE.md <<'EOF'
           # Project Asset Notice
+          The application icons, avatar images, race-scene images and other KnolTeacher visual assets in this repository were created or generated specifically for this project.
 
-          The visual assets stored under the KnolTeacher project directories, including
-          application icons, avatar images, and race-scene images, were created or generated
-          specifically for this project. They are included as KnolTeacher project assets and
-          are not presented as assets sourced from another product or service.
-
-          Do not add external images, audio, fonts, or other media unless their use and
-          redistribution rights are documented for this repository.
+          Do not add external images, audio, fonts, or other media unless their use and redistribution rights are documented for this repository.
           EOF
 
           cat > target/THIRD_PARTY_NOTICES.md <<'EOF'
           # Third-Party Components
+          KnolTeacher references third-party libraries through NuGet. Those packages are not claimed as project-owned works and remain subject to their own licenses and notices.
 
-          KnolTeacher references third-party libraries through NuGet. Those packages are not
-          claimed as project-owned works and remain subject to their own licenses and notices.
+          Current package references include CommunityToolkit.Mvvm, DirectShowLib.NET, Microsoft.Extensions.DependencyInjection, Microsoft.Extensions.Hosting, Microsoft.Web.WebView2, MiniExcel, NAudio, OpenCvSharp4 and its Windows/WPF packages, QRCoder, System.Speech, and WPF-UI.
 
-          Current package references include:
-
-          - CommunityToolkit.Mvvm
-          - DirectShowLib.NET
-          - Microsoft.Extensions.DependencyInjection
-          - Microsoft.Extensions.Hosting
-          - Microsoft.Web.WebView2
-          - MiniExcel
-          - NAudio
-          - OpenCvSharp4 and its Windows/WPF packages
-          - QRCoder
-          - System.Speech
-          - WPF-UI
-
-          When package versions change, review the applicable package license metadata and
-          preserve any notice obligations required by those packages.
+          When package versions change, review the applicable package license metadata and preserve required notices.
           EOF
 
           cat > target/tests/KnolTeacher.Tests/UpdateServiceContractTests.cs <<'EOF'
@@ -329,9 +254,7 @@ jobs:
               [InlineData("setup.exe", false)]
               [InlineData("", false)]
               public void AcceptedReleaseAssetNames_AreExplicitAndLimited(string assetName, bool expected)
-              {
-                  Assert.Equal(expected, UpdateService.IsAcceptedReleaseAssetName(assetName));
-              }
+                  => Assert.Equal(expected, UpdateService.IsAcceptedReleaseAssetName(assetName));
 
               [Theory]
               [InlineData("v1.0.1", "v1.0.0", true)]
@@ -341,9 +264,7 @@ jobs:
               [InlineData("v2.0.0", "v1.0.0", true)]
               [InlineData("v1.0.9", "v1.0.10", false)]
               public void VersionComparison_UsesSemanticVersionOrdering(string latest, string current, bool expected)
-              {
-                  Assert.Equal(expected, UpdateService.IsNewerVersion(latest, current));
-              }
+                  => Assert.Equal(expected, UpdateService.IsNewerVersion(latest, current));
 
               [Theory]
               [InlineData("v1.0.0", "1.0.0.0", true)]
@@ -352,20 +273,13 @@ jobs:
               [InlineData("v1.0.1", "v1.0.0", false)]
               [InlineData("invalid", "v1.0.0", false)]
               public void SameProductVersion_UsesMajorMinorBuild(string left, string right, bool expected)
-              {
-                  Assert.Equal(expected, UpdateService.IsSameProductVersion(left, right));
-              }
+                  => Assert.Equal(expected, UpdateService.IsSameProductVersion(left, right));
           }
           EOF
-
-          # New repository has no historical release rewrite mechanism.
-          rm -f target/.github/workflows/public-release-history.yml
-          rm -f target/scripts/apply-user-facing-release-history.ps1
-          rm -f target/release/public-release-history.json
 
           cd target
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -A -- . ':!.github/workflows'
           git commit -m "feat: 놀티쳐 v1.0.0 안정 기준선 구성"
           git push origin main
