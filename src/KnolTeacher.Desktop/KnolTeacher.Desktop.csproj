@@ -10,7 +10,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <LangVersion>latest</LangVersion>
     <PlatformTarget>x64</PlatformTarget>
-    <NoWarn>$(NoWarn);CS9057</NoWarn>
+    <!-- WFAC010 is a known false-positive for WPF apps that intentionally keep per-monitor DPI in the manifest while also enabling WinForms interop. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>

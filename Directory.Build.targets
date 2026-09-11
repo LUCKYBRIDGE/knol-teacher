@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    OpenCvSharp4 4.13.0.20260627 ships OpenCvSharp.Analyzers.dll built against
+    Roslyn 4.14, while the pinned .NET 8 SDK currently runs Roslyn 4.11.
+    The runtime library is compatible; only the analyzer is not. Remove that
+    analyzer after NuGet assets are resolved and before compilation for every
+    project in the solution, including the test project.
+  -->
+  <Target Name="RemoveIncompatibleOpenCvSharpAnalyzer" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.Filename)' == 'OpenCvSharp.Analyzers'" />
+    </ItemGroup>
+  </Target>
+</Project>
