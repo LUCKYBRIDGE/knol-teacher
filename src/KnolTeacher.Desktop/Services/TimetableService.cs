@@ -70,19 +70,11 @@ public class TimetableService : ITimetableService
 
     private void LoadPeriods()
     {
-        if (File.Exists(_periodsFile))
+        if (SafeLocalJsonStore.TryLoad<List<PeriodItem>>(_periodsFile, _jsonOptions, out var list) &&
+            list is { Count: > 0 })
         {
-            try
-            {
-                string json = File.ReadAllText(_periodsFile);
-                var list = JsonSerializer.Deserialize<List<PeriodItem>>(json, _jsonOptions);
-                if (list != null && list.Count > 0)
-                {
-                    _periods = list;
-                    return;
-                }
-            }
-            catch { }
+            _periods = list;
+            return;
         }
 
         // Default Korean Elementary School periods (9:10 start, lunch 12:20~13:20)
@@ -174,19 +166,14 @@ public class TimetableService : ITimetableService
 
     private void LoadBaseTimetable()
     {
-        if (File.Exists(_baseTimetableFile))
+        if (SafeLocalJsonStore.TryLoad<Dictionary<string, List<Dictionary<string, string>>>>(
+                _baseTimetableFile,
+                _jsonOptions,
+                out var dict) &&
+            dict is { Count: > 0 })
         {
-            try
-            {
-                string json = File.ReadAllText(_baseTimetableFile);
-                var dict = JsonSerializer.Deserialize<Dictionary<string, List<Dictionary<string, string>>>>(json, _jsonOptions);
-                if (dict != null && dict.Count > 0)
-                {
-                    _baseTimetable = dict;
-                    return;
-                }
-            }
-            catch { }
+            _baseTimetable = dict;
+            return;
         }
 
         _baseTimetable = CreateDefaultTimetable();
@@ -195,19 +182,14 @@ public class TimetableService : ITimetableService
 
     private void LoadWeeklyTimetable()
     {
-        if (File.Exists(_timetableFile))
+        if (SafeLocalJsonStore.TryLoad<Dictionary<string, List<Dictionary<string, string>>>>(
+                _timetableFile,
+                _jsonOptions,
+                out var dict) &&
+            dict is { Count: > 0 })
         {
-            try
-            {
-                string json = File.ReadAllText(_timetableFile);
-                var dict = JsonSerializer.Deserialize<Dictionary<string, List<Dictionary<string, string>>>>(json, _jsonOptions);
-                if (dict != null && dict.Count > 0)
-                {
-                    _weeklyTimetable = dict;
-                    return;
-                }
-            }
-            catch { }
+            _weeklyTimetable = dict;
+            return;
         }
 
         _weeklyTimetable = CloneTimetable(_baseTimetable);
@@ -220,25 +202,19 @@ public class TimetableService : ITimetableService
     public void SaveWeeklyTimetable(Dictionary<string, List<Dictionary<string, string>>> timetable)
     {
         _weeklyTimetable = CloneTimetable(timetable);
-        try
+        if (SafeLocalJsonStore.TrySave(_timetableFile, _weeklyTimetable, _jsonOptions))
         {
-            string json = JsonSerializer.Serialize(_weeklyTimetable, _jsonOptions);
-            File.WriteAllText(_timetableFile, json);
             OnTimetableChanged?.Invoke();
         }
-        catch { }
     }
 
     public void SaveBaseTimetable(Dictionary<string, List<Dictionary<string, string>>> timetable)
     {
         _baseTimetable = CloneTimetable(timetable);
-        try
+        if (SafeLocalJsonStore.TrySave(_baseTimetableFile, _baseTimetable, _jsonOptions))
         {
-            string json = JsonSerializer.Serialize(_baseTimetable, _jsonOptions);
-            File.WriteAllText(_baseTimetableFile, json);
             OnTimetableChanged?.Invoke();
         }
-        catch { }
     }
 
     public void ResetWeeklyToBase()
@@ -307,24 +283,18 @@ public class TimetableService : ITimetableService
     public void SavePeriods(List<PeriodItem> periods)
     {
         _periods = periods;
-        try
+        if (SafeLocalJsonStore.TrySave(_periodsFile, _periods, _jsonOptions))
         {
-            string json = JsonSerializer.Serialize(_periods, _jsonOptions);
-            File.WriteAllText(_periodsFile, json);
             OnTimetableChanged?.Invoke();
         }
-        catch { }
     }
 
     private void SaveWeeklyTimetable()
     {
-        try
+        if (SafeLocalJsonStore.TrySave(_timetableFile, _weeklyTimetable, _jsonOptions))
         {
-            string json = JsonSerializer.Serialize(_weeklyTimetable, _jsonOptions);
-            File.WriteAllText(_timetableFile, json);
             OnTimetableChanged?.Invoke();
         }
-        catch { }
     }
 
     public void SaveSettings()
