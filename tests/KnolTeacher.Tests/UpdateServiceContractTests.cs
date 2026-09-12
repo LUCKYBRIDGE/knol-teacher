@@ -129,14 +129,12 @@ public class UpdateServiceContractTests
         {
             string source = Path.Combine(root, "source.exe");
             string target = Path.Combine(root, UpdateService.LocalExecutableName);
-            string blockedMarkerParent = Path.Combine(root, "blocked-success-marker");
-            string successMarker = Path.Combine(blockedMarkerParent, "update_completed.txt");
-            string failureMarker = Path.Combine(root, "failure-state", "update_failed.txt");
+            string successMarker = Path.Combine(root, "state", "update_completed.txt");
+            string failureMarker = Path.Combine(root, "state", "update_failed.txt");
             string scriptPath = Path.Combine(root, "updater.ps1");
 
             File.Copy(GetSystemExecutable("whoami.exe"), source);
             File.Copy(GetSystemExecutable("where.exe"), target);
-            File.WriteAllText(blockedMarkerParent, "This file deliberately prevents success-marker directory creation.", Encoding.UTF8);
 
             string replacementHash = ComputeSha256Hex(source);
             string originalHash = ComputeSha256Hex(target);
@@ -150,6 +148,7 @@ public class UpdateServiceContractTests
                 "v1.1.0",
                 int.MaxValue,
                 scriptPath);
+            script = InjectFailureBeforeReplacementLaunch(script);
 
             File.WriteAllText(scriptPath, script, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
             await RunPowerShellScriptAsync(scriptPath);
@@ -195,6 +194,17 @@ public class UpdateServiceContractTests
             currentPid,
             scriptPath
         }));
+    }
+
+    private static string InjectFailureBeforeReplacementLaunch(string script)
+    {
+        const string launch = "    Start-Process -FilePath $target";
+        int launchIndex = script.IndexOf(launch, StringComparison.Ordinal);
+        Assert.True(launchIndex >= 0, "Updater script must launch the verified replacement.");
+
+        return script[..launchIndex]
+            + "    throw 'test-induced post-replacement failure'"
+            + script[(launchIndex + launch.Length)..];
     }
 
     private static string CreateTestDirectory()
