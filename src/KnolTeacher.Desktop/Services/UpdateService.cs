@@ -496,7 +496,38 @@ try {{
     $markerDir = Split-Path -Parent $successMarker
     New-Item -ItemType Directory -Path $markerDir -Force | Out-Null
 
-    Start-Process -FilePath $target
+    $replacementProcess = Start-Process -FilePath $target -PassThru
+    $replacementReady = $false
+    for ($i = 0; $i -lt 120; $i++) {{
+        Start-Sleep -Milliseconds 250
+        try {{
+            $replacementProcess.Refresh()
+            if ($replacementProcess.HasExited) {{ break }}
+
+            if ($replacementProcess.MainWindowHandle -ne 0) {{
+                Start-Sleep -Milliseconds 500
+                $replacementProcess.Refresh()
+                if ((-not $replacementProcess.HasExited) -and ($replacementProcess.MainWindowHandle -ne 0)) {{
+                    $replacementReady = $true
+                }}
+                break
+            }}
+        }}
+        catch {{
+            break
+        }}
+    }}
+
+    if (-not $replacementReady) {{
+        try {{
+            $replacementProcess.Refresh()
+            if (-not $replacementProcess.HasExited) {{
+                Stop-Process -Id $replacementProcess.Id -Force -ErrorAction SilentlyContinue
+                try {{ Wait-Process -Id $replacementProcess.Id -ErrorAction SilentlyContinue }} catch {{ }}
+            }}
+        }} catch {{ }}
+        throw 'replacement process did not become ready'
+    }}
 
     try {{
         Set-Content -LiteralPath $successMarker -Value $expectedVersion -Encoding UTF8
