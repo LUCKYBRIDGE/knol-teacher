@@ -1,4 +1,7 @@
+using System.Diagnostics;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using KnolTeacher.Desktop.Services;
 using Xunit;
 
@@ -38,13 +41,7 @@ public class UpdateServiceContractTests
     [Fact]
     public void UpdaterScript_StagesVerifiesAndRollsBackBeforeReportingSuccess()
     {
-        MethodInfo? method = typeof(UpdateService).GetMethod(
-            "BuildPowerShellUpdaterScript",
-            BindingFlags.NonPublic | BindingFlags.Static);
-        Assert.NotNull(method);
-
-        string script = Assert.IsType<string>(method.Invoke(null, new object?[]
-        {
+        string script = BuildUpdaterScript(
             @"C:\Temp\놀티쳐.exe",
             @"C:\Apps\놀티쳐.exe",
             @"C:\Apps\놀티쳐.exe",
@@ -53,8 +50,7 @@ public class UpdateServiceContractTests
             new string('A', 64),
             "v1.1.0",
             1234,
-            @"C:\Temp\knol_updater_test.ps1"
-        }));
+            @"C:\Temp\knol_updater_test.ps1");
 
         Assert.Contains("$staged = $target + '.knol-update-new'", script, StringComparison.Ordinal);
         Assert.Contains("$backup = $target + '.knol-update-backup'", script, StringComparison.Ordinal);
@@ -62,6 +58,8 @@ public class UpdateServiceContractTests
         Assert.DoesNotContain("Copy-Item -LiteralPath $source -Destination $target -Force", script, StringComparison.Ordinal);
         Assert.Contains("[System.IO.File]::Replace($staged, $target, $backup, $true)", script, StringComparison.Ordinal);
         Assert.Contains("Copy-Item -LiteralPath $backup -Destination $target -Force", script, StringComparison.Ordinal);
+        Assert.Contains("[System.Security.Cryptography.SHA256]::Create()", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("Get-FileHash", script, StringComparison.OrdinalIgnoreCase);
 
         int markerDirectoryIndex = script.IndexOf("New-Item -ItemType Directory -Path $markerDir -Force", StringComparison.Ordinal);
         int launchIndex = script.IndexOf("Start-Process -FilePath $target", StringComparison.Ordinal);
@@ -70,5 +68,211 @@ public class UpdateServiceContractTests
             "Marker directory setup must fail before launching the replacement, not trigger rollback afterward.");
         Assert.True(launchIndex >= 0, "Updater must launch the verified replacement.");
         Assert.True(successMarkerIndex > launchIndex, "Success must only be recorded after the new executable starts.");
+    }
+
+    [Fact]
+    public async Task UpdaterScript_EndToEnd_ReplacesTargetAndWritesSuccessMarker()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        string root = CreateTestDirectory();
+        try
+        {
+            string source = Path.Combine(root, "source.exe");
+            string target = Path.Combine(root, UpdateService.LocalExecutableName);
+            string successMarker = Path.Combine(root, "state", "update_completed.txt");
+            string failureMarker = Path.Combine(root, "state", "update_failed.txt");
+            string scriptPath = Path.Combine(root, "updater.ps1");
+
+            File.Copy(GetSystemExecutable("whoami.exe"), source);
+            File.Copy(GetSystemExecutable("where.exe"), target);
+
+            string expectedHash = ComputeSha256Hex(source);
+            string originalHash = ComputeSha256Hex(target);
+            string script = BuildUpdaterScript(
+                source,
+                target,
+                target,
+                successMarker,
+                failureMarker,
+                expectedHash,
+                "v1.1.0",
+                int.MaxValue,
+                scriptPath);
+
+            File.WriteAllText(scriptPath, script, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            await RunPowerShellScriptAsync(scriptPath);
+
+            string actualHash = ComputeSha256Hex(target);
+            Assert.Equal(expectedHash, actualHash);
+            Assert.NotEqual(originalHash, actualHash);
+            Assert.True(File.Exists(successMarker));
+            Assert.Equal("v1.1.0", File.ReadAllText(successMarker).Trim());
+            Assert.False(File.Exists(failureMarker));
+            Assert.False(File.Exists(source));
+            Assert.False(File.Exists(target + ".knol-update-new"));
+            Assert.False(File.Exists(target + ".knol-update-backup"));
+        }
+        finally
+        {
+            TryDeleteDirectory(root);
+        }
+    }
+
+    [Fact]
+    public async Task UpdaterScript_EndToEnd_RestoresBackupWhenPostReplacementStepFails()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+
+        string root = CreateTestDirectory();
+        try
+        {
+            string source = Path.Combine(root, "source.exe");
+            string target = Path.Combine(root, UpdateService.LocalExecutableName);
+            string successMarker = Path.Combine(root, "state", "update_completed.txt");
+            string failureMarker = Path.Combine(root, "state", "update_failed.txt");
+            string scriptPath = Path.Combine(root, "updater.ps1");
+
+            File.Copy(GetSystemExecutable("whoami.exe"), source);
+            File.Copy(GetSystemExecutable("where.exe"), target);
+
+            string replacementHash = ComputeSha256Hex(source);
+            string originalHash = ComputeSha256Hex(target);
+            string script = BuildUpdaterScript(
+                source,
+                target,
+                target,
+                successMarker,
+                failureMarker,
+                replacementHash,
+                "v1.1.0",
+                int.MaxValue,
+                scriptPath);
+            script = InjectFailureBeforeReplacementLaunch(script);
+
+            File.WriteAllText(scriptPath, script, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            await RunPowerShellScriptAsync(scriptPath);
+
+            Assert.Equal(originalHash, ComputeSha256Hex(target));
+            Assert.NotEqual(replacementHash, ComputeSha256Hex(target));
+            Assert.False(File.Exists(successMarker));
+            Assert.True(File.Exists(failureMarker));
+            Assert.Equal("replacement_failed", File.ReadAllText(failureMarker).Trim());
+            Assert.False(File.Exists(target + ".knol-update-new"));
+        }
+        finally
+        {
+            TryDeleteDirectory(root);
+        }
+    }
+
+    private static string BuildUpdaterScript(
+        string source,
+        string target,
+        string runningExe,
+        string successMarker,
+        string failureMarker,
+        string expectedHash,
+        string expectedVersion,
+        int currentPid,
+        string scriptPath)
+    {
+        MethodInfo? method = typeof(UpdateService).GetMethod(
+            "BuildPowerShellUpdaterScript",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        return Assert.IsType<string>(method.Invoke(null, new object?[]
+        {
+            source,
+            target,
+            runningExe,
+            successMarker,
+            failureMarker,
+            expectedHash,
+            expectedVersion,
+            currentPid,
+            scriptPath
+        }));
+    }
+
+    private static string InjectFailureBeforeReplacementLaunch(string script)
+    {
+        const string launch = "    Start-Process -FilePath $target";
+        int launchIndex = script.IndexOf(launch, StringComparison.Ordinal);
+        Assert.True(launchIndex >= 0, "Updater script must launch the verified replacement.");
+
+        return script[..launchIndex]
+            + "    throw 'test-induced post-replacement failure'"
+            + script[(launchIndex + launch.Length)..];
+    }
+
+    private static string CreateTestDirectory()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"KnolTeacherUpdaterTests_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static string GetSystemExecutable(string fileName)
+    {
+        string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), fileName);
+        Assert.True(File.Exists(path), $"Required Windows system executable was not found: {path}");
+        return path;
+    }
+
+    private static string ComputeSha256Hex(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        using SHA256 sha = SHA256.Create();
+        return Convert.ToHexString(sha.ComputeHash(stream));
+    }
+
+    private static async Task RunPowerShellScriptAsync(string scriptPath)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        using Process process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start Windows PowerShell for updater integration test.");
+        Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
+        Task<string> standardError = process.StandardError.ReadToEndAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            try { process.Kill(entireProcessTree: true); } catch { }
+            throw new TimeoutException("Updater PowerShell integration test exceeded 30 seconds.");
+        }
+
+        string output = await standardOutput;
+        string error = await standardError;
+        Assert.True(process.ExitCode == 0,
+            $"Updater PowerShell script exited with code {process.ExitCode}. Output: {output} Error: {error}");
+    }
+
+    private static void TryDeleteDirectory(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+        catch
+        {
+        }
     }
 }

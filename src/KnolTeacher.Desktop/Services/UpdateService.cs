@@ -421,6 +421,23 @@ public class UpdateService : IUpdateService
         string scriptPs = EscapePowerShellLiteral(scriptPath);
 
         return $@"$ErrorActionPreference = 'Stop'
+function Get-Sha256Hex([string]$path) {{
+    $stream = [System.IO.File]::OpenRead($path)
+    try {{
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {{
+            $hashBytes = $sha256.ComputeHash($stream)
+            return ([System.BitConverter]::ToString($hashBytes)).Replace('-', '').ToUpperInvariant()
+        }}
+        finally {{
+            $sha256.Dispose()
+        }}
+    }}
+    finally {{
+        $stream.Dispose()
+    }}
+}}
+
 $source = '{sourcePs}'
 $target = '{targetPs}'
 $running = '{runningPs}'
@@ -443,7 +460,7 @@ try {{
             Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
 
             Copy-Item -LiteralPath $source -Destination $staged -Force
-            $stagedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $staged).Hash.ToUpperInvariant()
+            $stagedHash = Get-Sha256Hex $staged
             if ($stagedHash -ne $expectedHash) {{ throw 'staged update hash mismatch' }}
 
             if (Test-Path -LiteralPath $target) {{
@@ -453,7 +470,7 @@ try {{
                 [System.IO.File]::Move($staged, $target)
             }}
 
-            $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $target).Hash.ToUpperInvariant()
+            $actualHash = Get-Sha256Hex $target
             if ($actualHash -eq $expectedHash) {{
                 $replacementCommitted = $true
                 break
