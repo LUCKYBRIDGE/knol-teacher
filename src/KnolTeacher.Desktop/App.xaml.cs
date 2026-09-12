@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,10 +12,11 @@ namespace KnolTeacher.Desktop;
 
 public partial class App : Application
 {
-    private static Mutex? _mutex;
+    private SingleInstanceLease? _singleInstanceLease;
     private const string MutexName = "KnolTeacherDesktopNetMutex";
 
     private readonly IHost _host;
+    private bool _hostStarted;
     public IServiceProvider? Services => _host?.Services;
 
     public App()
@@ -112,9 +112,9 @@ public partial class App : Application
         try
         {
             // 1. Single-Instance Check
-            _mutex = new Mutex(true, MutexName, out bool createdNew);
-            BootLog($"Mutex createdNew: {createdNew}");
-            if (!createdNew)
+            _singleInstanceLease = SingleInstanceLease.Acquire(MutexName);
+            BootLog($"Mutex createdNew: {_singleInstanceLease.IsPrimaryInstance}");
+            if (!_singleInstanceLease.IsPrimaryInstance)
             {
                 BootLog("Single instance check failed - bringing existing instance to front");
                 BringExistingInstanceToFront();
@@ -128,6 +128,7 @@ public partial class App : Application
 
             // 2. Start DI Host
             _host.Start();
+            _hostStarted = true;
             BootLog("DI host started");
 
             // 3. Apply Theme
@@ -368,19 +369,28 @@ public partial class App : Application
         BootLog($"OnExit called with Application ExitCode: {e.ApplicationExitCode}");
         try
         {
-            var hotkeyService = _host.Services.GetService<IGlobalHotkeyService>();
-            hotkeyService?.Dispose();
+            if (_hostStarted)
+            {
+                var hotkeyService = _host.Services.GetService<IGlobalHotkeyService>();
+                hotkeyService?.Dispose();
 
-            var trayService = _host.Services.GetService<ITrayService>();
-            trayService?.Dispose();
+                var trayService = _host.Services.GetService<ITrayService>();
+                trayService?.Dispose();
 
-            await _host.StopAsync();
+                await _host.StopAsync();
+            }
+
             _host.Dispose();
-
-            _mutex?.ReleaseMutex();
-            _mutex?.Dispose();
         }
-        catch { }
+        catch (Exception ex)
+        {
+            BootLog($"OnExit cleanup error: {ex.Message}");
+        }
+        finally
+        {
+            _singleInstanceLease?.Dispose();
+            _singleInstanceLease = null;
+        }
 
         base.OnExit(e);
     }
