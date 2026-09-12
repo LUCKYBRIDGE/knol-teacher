@@ -110,7 +110,8 @@ jobs:
 
           $hash = (Get-FileHash -LiteralPath $exe.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           $size = $exe.Length
-          $shortSha = "${{ github.sha }}".Substring(0, 8)
+          $commitSha = "${{ github.sha }}"
+          $shortSha = $commitSha.Substring(0, 8)
           $artifactName = "KnolTeacher-v$developmentVersion-rc-run${{ github.run_number }}-$shortSha"
 
           New-Item -ItemType Directory -Path "rc-output" -Force | Out-Null
@@ -118,7 +119,7 @@ jobs:
               "KnolTeacher Release Candidate Manifest"
               "DevelopmentVersion=$developmentVersion"
               "StableBaseline=$stableVersion"
-              "Commit=${{ github.sha }}"
+              "Commit=$commitSha"
               "WorkflowRun=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
               "FileName=$($exe.Name)"
               "FileVersion=$actualFileVersion"
@@ -131,11 +132,11 @@ jobs:
           "RC_ARTIFACT_NAME=$artifactName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
           Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "## KnolTeacher v$developmentVersion RC"
-          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- Commit: `${{ github.sha }}`"
-          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- FileVersion: `$actualFileVersion`"
-          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- Size: `$size bytes`"
-          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- SHA-256: `$hash`"
-          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- Manual regression: `docs/V1_1_RELEASE_REGRESSION_CHECKLIST.md`"
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- Commit: ``$commitSha``"
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- FileVersion: ``$actualFileVersion``"
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- Size: ``$size bytes``"
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- SHA-256: ``$hash``"
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "- Manual regression: ``docs/V1_1_RELEASE_REGRESSION_CHECKLIST.md``"
 
           Write-Host "RC artifact: $artifactName"
           Write-Host "SHA-256: $hash"
