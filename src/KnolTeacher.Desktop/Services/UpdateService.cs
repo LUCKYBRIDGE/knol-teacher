@@ -429,24 +429,54 @@ $failureMarker = '{failurePs}'
 $expectedHash = '{expectedHash}'
 $expectedVersion = '{expectedVersion}'
 $scriptPath = '{scriptPs}'
+$staged = "$target.knol-update-new"
+$backup = "$target.knol-update-backup"
+$hadOriginalTarget = Test-Path -LiteralPath $target
 
 try {{
     try {{ Wait-Process -Id {currentPid} -ErrorAction SilentlyContinue }} catch {{ }}
 
-    $copied = $false
+    $replacementCommitted = $false
     for ($i = 0; $i -lt 12; $i++) {{
         try {{
-            Copy-Item -LiteralPath $source -Destination $target -Force
+            Remove-Item -LiteralPath $staged -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
+
+            Copy-Item -LiteralPath $source -Destination $staged -Force
+            $stagedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $staged).Hash.ToUpperInvariant()
+            if ($stagedHash -ne $expectedHash) {{ throw 'staged update hash mismatch' }}
+
+            if (Test-Path -LiteralPath $target) {{
+                [System.IO.File]::Replace($staged, $target, $backup, $true)
+            }}
+            else {{
+                [System.IO.File]::Move($staged, $target)
+            }}
+
             $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $target).Hash.ToUpperInvariant()
             if ($actualHash -eq $expectedHash) {{
-                $copied = $true
+                $replacementCommitted = $true
                 break
             }}
-        }} catch {{ }}
+
+            throw 'installed update hash mismatch'
+        }}
+        catch {{
+            if (Test-Path -LiteralPath $backup) {{
+                Copy-Item -LiteralPath $backup -Destination $target -Force
+            }}
+            elseif ((-not $hadOriginalTarget) -and (Test-Path -LiteralPath $target)) {{
+                Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
+            }}
+            Remove-Item -LiteralPath $staged -Force -ErrorAction SilentlyContinue
+        }}
+
         Start-Sleep -Milliseconds 500
     }}
 
-    if (-not $copied) {{ throw 'verified replacement failed' }}
+    if (-not $replacementCommitted) {{ throw 'verified replacement failed' }}
+
+    Start-Process -FilePath $target
 
     $markerDir = Split-Path -Parent $successMarker
     New-Item -ItemType Directory -Path $markerDir -Force | Out-Null
@@ -457,21 +487,31 @@ try {{
         Remove-Item -LiteralPath $running -Force -ErrorAction SilentlyContinue
     }}
 
-    Start-Process -FilePath $target
     Start-Sleep -Milliseconds 700
     Remove-Item -LiteralPath $source -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $backup -Force -ErrorAction SilentlyContinue
 }}
 catch {{
     try {{
+        if (Test-Path -LiteralPath $backup) {{
+            Copy-Item -LiteralPath $backup -Destination $target -Force
+        }}
+        elseif ((-not $hadOriginalTarget) -and (Test-Path -LiteralPath $target)) {{
+            Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue
+        }}
+        Remove-Item -LiteralPath $staged -Force -ErrorAction SilentlyContinue
+
         $markerDir = Split-Path -Parent $failureMarker
         New-Item -ItemType Directory -Path $markerDir -Force | Out-Null
         Set-Content -LiteralPath $failureMarker -Value 'replacement_failed' -Encoding UTF8
-        if (Test-Path -LiteralPath $target) {{ Start-Process -FilePath $target }}
-        elseif (Test-Path -LiteralPath $running) {{ Start-Process -FilePath $running }}
+
+        if ($hadOriginalTarget -and (Test-Path -LiteralPath $target)) {{ Start-Process -FilePath $target }}
+        elseif (($running -ne $target) -and (Test-Path -LiteralPath $running)) {{ Start-Process -FilePath $running }}
     }} catch {{ }}
 }}
 finally {{
     Start-Sleep -Milliseconds 500
+    Remove-Item -LiteralPath $staged -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
 }}
 ";
