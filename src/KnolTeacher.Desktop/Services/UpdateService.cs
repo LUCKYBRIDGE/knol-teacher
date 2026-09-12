@@ -429,8 +429,8 @@ $failureMarker = '{failurePs}'
 $expectedHash = '{expectedHash}'
 $expectedVersion = '{expectedVersion}'
 $scriptPath = '{scriptPs}'
-$staged = "$target.knol-update-new"
-$backup = "$target.knol-update-backup"
+$staged = $target + '.knol-update-new'
+$backup = $target + '.knol-update-backup'
 $hadOriginalTarget = Test-Path -LiteralPath $target
 
 try {{
@@ -476,12 +476,15 @@ try {{
 
     if (-not $replacementCommitted) {{ throw 'verified replacement failed' }}
 
-    Start-Process -FilePath $target
-
     $markerDir = Split-Path -Parent $successMarker
     New-Item -ItemType Directory -Path $markerDir -Force | Out-Null
-    Set-Content -LiteralPath $successMarker -Value $expectedVersion -Encoding UTF8
-    if (Test-Path -LiteralPath $failureMarker) {{ Remove-Item -LiteralPath $failureMarker -Force -ErrorAction SilentlyContinue }}
+
+    Start-Process -FilePath $target
+
+    try {{
+        Set-Content -LiteralPath $successMarker -Value $expectedVersion -Encoding UTF8
+        if (Test-Path -LiteralPath $failureMarker) {{ Remove-Item -LiteralPath $failureMarker -Force -ErrorAction SilentlyContinue }}
+    }} catch {{ }}
 
     if (($running -ne $target) -and (Test-Path -LiteralPath $running)) {{
         Remove-Item -LiteralPath $running -Force -ErrorAction SilentlyContinue
