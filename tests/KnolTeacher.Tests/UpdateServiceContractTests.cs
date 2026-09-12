@@ -58,6 +58,8 @@ public class UpdateServiceContractTests
         Assert.DoesNotContain("Copy-Item -LiteralPath $source -Destination $target -Force", script, StringComparison.Ordinal);
         Assert.Contains("[System.IO.File]::Replace($staged, $target, $backup, $true)", script, StringComparison.Ordinal);
         Assert.Contains("Copy-Item -LiteralPath $backup -Destination $target -Force", script, StringComparison.Ordinal);
+        Assert.Contains("[System.Security.Cryptography.SHA256]::Create()", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("Get-FileHash", script, StringComparison.OrdinalIgnoreCase);
 
         int markerDirectoryIndex = script.IndexOf("New-Item -ItemType Directory -Path $markerDir -Force", StringComparison.Ordinal);
         int launchIndex = script.IndexOf("Start-Process -FilePath $target", StringComparison.Ordinal);
@@ -80,7 +82,6 @@ public class UpdateServiceContractTests
             string target = Path.Combine(root, UpdateService.LocalExecutableName);
             string successMarker = Path.Combine(root, "state", "update_completed.txt");
             string failureMarker = Path.Combine(root, "state", "update_failed.txt");
-            string diagnosticsPath = Path.Combine(root, "attempt-errors.txt");
             string scriptPath = Path.Combine(root, "updater.ps1");
 
             File.Copy(GetSystemExecutable("whoami.exe"), source);
@@ -98,17 +99,12 @@ public class UpdateServiceContractTests
                 "v1.1.0",
                 int.MaxValue,
                 scriptPath);
-            script = AddAttemptDiagnostics(script, diagnosticsPath);
 
             File.WriteAllText(scriptPath, script, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
             await RunPowerShellScriptAsync(scriptPath);
 
             string actualHash = ComputeSha256Hex(target);
-            string diagnostics = File.Exists(diagnosticsPath)
-                ? File.ReadAllText(diagnosticsPath)
-                : "(no replacement-attempt diagnostics were recorded)";
-            Assert.True(string.Equals(expectedHash, actualHash, StringComparison.Ordinal),
-                $"Verified replacement hash mismatch. Expected={expectedHash}, Actual={actualHash}, Original={originalHash}. Attempt errors: {diagnostics}");
+            Assert.Equal(expectedHash, actualHash);
             Assert.NotEqual(originalHash, actualHash);
             Assert.True(File.Exists(successMarker));
             Assert.Equal("v1.1.0", File.ReadAllText(successMarker).Trim());
@@ -124,7 +120,7 @@ public class UpdateServiceContractTests
     }
 
     [Fact]
-    public async Task UpdaterScript_EndToEnd_RestoresBackupWhenReplacementCannotStart()
+    public async Task UpdaterScript_EndToEnd_RestoresBackupWhenPostReplacementStepFails()
     {
         if (!OperatingSystem.IsWindows()) return;
 
@@ -133,12 +129,14 @@ public class UpdateServiceContractTests
         {
             string source = Path.Combine(root, "source.exe");
             string target = Path.Combine(root, UpdateService.LocalExecutableName);
-            string successMarker = Path.Combine(root, "state", "update_completed.txt");
-            string failureMarker = Path.Combine(root, "state", "update_failed.txt");
+            string blockedMarkerParent = Path.Combine(root, "blocked-success-marker");
+            string successMarker = Path.Combine(blockedMarkerParent, "update_completed.txt");
+            string failureMarker = Path.Combine(root, "failure-state", "update_failed.txt");
             string scriptPath = Path.Combine(root, "updater.ps1");
 
-            File.WriteAllText(source, "This is deliberately not a Windows executable.", Encoding.UTF8);
+            File.Copy(GetSystemExecutable("whoami.exe"), source);
             File.Copy(GetSystemExecutable("where.exe"), target);
+            File.WriteAllText(blockedMarkerParent, "This file deliberately prevents success-marker directory creation.", Encoding.UTF8);
 
             string replacementHash = ComputeSha256Hex(source);
             string originalHash = ComputeSha256Hex(target);
@@ -198,22 +196,6 @@ public class UpdateServiceContractTests
             scriptPath
         }));
     }
-
-    private static string AddAttemptDiagnostics(string script, string diagnosticsPath)
-    {
-        string normalizedScript = script.Replace("\r\n", "\n", StringComparison.Ordinal);
-        const string marker = "        catch {\n            if (Test-Path -LiteralPath $backup) {";
-        string replacement =
-            "        catch {\n" +
-            $"            Add-Content -LiteralPath '{EscapePowerShellLiteral(diagnosticsPath)}' -Value ($_.Exception.GetType().FullName + ': ' + $_.Exception.Message)\n" +
-            "            if (Test-Path -LiteralPath $backup) {";
-
-        Assert.Contains(marker, normalizedScript, StringComparison.Ordinal);
-        return normalizedScript.Replace(marker, replacement, StringComparison.Ordinal);
-    }
-
-    private static string EscapePowerShellLiteral(string value)
-        => value.Replace("'", "''", StringComparison.Ordinal);
 
     private static string CreateTestDirectory()
     {
