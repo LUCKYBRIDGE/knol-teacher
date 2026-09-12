@@ -474,39 +474,26 @@ public partial class App : Application
     {
         try
         {
-            var current = System.Diagnostics.Process.GetCurrentProcess();
-            var processes = System.Diagnostics.Process.GetProcessesByName(current.ProcessName)
-                .Concat(System.Diagnostics.Process.GetProcessesByName("놀티쳐"))
-                .Concat(System.Diagnostics.Process.GetProcessesByName("KnolTeacher.Desktop"))
-                .Where(p => p.Id != current.Id)
-                .ToList();
+            using var current = System.Diagnostics.Process.GetCurrentProcess();
+            var activator = new SingleInstanceWindowActivator();
+            IntPtr hWnd = activator.FindExistingWindowHandle(current.Id, current.ProcessName);
 
-            foreach (var p in processes)
+            if (hWnd == IntPtr.Zero)
             {
-                IntPtr hWnd = p.MainWindowHandle;
-                int retry = 0;
-                while (hWnd == IntPtr.Zero && retry < 8)
-                {
-                    System.Threading.Thread.Sleep(200);
-                    p.Refresh();
-                    hWnd = p.MainWindowHandle;
-                    retry++;
-                }
-
-                if (hWnd != IntPtr.Zero)
-                {
-                    if (NativeMethods.IsIconic(hWnd))
-                    {
-                        NativeMethods.ShowWindowAsync(hWnd, NativeMethods.SW_RESTORE);
-                    }
-                    else
-                    {
-                        NativeMethods.ShowWindowAsync(hWnd, NativeMethods.SW_SHOWNORMAL);
-                    }
-                    NativeMethods.SetForegroundWindow(hWnd);
-                    return;
-                }
+                BootLog("Existing instance was detected, but no main window handle became available within the activation retry budget.");
+                return;
             }
+
+            if (NativeMethods.IsIconic(hWnd))
+            {
+                NativeMethods.ShowWindowAsync(hWnd, NativeMethods.SW_RESTORE);
+            }
+            else
+            {
+                NativeMethods.ShowWindowAsync(hWnd, NativeMethods.SW_SHOWNORMAL);
+            }
+
+            NativeMethods.SetForegroundWindow(hWnd);
         }
         catch (Exception ex)
         {
