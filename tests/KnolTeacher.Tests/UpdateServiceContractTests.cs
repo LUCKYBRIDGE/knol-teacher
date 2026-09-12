@@ -56,15 +56,18 @@ public class UpdateServiceContractTests
             @"C:\Temp\knol_updater_test.ps1"
         }));
 
-        Assert.Contains("$staged = \"$target.knol-update-new\"", script, StringComparison.Ordinal);
-        Assert.Contains("$backup = \"$target.knol-update-backup\"", script, StringComparison.Ordinal);
+        Assert.Contains("$staged = $target + '.knol-update-new'", script, StringComparison.Ordinal);
+        Assert.Contains("$backup = $target + '.knol-update-backup'", script, StringComparison.Ordinal);
         Assert.Contains("Copy-Item -LiteralPath $source -Destination $staged -Force", script, StringComparison.Ordinal);
         Assert.DoesNotContain("Copy-Item -LiteralPath $source -Destination $target -Force", script, StringComparison.Ordinal);
         Assert.Contains("[System.IO.File]::Replace($staged, $target, $backup, $true)", script, StringComparison.Ordinal);
         Assert.Contains("Copy-Item -LiteralPath $backup -Destination $target -Force", script, StringComparison.Ordinal);
 
+        int markerDirectoryIndex = script.IndexOf("New-Item -ItemType Directory -Path $markerDir -Force", StringComparison.Ordinal);
         int launchIndex = script.IndexOf("Start-Process -FilePath $target", StringComparison.Ordinal);
         int successMarkerIndex = script.IndexOf("Set-Content -LiteralPath $successMarker", StringComparison.Ordinal);
+        Assert.True(markerDirectoryIndex >= 0 && markerDirectoryIndex < launchIndex,
+            "Marker directory setup must fail before launching the replacement, not trigger rollback afterward.");
         Assert.True(launchIndex >= 0, "Updater must launch the verified replacement.");
         Assert.True(successMarkerIndex > launchIndex, "Success must only be recorded after the new executable starts.");
     }
