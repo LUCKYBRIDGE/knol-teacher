@@ -39,7 +39,7 @@ public class UpdateServiceContractTests
         => Assert.Equal(expected, UpdateService.IsSameProductVersion(left, right));
 
     [Fact]
-    public void UpdaterScript_StagesVerifiesAndRollsBackBeforeReportingSuccess()
+    public void UpdaterScript_StagesVerifiesWaitsForReadinessAndRollsBackBeforeReportingSuccess()
     {
         string script = BuildUpdaterScript(
             @"C:\Temp\놀티쳐.exe",
@@ -60,18 +60,27 @@ public class UpdateServiceContractTests
         Assert.Contains("Copy-Item -LiteralPath $backup -Destination $target -Force", script, StringComparison.Ordinal);
         Assert.Contains("[System.Security.Cryptography.SHA256]::Create()", script, StringComparison.Ordinal);
         Assert.DoesNotContain("Get-FileHash", script, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Start-Process -FilePath $target -PassThru", script, StringComparison.Ordinal);
+        Assert.Contains("$replacementProcess.MainWindowHandle -ne 0", script, StringComparison.Ordinal);
+        Assert.Contains("throw 'replacement process did not become ready'", script, StringComparison.Ordinal);
+        Assert.Contains("Stop-Process -Id $replacementProcess.Id -Force", script, StringComparison.Ordinal);
 
         int markerDirectoryIndex = script.IndexOf("New-Item -ItemType Directory -Path $markerDir -Force", StringComparison.Ordinal);
-        int launchIndex = script.IndexOf("Start-Process -FilePath $target", StringComparison.Ordinal);
+        int launchIndex = script.IndexOf("$replacementProcess = Start-Process -FilePath $target -PassThru", StringComparison.Ordinal);
+        int readinessIndex = script.IndexOf("$replacementReady = $false", StringComparison.Ordinal);
         int successMarkerIndex = script.IndexOf("Set-Content -LiteralPath $successMarker", StringComparison.Ordinal);
+        int backupDeleteIndex = script.IndexOf("Remove-Item -LiteralPath $backup -Force", StringComparison.Ordinal);
+
         Assert.True(markerDirectoryIndex >= 0 && markerDirectoryIndex < launchIndex,
             "Marker directory setup must fail before launching the replacement, not trigger rollback afterward.");
         Assert.True(launchIndex >= 0, "Updater must launch the verified replacement.");
-        Assert.True(successMarkerIndex > launchIndex, "Success must only be recorded after the new executable starts.");
+        Assert.True(readinessIndex > launchIndex, "Updater must probe readiness after launching the replacement.");
+        Assert.True(successMarkerIndex > readinessIndex, "Success must only be recorded after replacement readiness is verified.");
+        Assert.True(backupDeleteIndex > successMarkerIndex, "Backup must be retained until replacement readiness and success recording complete.");
     }
 
     [Fact]
-    public async Task UpdaterScript_EndToEnd_ReplacesTargetAndWritesSuccessMarker()
+    public async Task UpdaterScript_EndToEnd_ReplacesTargetAndWritesSuccessMarkerAfterReadiness()
     {
         if (!OperatingSystem.IsWindows()) return;
 
@@ -99,6 +108,7 @@ public class UpdateServiceContractTests
                 "v1.1.0",
                 int.MaxValue,
                 scriptPath);
+            script = ForceReplacementReadinessForTest(script);
 
             File.WriteAllText(scriptPath, script, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
             await RunPowerShellScriptAsync(scriptPath);
@@ -120,7 +130,7 @@ public class UpdateServiceContractTests
     }
 
     [Fact]
-    public async Task UpdaterScript_EndToEnd_RestoresBackupWhenPostReplacementStepFails()
+    public async Task UpdaterScript_EndToEnd_RestoresBackupWhenReplacementExitsBeforeReadiness()
     {
         if (!OperatingSystem.IsWindows()) return;
 
@@ -148,7 +158,6 @@ public class UpdateServiceContractTests
                 "v1.1.0",
                 int.MaxValue,
                 scriptPath);
-            script = InjectFailureBeforeReplacementLaunch(script);
 
             File.WriteAllText(scriptPath, script, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
             await RunPowerShellScriptAsync(scriptPath);
@@ -159,6 +168,7 @@ public class UpdateServiceContractTests
             Assert.True(File.Exists(failureMarker));
             Assert.Equal("replacement_failed", File.ReadAllText(failureMarker).Trim());
             Assert.False(File.Exists(target + ".knol-update-new"));
+            Assert.False(File.Exists(target + ".knol-update-backup"));
         }
         finally
         {
@@ -196,15 +206,11 @@ public class UpdateServiceContractTests
         }));
     }
 
-    private static string InjectFailureBeforeReplacementLaunch(string script)
+    private static string ForceReplacementReadinessForTest(string script)
     {
-        const string launch = "    Start-Process -FilePath $target";
-        int launchIndex = script.IndexOf(launch, StringComparison.Ordinal);
-        Assert.True(launchIndex >= 0, "Updater script must launch the verified replacement.");
-
-        return script[..launchIndex]
-            + "    throw 'test-induced post-replacement failure'"
-            + script[(launchIndex + launch.Length)..];
+        const string assignment = "    $replacementReady = $false";
+        Assert.Contains(assignment, script, StringComparison.Ordinal);
+        return script.Replace(assignment, "    $replacementReady = $true", StringComparison.Ordinal);
     }
 
     private static string CreateTestDirectory()
