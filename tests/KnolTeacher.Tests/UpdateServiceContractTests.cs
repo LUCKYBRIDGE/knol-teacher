@@ -80,6 +80,7 @@ public class UpdateServiceContractTests
             string target = Path.Combine(root, UpdateService.LocalExecutableName);
             string successMarker = Path.Combine(root, "state", "update_completed.txt");
             string failureMarker = Path.Combine(root, "state", "update_failed.txt");
+            string diagnosticsPath = Path.Combine(root, "attempt-errors.txt");
             string scriptPath = Path.Combine(root, "updater.ps1");
 
             File.Copy(GetSystemExecutable("whoami.exe"), source);
@@ -97,12 +98,18 @@ public class UpdateServiceContractTests
                 "v1.1.0",
                 int.MaxValue,
                 scriptPath);
+            script = AddAttemptDiagnostics(script, diagnosticsPath);
 
             File.WriteAllText(scriptPath, script, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
             await RunPowerShellScriptAsync(scriptPath);
 
-            Assert.Equal(expectedHash, ComputeSha256Hex(target));
-            Assert.NotEqual(originalHash, ComputeSha256Hex(target));
+            string actualHash = ComputeSha256Hex(target);
+            string diagnostics = File.Exists(diagnosticsPath)
+                ? File.ReadAllText(diagnosticsPath)
+                : "(no replacement-attempt diagnostics were recorded)";
+            Assert.True(string.Equals(expectedHash, actualHash, StringComparison.Ordinal),
+                $"Verified replacement hash mismatch. Expected={expectedHash}, Actual={actualHash}, Original={originalHash}. Attempt errors: {diagnostics}");
+            Assert.NotEqual(originalHash, actualHash);
             Assert.True(File.Exists(successMarker));
             Assert.Equal("v1.1.0", File.ReadAllText(successMarker).Trim());
             Assert.False(File.Exists(failureMarker));
@@ -191,6 +198,21 @@ public class UpdateServiceContractTests
             scriptPath
         }));
     }
+
+    private static string AddAttemptDiagnostics(string script, string diagnosticsPath)
+    {
+        const string marker = "        catch {\n            if (Test-Path -LiteralPath $backup) {";
+        string replacement =
+            "        catch {\n" +
+            $"            Add-Content -LiteralPath '{EscapePowerShellLiteral(diagnosticsPath)}' -Value ($_.Exception.GetType().FullName + ': ' + $_.Exception.Message)\n" +
+            "            if (Test-Path -LiteralPath $backup) {";
+
+        Assert.Contains(marker, script, StringComparison.Ordinal);
+        return script.Replace(marker, replacement, StringComparison.Ordinal);
+    }
+
+    private static string EscapePowerShellLiteral(string value)
+        => value.Replace("'", "''", StringComparison.Ordinal);
 
     private static string CreateTestDirectory()
     {
