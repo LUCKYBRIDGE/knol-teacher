@@ -41,8 +41,8 @@ public class PowerShellFileReplaceTests
 
             using Process process = Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Failed to start Windows PowerShell for File.Replace test.");
-            Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
-            Task<string> standardError = process.StandardError.ReadToEndAsync();
+            Task<string> standardOutput = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
+            Task<string> standardError = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
             try
