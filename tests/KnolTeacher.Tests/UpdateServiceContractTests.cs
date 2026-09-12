@@ -201,14 +201,15 @@ public class UpdateServiceContractTests
 
     private static string AddAttemptDiagnostics(string script, string diagnosticsPath)
     {
+        string normalizedScript = script.Replace("\r\n", "\n", StringComparison.Ordinal);
         const string marker = "        catch {\n            if (Test-Path -LiteralPath $backup) {";
         string replacement =
             "        catch {\n" +
             $"            Add-Content -LiteralPath '{EscapePowerShellLiteral(diagnosticsPath)}' -Value ($_.Exception.GetType().FullName + ': ' + $_.Exception.Message)\n" +
             "            if (Test-Path -LiteralPath $backup) {";
 
-        Assert.Contains(marker, script, StringComparison.Ordinal);
-        return script.Replace(marker, replacement, StringComparison.Ordinal);
+        Assert.Contains(marker, normalizedScript, StringComparison.Ordinal);
+        return normalizedScript.Replace(marker, replacement, StringComparison.Ordinal);
     }
 
     private static string EscapePowerShellLiteral(string value)
