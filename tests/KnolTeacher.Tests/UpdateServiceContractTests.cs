@@ -69,14 +69,14 @@ public class UpdateServiceContractTests
         int launchIndex = script.IndexOf("$replacementProcess = Start-Process -FilePath $target -PassThru", StringComparison.Ordinal);
         int readinessIndex = script.IndexOf("$replacementReady = $false", StringComparison.Ordinal);
         int successMarkerIndex = script.IndexOf("Set-Content -LiteralPath $successMarker", StringComparison.Ordinal);
-        int backupDeleteIndex = script.IndexOf("Remove-Item -LiteralPath $backup -Force", StringComparison.Ordinal);
+        int finalBackupDeleteIndex = script.LastIndexOf("Remove-Item -LiteralPath $backup -Force", StringComparison.Ordinal);
 
         Assert.True(markerDirectoryIndex >= 0 && markerDirectoryIndex < launchIndex,
             "Marker directory setup must fail before launching the replacement, not trigger rollback afterward.");
         Assert.True(launchIndex >= 0, "Updater must launch the verified replacement.");
         Assert.True(readinessIndex > launchIndex, "Updater must probe readiness after launching the replacement.");
         Assert.True(successMarkerIndex > readinessIndex, "Success must only be recorded after replacement readiness is verified.");
-        Assert.True(backupDeleteIndex > successMarkerIndex, "Backup must be retained until replacement readiness and success recording complete.");
+        Assert.True(finalBackupDeleteIndex > successMarkerIndex, "Backup must be retained until replacement readiness and success recording complete.");
     }
 
     [Fact]
@@ -148,6 +148,7 @@ public class UpdateServiceContractTests
 
             string replacementHash = ComputeSha256Hex(source);
             string originalHash = ComputeSha256Hex(target);
+            string backupPath = target + ".knol-update-backup";
             string script = BuildUpdaterScript(
                 source,
                 target,
@@ -168,7 +169,8 @@ public class UpdateServiceContractTests
             Assert.True(File.Exists(failureMarker));
             Assert.Equal("replacement_failed", File.ReadAllText(failureMarker).Trim());
             Assert.False(File.Exists(target + ".knol-update-new"));
-            Assert.False(File.Exists(target + ".knol-update-backup"));
+            Assert.True(File.Exists(backupPath));
+            Assert.Equal(originalHash, ComputeSha256Hex(backupPath));
         }
         finally
         {
