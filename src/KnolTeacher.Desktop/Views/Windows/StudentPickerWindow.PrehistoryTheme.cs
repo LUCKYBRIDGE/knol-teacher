@@ -149,13 +149,12 @@ public partial class StudentPickerWindow
     {
         RebuildMapV2InteractiveRelics();
 
-        // SetupCourseScenery also creates rail outlines for the four static rock
-        // islands, while the simulation loop already contains composite island
-        // watchdogs for those exact footprints. Keeping both active causes the
-        // same obstacle to resolve twice. Map v2 keeps the watchdog path for now
-        // and removes the duplicate rail collision layer.
-        _rails.Clear();
-
+        // Preserve the existing two-layer static-obstacle response. RaceRail
+        // segments provide normal reflection and downhill sliding along the rock
+        // edges; the composite island watchdogs in GameTimer_Tick are a cheap
+        // anti-tunneling fallback for extreme velocity. Map v2 only binds their
+        // footprint to the PNG visual contract; it does not replace this stable
+        // lightweight physics with WPF hit-testing or pixel collision.
         foreach (RaceBumper bumper in _bumpers)
         {
             bumper.Visual.IsHitTestVisible = false;
