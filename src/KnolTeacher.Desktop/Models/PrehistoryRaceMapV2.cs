@@ -10,6 +10,15 @@ public enum RaceMapVisualRole
     Foreground
 }
 
+public enum RaceMapInteractionRole
+{
+    None,
+    StaticBumper,
+    Breakable,
+    StaticCollider,
+    DynamicObstacle
+}
+
 public sealed record RaceMapProp(
     string Key,
     string AssetName,
@@ -23,6 +32,7 @@ public sealed record RaceMapProp(
     double Opacity = 1.0,
     string? Label = null,
     string? Period = null,
+    RaceMapInteractionRole Interaction = RaceMapInteractionRole.None,
     string? GameplayColliderKey = null);
 
 public sealed record PendingRaceArtAsset(
@@ -30,15 +40,16 @@ public sealed record PendingRaceArtAsset(
     string FileName,
     string Label,
     string Period,
-    string Purpose);
+    string Purpose,
+    RaceMapInteractionRole IntendedInteraction = RaceMapInteractionRole.None);
 
 /// <summary>
 /// Lightweight visual-map contract for the vertical prehistoric picker race.
 ///
-/// The map deliberately separates what the user sees from what participates in
-/// the physics simulation. RaceMapProp only describes visuals. Existing race
-/// physics remains authoritative for track boundaries, rails, rotating logs,
-/// bumpers, pottery, squirrels and racers.
+/// What the user sees and what participates in the simulation are separate
+/// concerns. A prop may be decorative, or it may explicitly opt into a simple
+/// gameplay interaction such as a bumper, breakable obstacle or static collider.
+/// The WPF Image itself never owns collision.
 ///
 /// Final map art must be transparent PNG/WebP. Do not add SVG/Path substitutes
 /// for missing historical assets; add the real asset to assets/race instead.
@@ -99,18 +110,21 @@ public static class PrehistoryRaceMapV2
             "river_stone.png",
             235, 1360, 210, 280, -4,
             RaceMapVisualRole.GameplayObstacleVisual,
+            Interaction: RaceMapInteractionRole.StaticCollider,
             GameplayColliderKey: "river-rock-main"),
         new RaceMapProp(
             "river-rock-upper",
             "river_stone.png",
             296, 1680, 88, 130, -4,
             RaceMapVisualRole.GameplayObstacleVisual,
+            Interaction: RaceMapInteractionRole.StaticCollider,
             GameplayColliderKey: "river-rock-upper"),
         new RaceMapProp(
             "river-rock-lower-left",
             "river_stone.png",
             185, 1830, 90, 145, -4,
             RaceMapVisualRole.GameplayObstacleVisual,
+            Interaction: RaceMapInteractionRole.StaticCollider,
             GameplayColliderKey: "river-rock-lower-left"),
         new RaceMapProp(
             "river-rock-lower-right",
@@ -118,6 +132,7 @@ public static class PrehistoryRaceMapV2
             405, 1830, 90, 145, -4,
             RaceMapVisualRole.GameplayObstacleVisual,
             FlipX: true,
+            Interaction: RaceMapInteractionRole.StaticCollider,
             GameplayColliderKey: "river-rock-lower-right"),
         new RaceMapProp(
             "neo-polished-stone",
@@ -127,14 +142,17 @@ public static class PrehistoryRaceMapV2
             Label: "간석기",
             Period: "신석기"),
 
-        // Neolithic village/coast.
+        // Neolithic village/coast. Pottery remains a real race mechanic: it can
+        // obstruct a racer, shatter on impact and create a reversal moment.
         new RaceMapProp(
             "neo-pottery-left",
             "cartoon_comb_pottery.png",
             18, 2060, 110, 135, -9,
             RaceMapVisualRole.Landmark,
             Label: "빗살무늬 토기",
-            Period: "신석기"),
+            Period: "신석기",
+            Interaction: RaceMapInteractionRole.Breakable,
+            GameplayColliderKey: "breakable-pottery"),
         new RaceMapProp(
             "neo-log-right",
             "fallen_log_right.png",
@@ -209,7 +227,8 @@ public static class PrehistoryRaceMapV2
             "prehistoric_plain_pottery.png",
             "민무늬 토기",
             "청동기",
-            "청동기 생활 랜드마크"),
+            "청동기 생활 랜드마크",
+            RaceMapInteractionRole.Breakable),
         new PendingRaceArtAsset(
             "bronze-dagger",
             "prehistoric_bronze_dagger.png",
