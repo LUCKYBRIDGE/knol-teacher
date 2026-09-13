@@ -12,7 +12,6 @@ namespace KnolTeacher.Desktop.Views.Windows;
 public partial class StudentPickerWindow
 {
     private bool _prehistoryMapV2Applied;
-    private bool _raceMapV2GameplayNormalized;
     private PrehistoryRaceMapRenderer? _prehistoryMapRenderer;
 
     static StudentPickerWindow()
@@ -32,9 +31,9 @@ public partial class StudentPickerWindow
 
         window.ApplyPrehistoryMapV2();
 
-        // The instance Loaded handler builds gameplay objects after the class
-        // handler. Normalize their WPF hit-testing once setup is complete. Their
-        // actual collision/effects stay in the lightweight simulation loop.
+        // The instance Loaded handler still owns the legacy lightweight gameplay
+        // setup. Reconcile it after Loaded so Map v2 can keep the proven physics
+        // loop while replacing only the relic placements that are era-sensitive.
         _ = window.Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
             new Action(window.NormalizeRaceMapV2Gameplay));
@@ -148,10 +147,15 @@ public partial class StudentPickerWindow
 
     private void NormalizeRaceMapV2Gameplay()
     {
-        // Do not remove relic obstacles here. Some historical objects are
-        // intentionally gameplay objects: pottery can shatter and rebound racers,
-        // while selected stone tools may act as bumpers. Visual role and gameplay
-        // interaction are separate concerns in PrehistoryRaceMapV2.
+        RebuildMapV2InteractiveRelics();
+
+        // SetupCourseScenery also creates rail outlines for the four static rock
+        // islands, while the simulation loop already contains composite island
+        // watchdogs for those exact footprints. Keeping both active causes the
+        // same obstacle to resolve twice. Map v2 keeps the watchdog path for now
+        // and removes the duplicate rail collision layer.
+        _rails.Clear();
+
         foreach (RaceBumper bumper in _bumpers)
         {
             bumper.Visual.IsHitTestVisible = false;
@@ -172,24 +176,92 @@ public partial class StudentPickerWindow
             squirrel.BranchVisual.IsHitTestVisible = false;
             squirrel.SquirrelVisual.IsHitTestVisible = false;
 
-            if (!_raceMapV2GameplayNormalized)
+            // Projectiles are created after Loaded. WPF hit-testing remains off;
+            // the existing circle collision in GameTimer_Tick is authoritative.
+            squirrel.OnThrowProjectile = projectile =>
             {
-                // Projectiles are created after Loaded, so normalize them at
-                // creation time as well. Circle collision remains authoritative.
-                squirrel.OnThrowProjectile = projectile =>
-                {
-                    projectile.Visual.IsHitTestVisible = false;
-                    _projectiles.Add(projectile);
-                    RaceCanvas.Children.Add(projectile.Visual);
-                };
-            }
+                projectile.Visual.IsHitTestVisible = false;
+                _projectiles.Add(projectile);
+                RaceCanvas.Children.Add(projectile.Visual);
+            };
         }
 
         foreach (ThrownProjectile projectile in _projectiles)
         {
             projectile.Visual.IsHitTestVisible = false;
         }
+    }
 
-        _raceMapV2GameplayNormalized = true;
+    private void RebuildMapV2InteractiveRelics()
+    {
+        foreach (RaceBumper bumper in _bumpers)
+        {
+            RaceCanvas.Children.Remove(bumper.Visual);
+        }
+        _bumpers.Clear();
+
+        foreach (BreakablePottery pottery in _potteries)
+        {
+            RaceCanvas.Children.Remove(pottery.Visual);
+        }
+        _potteries.Clear();
+
+        var rulesByKey = PrehistoryRaceMapV2.InteractiveRelics
+            .ToDictionary(rule => rule.Key, StringComparer.Ordinal);
+
+        foreach (InteractiveRelicPlacement placement in PrehistoryRaceMapV2.InteractiveRelicPlacements)
+        {
+            if (!rulesByKey.TryGetValue(placement.RuleKey, out InteractiveRelicRule? rule))
+            {
+                continue;
+            }
+
+            switch (rule.Interaction)
+            {
+                case RaceMapInteractionRole.StaticBumper
+                    when rule.ColliderShape == RaceColliderShape.Circle:
+                    AddBumper(
+                        placement.X,
+                        placement.Y,
+                        placement.ColliderRadius,
+                        rule.AssetName);
+                    ApplyMapV2GameplayVisualLayout(_bumpers[^1].Visual, placement);
+                    break;
+
+                case RaceMapInteractionRole.Breakable
+                    when rule.ColliderShape == RaceColliderShape.Circle &&
+                         string.Equals(rule.BehaviorKey, "breakable-pottery", StringComparison.Ordinal):
+                    // BreakablePottery intentionally keeps the established shatter,
+                    // rebound and dizzy/overtake mechanic. Only its placement and
+                    // display footprint are changed by Map v2.
+                    AddBreakablePottery(
+                        placement.X,
+                        placement.Y,
+                        placement.ColliderRadius);
+                    ApplyMapV2GameplayVisualLayout(_potteries[^1].Visual, placement);
+                    break;
+            }
+        }
+    }
+
+    private static void ApplyMapV2GameplayVisualLayout(
+        Grid visual,
+        InteractiveRelicPlacement placement)
+    {
+        visual.Width = placement.VisualWidth;
+        visual.Height = placement.VisualHeight;
+        visual.IsHitTestVisible = false;
+
+        foreach (Image image in visual.Children.OfType<Image>())
+        {
+            image.Width = placement.VisualWidth;
+            image.Height = placement.VisualHeight;
+            image.Stretch = Stretch.Uniform;
+            image.IsHitTestVisible = false;
+        }
+
+        Canvas.SetLeft(visual, placement.X - placement.VisualWidth / 2.0);
+        Canvas.SetTop(visual, placement.Y - placement.VisualHeight / 2.0);
+        Panel.SetZIndex(visual, placement.ZIndex);
     }
 }
