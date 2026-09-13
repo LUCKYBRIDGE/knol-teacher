@@ -52,6 +52,34 @@ public sealed record InteractiveRelicRule(
     RaceColliderShape ColliderShape,
     string BehaviorKey);
 
+/// <summary>
+/// One concrete occurrence of an interactive relic on the race course.
+/// The collider remains deliberately simple while VisualWidth/VisualHeight may
+/// be larger than the hit circle so the transparent PNG stays readable.
+/// </summary>
+public sealed record InteractiveRelicPlacement(
+    string Key,
+    string RuleKey,
+    double X,
+    double Y,
+    double ColliderRadius,
+    double VisualWidth,
+    double VisualHeight,
+    int ZIndex = -1);
+
+/// <summary>
+/// Declares the visual-to-simulation binding for the four large static rock
+/// obstacles. The actual lightweight resolution remains in the existing race
+/// simulation; these values make the intended collider footprint testable
+/// without treating PNG bounds as physics.
+/// </summary>
+public sealed record RaceStaticColliderBinding(
+    string Key,
+    double CenterX,
+    double StartY,
+    double EndY,
+    RaceColliderShape Shape);
+
 public sealed record PendingRaceArtAsset(
     string Key,
     string FileName,
@@ -67,8 +95,9 @@ public sealed record PendingRaceArtAsset(
 /// art and never rely on WPF hit-testing. When a visual must correspond to a
 /// physical obstacle (for example the river rocks), the mapping is explicit.
 /// Historical relics that are intentionally part of gameplay are described by
-/// InteractiveRelics so a relic can be decorative in one place and interactive
-/// in another without conflating its PNG bounds with its hitbox.
+/// InteractiveRelics plus InteractiveRelicPlacements so a relic can be a
+/// decorative landmark in one place and an obstacle in another without
+/// conflating its PNG rectangle with its hitbox.
 ///
 /// Final map art must be transparent PNG/WebP. Do not add SVG/Path substitutes
 /// for missing historical assets; add the real asset to assets/race instead.
@@ -121,7 +150,7 @@ public static class PrehistoryRaceMapV2
             Opacity: 0.92),
 
         // These PNG stones intentionally correspond to the existing lightweight
-        // rail/island collision geometry. The image bounds themselves are never
+        // static-island collision geometry. The image bounds themselves are never
         // used for collision.
         new RaceMapProp(
             "river-rock-main",
@@ -244,6 +273,65 @@ public static class PrehistoryRaceMapV2
             RaceMapInteractionRole.Breakable,
             RaceColliderShape.Circle,
             "breakable-pottery")
+    };
+
+    /// <summary>
+    /// Concrete gameplay occurrences. Their eras intentionally match the map
+    /// zones: Paleolithic tools stay above Y=1200, while polished stone and comb
+    /// pottery stay in Neolithic zones. No comb pottery is used to plug the
+    /// 80-pixel Bronze Age finish chute.
+    /// </summary>
+    public static IReadOnlyList<InteractiveRelicPlacement> InteractiveRelicPlacements { get; } = new[]
+    {
+        new InteractiveRelicPlacement(
+            "paleo-handaxe-bumper-1", "handaxe-bumper",
+            340, 330, 15, 48, 48),
+        new InteractiveRelicPlacement(
+            "paleo-chopper-bumper-1", "chopper-bumper",
+            180, 410, 15, 48, 48),
+        new InteractiveRelicPlacement(
+            "paleo-handaxe-bumper-2", "handaxe-bumper",
+            210, 760, 15, 48, 48),
+        new InteractiveRelicPlacement(
+            "paleo-chopper-bumper-2", "chopper-bumper",
+            460, 1040, 15, 48, 48),
+
+        new InteractiveRelicPlacement(
+            "neo-polished-bumper-1", "polished-stone-bumper",
+            500, 1280, 15, 48, 48),
+        new InteractiveRelicPlacement(
+            "neo-pottery-breakable-1", "comb-pottery-breakable",
+            220, 1660, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "neo-pottery-breakable-2", "comb-pottery-breakable",
+            465, 1740, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "neo-pottery-breakable-3", "comb-pottery-breakable",
+            250, 2030, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "neo-pottery-breakable-4", "comb-pottery-breakable",
+            440, 2030, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "neo-polished-bumper-2", "polished-stone-bumper",
+            255, 2260, 15, 48, 48)
+    };
+
+    /// <summary>
+    /// Explicit bindings for the four large PNG rock obstacles. The simulation
+    /// currently resolves these with its existing composite island watchdogs.
+    /// Keeping the footprints here lets tests catch visual/physics drift while
+    /// avoiding a second heavyweight collision system.
+    /// </summary>
+    public static IReadOnlyList<RaceStaticColliderBinding> StaticColliderBindings { get; } = new[]
+    {
+        new RaceStaticColliderBinding(
+            "river-rock-main", 340, 1360, 1640, RaceColliderShape.Composite),
+        new RaceStaticColliderBinding(
+            "river-rock-upper", 340, 1680, 1810, RaceColliderShape.Composite),
+        new RaceStaticColliderBinding(
+            "river-rock-lower-left", 230, 1830, 1975, RaceColliderShape.Composite),
+        new RaceStaticColliderBinding(
+            "river-rock-lower-right", 450, 1830, 1975, RaceColliderShape.Composite)
     };
 
     /// <summary>
