@@ -196,7 +196,8 @@ public partial class QrWidgetView : UserControl
     {
         try
         {
-            if (ImgWidgetQr.Source is not BitmapSource bitmap)
+            BitmapSource? bitmap = ImgWidgetQr.Source as BitmapSource;
+            if (bitmap == null)
             {
                 RenderQr();
                 bitmap = ImgWidgetQr.Source as BitmapSource;
