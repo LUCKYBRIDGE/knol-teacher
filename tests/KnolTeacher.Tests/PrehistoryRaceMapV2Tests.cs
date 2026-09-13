@@ -172,12 +172,19 @@ public class PrehistoryRaceMapV2Tests
     }
 
     [Fact]
-    public void PendingPlainPottery_IsPlannedAsBreakable()
+    public void PendingPlainPottery_IsPlannedAsBreakable_ButReservedLandmarkIsVisualOnly()
     {
         PendingRaceArtAsset plainPottery = Assert.Single(
             PrehistoryRaceMapV2.PendingArtAssets,
             asset => asset.Key == "plain-pottery");
         Assert.Equal(RaceMapInteractionRole.Breakable, plainPottery.IntendedInteraction);
+
+        RaceMapProp reservedLandmark = Assert.Single(
+            PrehistoryRaceMapV2.Props,
+            prop => prop.AssetName == plainPottery.FileName);
+        Assert.Equal(RaceMapVisualRole.Landmark, reservedLandmark.Role);
+        Assert.Equal(RaceMapInteractionRole.None, reservedLandmark.Interaction);
+        Assert.Null(reservedLandmark.GameplayColliderKey);
     }
 
     [Fact]
@@ -220,6 +227,47 @@ public class PrehistoryRaceMapV2Tests
         Assert.All(
             PrehistoryRaceMapV2.PendingArtAssets,
             asset => Assert.EndsWith(".png", asset.FileName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void PendingHistoricalArt_HasReservedNonInteractiveLandmarkSlots()
+    {
+        foreach (PendingRaceArtAsset asset in PrehistoryRaceMapV2.PendingArtAssets)
+        {
+            RaceMapProp slot = Assert.Single(
+                PrehistoryRaceMapV2.Props,
+                prop => prop.AssetName.Equals(asset.FileName, StringComparison.OrdinalIgnoreCase));
+
+            Assert.Equal(RaceMapVisualRole.Landmark, slot.Role);
+            Assert.Equal(RaceMapInteractionRole.None, slot.Interaction);
+            Assert.Null(slot.GameplayColliderKey);
+            Assert.Equal(asset.Label, slot.Label);
+            Assert.Equal(asset.Period, slot.Period);
+            Assert.True(slot.Width > 0);
+            Assert.True(slot.Height > 0);
+
+            PrehistoryRaceZone? zone = PrehistoryRaceThemeSpec.Zones
+                .SingleOrDefault(candidate => slot.Y >= candidate.StartY && slot.Y < candidate.EndY);
+
+            Assert.NotNull(zone);
+            Assert.Equal(asset.Period, zone!.Period);
+        }
+    }
+
+    [Fact]
+    public void PendingHistoricalArt_HasProductionReadyTransparentPngSpecs()
+    {
+        Assert.Equal(6, PrehistoryRaceMapV2.PendingArtAssets.Count);
+
+        Assert.All(
+            PrehistoryRaceMapV2.PendingArtAssets,
+            asset =>
+            {
+                Assert.Equal(1024, asset.SourceWidth);
+                Assert.Equal(1024, asset.SourceHeight);
+                Assert.InRange(asset.TransparentPaddingRatio, 0.08, 0.12);
+                Assert.EndsWith(".png", asset.FileName, StringComparison.OrdinalIgnoreCase);
+            });
     }
 
     [Fact]
