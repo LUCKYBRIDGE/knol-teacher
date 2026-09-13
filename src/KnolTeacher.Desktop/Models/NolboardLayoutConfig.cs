@@ -13,7 +13,9 @@ public class NolboardWidgetState
 
 public class NolboardLayoutConfig
 {
-    public const int CurrentSchemaVersion = 2;
+    // v3: default widget sizes were enlarged for classroom displays and legacy v2
+    // layouts are reflowed once so old tiny dimensions do not keep coming back.
+    public const int CurrentSchemaVersion = 3;
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
     public bool HasCustomLayout { get; set; } = false;
