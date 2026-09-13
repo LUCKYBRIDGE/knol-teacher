@@ -196,7 +196,10 @@ public sealed class PrehistoryRaceMapRenderer
 
     private void RenderProps()
     {
-        foreach (RaceMapProp prop in PrehistoryRaceMapV2.Props)
+        IEnumerable<RaceMapProp> allProps =
+            PrehistoryRaceEnvironmentV2.Props.Concat(PrehistoryRaceMapV2.Props);
+
+        foreach (RaceMapProp prop in allProps)
         {
             BitmapSource? bitmap = TryGetAsset(prop.AssetName);
             if (bitmap == null)
