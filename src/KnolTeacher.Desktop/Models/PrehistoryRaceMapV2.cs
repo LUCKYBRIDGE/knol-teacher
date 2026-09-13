@@ -80,12 +80,20 @@ public sealed record RaceStaticColliderBinding(
     double EndY,
     RaceColliderShape Shape);
 
+/// <summary>
+/// Contract for a historical illustration that still needs final production.
+/// Source dimensions are production targets, not runtime decode sizes. The
+/// renderer still caps decoded bitmap width independently for low-spec PCs.
+/// </summary>
 public sealed record PendingRaceArtAsset(
     string Key,
     string FileName,
     string Label,
     string Period,
     string Purpose,
+    int SourceWidth = 1024,
+    int SourceHeight = 1024,
+    double TransparentPaddingRatio = 0.10,
     RaceMapInteractionRole IntendedInteraction = RaceMapInteractionRole.None);
 
 /// <summary>
@@ -101,6 +109,8 @@ public sealed record PendingRaceArtAsset(
 ///
 /// Final map art must be transparent PNG/WebP. Do not add SVG/Path substitutes
 /// for missing historical assets; add the real asset to assets/race instead.
+/// Missing final art may still have a reserved RaceMapProp slot: the renderer
+/// skips it until the bitmap exists, so no fake visual fallback is introduced.
 /// </summary>
 public static class PrehistoryRaceMapV2
 {
@@ -135,6 +145,13 @@ public static class PrehistoryRaceMapV2
             -34, 690, 220, 130, -16,
             RaceMapVisualRole.Decoration,
             Opacity: 0.96),
+        new RaceMapProp(
+            "paleo-bone-needle-slot",
+            "prehistoric_bone_needle.png",
+            18, 870, 96, 130, -7,
+            RaceMapVisualRole.Landmark,
+            Label: "뼈바늘",
+            Period: "구석기"),
         new RaceMapProp(
             "paleo-stump-right",
             "cartoon_wood_stump.png",
@@ -188,6 +205,13 @@ public static class PrehistoryRaceMapV2
             RaceMapVisualRole.Landmark,
             Label: "간석기",
             Period: "신석기"),
+        new RaceMapProp(
+            "neo-spindle-whorl-slot",
+            "prehistoric_spindle_whorl.png",
+            548, 1510, 100, 100, -7,
+            RaceMapVisualRole.Landmark,
+            Label: "가락바퀴",
+            Period: "신석기"),
 
         // This is a map-side landmark. The actual breakable pottery obstacles are
         // gameplay objects created by the simulation and use the same art family.
@@ -199,12 +223,40 @@ public static class PrehistoryRaceMapV2
             Label: "빗살무늬 토기",
             Period: "신석기"),
         new RaceMapProp(
+            "neo-shell-mask-slot",
+            "prehistoric_shell_mask.png",
+            548, 2130, 105, 118, -7,
+            RaceMapVisualRole.Landmark,
+            Label: "조개 껍데기 가면",
+            Period: "신석기"),
+        new RaceMapProp(
             "neo-log-right",
             "fallen_log_right.png",
             505, 2240, 205, 118, -15,
             RaceMapVisualRole.Decoration,
             Opacity: 0.95),
 
+        new RaceMapProp(
+            "bronze-half-moon-knife-slot",
+            "prehistoric_half_moon_stone_knife.png",
+            540, 2470, 120, 100, -7,
+            RaceMapVisualRole.Landmark,
+            Label: "반달 돌칼",
+            Period: "청동기"),
+        new RaceMapProp(
+            "bronze-plain-pottery-slot",
+            "prehistoric_plain_pottery.png",
+            18, 2700, 112, 142, -7,
+            RaceMapVisualRole.Landmark,
+            Label: "민무늬 토기",
+            Period: "청동기"),
+        new RaceMapProp(
+            "bronze-dagger-slot",
+            "prehistoric_bronze_dagger.png",
+            535, 2915, 120, 155, -7,
+            RaceMapVisualRole.Landmark,
+            Label: "비파형 동검",
+            Period: "청동기"),
         new RaceMapProp(
             "bronze-dolmen-left",
             "cartoon_dolmen.png",
@@ -336,7 +388,8 @@ public static class PrehistoryRaceMapV2
 
     /// <summary>
     /// Historical assets intentionally left as explicit art slots. They are not
-    /// replaced with programmer-drawn SVG/Path approximations.
+    /// replaced with programmer-drawn SVG/Path approximations. The reserved prop
+    /// slots above define where each illustration will appear once produced.
     /// </summary>
     public static IReadOnlyList<PendingRaceArtAsset> PendingArtAssets { get; } = new[]
     {
@@ -370,7 +423,7 @@ public static class PrehistoryRaceMapV2
             "민무늬 토기",
             "청동기",
             "청동기 생활 랜드마크",
-            RaceMapInteractionRole.Breakable),
+            IntendedInteraction: RaceMapInteractionRole.Breakable),
         new PendingRaceArtAsset(
             "bronze-dagger",
             "prehistoric_bronze_dagger.png",
