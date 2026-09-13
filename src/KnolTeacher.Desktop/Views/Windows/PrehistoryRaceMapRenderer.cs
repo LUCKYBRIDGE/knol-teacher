@@ -21,6 +21,7 @@ public sealed class PrehistoryRaceMapRenderer
 {
     private const string RenderTag = "prehistory-race-map-v2";
     private const double TrackWidth = 680.0;
+    private const double TrackSampleStep = 36.0;
     private readonly Canvas _canvas;
 
     private static readonly Dictionary<string, BitmapSource> AssetCache =
@@ -130,23 +131,24 @@ public sealed class PrehistoryRaceMapRenderer
 
     private static Geometry BuildTrackGeometry()
     {
-        const double sampleStep = 36.0;
+        IReadOnlyList<double> sampleRows = BuildTrackSampleRows();
         var geometry = new StreamGeometry();
 
         using (StreamGeometryContext context = geometry.Open())
         {
-            StudentPickerWindow.GetTrackBoundaries(0, out double firstLeft, out _);
-            context.BeginFigure(new Point(firstLeft, 0), true, true);
+            StudentPickerWindow.GetTrackBoundaries(sampleRows[0], out double firstLeft, out _);
+            context.BeginFigure(new Point(firstLeft, sampleRows[0]), true, true);
 
-            for (double y = sampleStep; y <= PrehistoryRaceThemeSpec.TrackHeight; y += sampleStep)
+            for (int i = 1; i < sampleRows.Count; i++)
             {
-                double sampleY = Math.Min(y, PrehistoryRaceThemeSpec.TrackHeight);
-                StudentPickerWindow.GetTrackBoundaries(sampleY, out double left, out _);
-                context.LineTo(new Point(left, sampleY), true, false);
+                double y = sampleRows[i];
+                StudentPickerWindow.GetTrackBoundaries(y, out double left, out _);
+                context.LineTo(new Point(left, y), true, false);
             }
 
-            for (double y = PrehistoryRaceThemeSpec.TrackHeight; y >= 0; y -= sampleStep)
+            for (int i = sampleRows.Count - 1; i >= 0; i--)
             {
+                double y = sampleRows[i];
                 StudentPickerWindow.GetTrackBoundaries(y, out _, out double right);
                 context.LineTo(new Point(right, y), true, false);
             }
@@ -154,6 +156,29 @@ public sealed class PrehistoryRaceMapRenderer
 
         geometry.Freeze();
         return geometry;
+    }
+
+    /// <summary>
+    /// Returns the deterministic Y rows used by both sides of the rendered road.
+    /// The exact start and finish rows are always present even when TrackHeight is
+    /// not evenly divisible by the sampling step, preventing a slanted closure at
+    /// either end of the long polygon.
+    /// </summary>
+    public static IReadOnlyList<double> BuildTrackSampleRows()
+    {
+        var rows = new List<double> { 0.0 };
+
+        for (double y = TrackSampleStep; y < PrehistoryRaceThemeSpec.TrackHeight; y += TrackSampleStep)
+        {
+            rows.Add(y);
+        }
+
+        if (rows[^1] < PrehistoryRaceThemeSpec.TrackHeight)
+        {
+            rows.Add(PrehistoryRaceThemeSpec.TrackHeight);
+        }
+
+        return rows;
     }
 
     private void RenderZoneLabels()
