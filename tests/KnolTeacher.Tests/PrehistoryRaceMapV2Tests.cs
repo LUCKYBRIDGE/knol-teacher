@@ -27,10 +27,10 @@ public class PrehistoryRaceMapV2Tests
     }
 
     [Fact]
-    public void DecorativeVisuals_DoNotPretendToOwnPhysics()
+    public void NonInteractiveProps_DoNotOwnColliderKeys()
     {
         var purelyVisual = PrehistoryRaceMapV2.Props
-            .Where(prop => prop.Role != RaceMapVisualRole.GameplayObstacleVisual)
+            .Where(prop => prop.Interaction == RaceMapInteractionRole.None)
             .ToArray();
 
         Assert.NotEmpty(purelyVisual);
@@ -38,26 +38,39 @@ public class PrehistoryRaceMapV2Tests
     }
 
     [Fact]
-    public void GameplayObstacleVisuals_ExplicitlyMapToPhysicsKeys()
+    public void InteractiveProps_ExplicitlyDeclareTheirGameplayContract()
     {
-        var gameplayVisuals = PrehistoryRaceMapV2.Props
-            .Where(prop => prop.Role == RaceMapVisualRole.GameplayObstacleVisual)
+        var interactive = PrehistoryRaceMapV2.Props
+            .Where(prop => prop.Interaction != RaceMapInteractionRole.None)
             .ToArray();
 
-        Assert.Equal(4, gameplayVisuals.Length);
-        Assert.All(gameplayVisuals, prop => Assert.False(string.IsNullOrWhiteSpace(prop.GameplayColliderKey)));
+        Assert.NotEmpty(interactive);
+        Assert.All(interactive, prop => Assert.False(string.IsNullOrWhiteSpace(prop.GameplayColliderKey)));
 
-        string[] expected =
-        {
-            "river-rock-main",
-            "river-rock-upper",
-            "river-rock-lower-left",
-            "river-rock-lower-right"
-        };
+        var riverColliders = interactive
+            .Where(prop => prop.Interaction == RaceMapInteractionRole.StaticCollider)
+            .Select(prop => prop.GameplayColliderKey)
+            .ToArray();
 
-        Assert.Equal(
-            expected.OrderBy(value => value),
-            gameplayVisuals.Select(prop => prop.GameplayColliderKey!).OrderBy(value => value));
+        Assert.Contains("river-rock-main", riverColliders);
+        Assert.Contains("river-rock-upper", riverColliders);
+        Assert.Contains("river-rock-lower-left", riverColliders);
+        Assert.Contains("river-rock-lower-right", riverColliders);
+    }
+
+    [Fact]
+    public void BreakablePottery_RemainsAnInteractiveRelic()
+    {
+        RaceMapProp pottery = Assert.Single(
+            PrehistoryRaceMapV2.Props.Where(prop => prop.Key == "neo-pottery-left"));
+
+        Assert.Equal(RaceMapVisualRole.Landmark, pottery.Role);
+        Assert.Equal(RaceMapInteractionRole.Breakable, pottery.Interaction);
+        Assert.Equal("breakable-pottery", pottery.GameplayColliderKey);
+
+        PendingRaceArtAsset plainPottery = Assert.Single(
+            PrehistoryRaceMapV2.PendingArtAssets.Where(asset => asset.Key == "plain-pottery"));
+        Assert.Equal(RaceMapInteractionRole.Breakable, plainPottery.IntendedInteraction);
     }
 
     [Fact]
@@ -111,6 +124,7 @@ public class PrehistoryRaceMapV2Tests
 
         Assert.InRange(foreground.Length, 1, 4);
         Assert.All(foreground, prop => Assert.True(prop.ZIndex > 0));
+        Assert.All(foreground, prop => Assert.Equal(RaceMapInteractionRole.None, prop.Interaction));
         Assert.All(foreground, prop => Assert.Null(prop.GameplayColliderKey));
     }
 }
