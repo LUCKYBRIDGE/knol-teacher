@@ -7,19 +7,21 @@
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- URL/text input. A short debounce keeps typing responsive. -->
-        <Grid Grid.Row="0" Margin="0,0,0,8">
+        <!-- Source URL/text. Typing is debounced so long links remain responsive. -->
+        <Grid Grid.Row="0" Margin="0,0,0,7">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBox x:Name="TbWidgetUrl"
                      Grid.Column="0"
-                     Height="34"
+                     Height="36"
                      Padding="9,4"
                      VerticalContentAlignment="Center"
                      FontSize="12"
@@ -32,7 +34,7 @@
             <Button Grid.Column="1"
                     Content="↻ QR 갱신"
                     Click="BtnRefresh_Click"
-                    Height="34"
+                    Height="36"
                     Padding="10,0"
                     Margin="6,0,0,0"
                     Background="#334155"
@@ -43,8 +45,67 @@
                     Cursor="Hand"/>
         </Grid>
 
-        <!-- Scanner-friendly white quiet area -->
+        <!-- The exact normalized content used by the QR is always copyable as text. -->
         <Border Grid.Row="1"
+                Background="#0F172A"
+                BorderBrush="#334155"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="8,7"
+                Margin="0,0,0,8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                        <TextBlock Text="학생에게 전달할 링크"
+                                   Foreground="#CBD5E1"
+                                   FontSize="10.5"
+                                   FontWeight="SemiBold"
+                                   Margin="1,0,0,4"/>
+                        <TextBox x:Name="TbShareLink"
+                                 IsReadOnly="True"
+                                 Height="32"
+                                 Padding="8,3"
+                                 VerticalContentAlignment="Center"
+                                 FontSize="11.5"
+                                 Background="#F8FAFC"
+                                 Foreground="#0F172A"
+                                 BorderBrush="#CBD5E1"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 ToolTip="QR에 실제로 들어가는 내용입니다. 긴 주소도 복사 버튼으로 전체가 복사됩니다."/>
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Content="🔗 링크 복사"
+                            Click="BtnCopyLink_Click"
+                            Height="32"
+                            Padding="11,0"
+                            VerticalAlignment="Bottom"
+                            Background="#0284C7"
+                            Foreground="White"
+                            BorderThickness="0"
+                            FontSize="11.5"
+                            FontWeight="Bold"
+                            Cursor="Hand"/>
+                </Grid>
+                <TextBlock x:Name="TxtLinkHint"
+                           Grid.Row="1"
+                           Text="QR을 찍기 어려운 학생에게는 이 링크를 그대로 복사해 전달할 수 있습니다."
+                           Margin="2,6,0,0"
+                           Foreground="#94A3B8"
+                           FontSize="10"
+                           TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+
+        <!-- Scanner-friendly white quiet area -->
+        <Border Grid.Row="2"
                 Background="White"
                 CornerRadius="10"
                 BorderBrush="#CBD5E1"
@@ -67,17 +128,50 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Content="📋 이미지 복사" Click="BtnCopy_Click" Height="34" Margin="0,0,4,0" Background="#334155" Foreground="White" FontSize="11.5" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
+            <Button Grid.Column="0"
+                    Content="📋 QR 이미지 복사"
+                    Click="BtnCopyQrImage_Click"
+                    Height="34"
+                    Margin="0,0,4,0"
+                    Background="#334155"
+                    Foreground="White"
+                    FontSize="11.5"
+                    FontWeight="Bold"
+                    BorderThickness="0"
+                    Cursor="Hand">
                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
             </Button>
-            <Button Grid.Column="1" Content="🔍 크게 보기" Click="BtnZoom_Click" Height="34" Margin="4,0,0,0" Background="#0284C7" Foreground="White" FontSize="11.5" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
+            <Button Grid.Column="1"
+                    Content="💾 PNG 저장"
+                    Click="BtnSavePng_Click"
+                    Height="34"
+                    Margin="4,0,0,0"
+                    Background="#334155"
+                    Foreground="White"
+                    FontSize="11.5"
+                    FontWeight="Bold"
+                    BorderThickness="0"
+                    Cursor="Hand">
                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
             </Button>
         </Grid>
+
+        <Button Grid.Row="4"
+                Content="🔍 교실 화면에 크게 보기"
+                Click="BtnZoom_Click"
+                Height="36"
+                Background="#0369A1"
+                Foreground="White"
+                FontSize="11.5"
+                FontWeight="Bold"
+                BorderThickness="0"
+                Cursor="Hand">
+            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+        </Button>
     </Grid>
 </UserControl>
