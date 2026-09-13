@@ -59,6 +59,31 @@ public class PrehistoryRaceMapV2Tests
     }
 
     [Fact]
+    public void StaticColliderVisuals_HaveMatchingCompositeBindings()
+    {
+        var bindings = PrehistoryRaceMapV2.StaticColliderBindings
+            .ToDictionary(binding => binding.Key, StringComparer.Ordinal);
+        var props = PrehistoryRaceMapV2.Props
+            .Where(prop => prop.Interaction == RaceMapInteractionRole.StaticCollider)
+            .ToArray();
+
+        Assert.Equal(props.Length, bindings.Count);
+
+        foreach (RaceMapProp prop in props)
+        {
+            Assert.NotNull(prop.GameplayColliderKey);
+            Assert.True(
+                bindings.TryGetValue(prop.GameplayColliderKey!, out RaceStaticColliderBinding? binding),
+                $"{prop.Key} is missing a static-collider binding");
+            Assert.NotNull(binding);
+            Assert.Equal(RaceColliderShape.Composite, binding!.Shape);
+            Assert.InRange(binding.CenterX, prop.X, prop.X + prop.Width);
+            Assert.InRange(binding.StartY, prop.Y, prop.Y + prop.Height);
+            Assert.InRange(binding.EndY, prop.Y, prop.Y + prop.Height);
+        }
+    }
+
+    [Fact]
     public void InteractiveRelics_CanBeBumpersOrBreakables()
     {
         Assert.NotEmpty(PrehistoryRaceMapV2.InteractiveRelics);
@@ -82,6 +107,52 @@ public class PrehistoryRaceMapV2Tests
         Assert.All(
             PrehistoryRaceMapV2.InteractiveRelics,
             rule => Assert.NotEqual(RaceColliderShape.None, rule.ColliderShape));
+    }
+
+    [Fact]
+    public void InteractiveRelicPlacements_ReferenceKnownRules_AndStayInTheirEra()
+    {
+        var rules = PrehistoryRaceMapV2.InteractiveRelics
+            .ToDictionary(rule => rule.Key, StringComparer.Ordinal);
+
+        Assert.NotEmpty(PrehistoryRaceMapV2.InteractiveRelicPlacements);
+        Assert.Equal(
+            PrehistoryRaceMapV2.InteractiveRelicPlacements.Count,
+            PrehistoryRaceMapV2.InteractiveRelicPlacements.Select(placement => placement.Key).Distinct().Count());
+
+        foreach (InteractiveRelicPlacement placement in PrehistoryRaceMapV2.InteractiveRelicPlacements)
+        {
+            Assert.True(
+                rules.TryGetValue(placement.RuleKey, out InteractiveRelicRule? rule),
+                $"{placement.Key} references unknown rule {placement.RuleKey}");
+
+            PrehistoryRaceZone? zone = PrehistoryRaceThemeSpec.Zones
+                .SingleOrDefault(candidate =>
+                    placement.Y >= candidate.StartY && placement.Y < candidate.EndY);
+
+            Assert.NotNull(zone);
+            Assert.NotNull(rule);
+            Assert.Equal(rule!.Period, zone!.Period);
+            Assert.True(placement.ColliderRadius > 0);
+            Assert.True(placement.VisualWidth > placement.ColliderRadius * 2.0);
+            Assert.True(placement.VisualHeight > placement.ColliderRadius * 2.0);
+        }
+    }
+
+    [Fact]
+    public void BreakableCombPottery_RemainsGameplay_ButDoesNotPlugBronzeFinishChute()
+    {
+        InteractiveRelicRule potteryRule = Assert.Single(
+            PrehistoryRaceMapV2.InteractiveRelics,
+            rule => rule.Key == "comb-pottery-breakable");
+
+        InteractiveRelicPlacement[] potteryPlacements = PrehistoryRaceMapV2.InteractiveRelicPlacements
+            .Where(placement => placement.RuleKey == potteryRule.Key)
+            .ToArray();
+
+        Assert.InRange(potteryPlacements.Length, 3, 6);
+        Assert.All(potteryPlacements, placement => Assert.InRange(placement.Y, 1200.0, 2399.999));
+        Assert.DoesNotContain(potteryPlacements, placement => placement.Y >= 3260.0);
     }
 
     [Fact]
