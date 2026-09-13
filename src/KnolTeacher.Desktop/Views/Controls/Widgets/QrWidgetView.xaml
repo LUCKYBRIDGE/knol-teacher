@@ -1,34 +1,81 @@
 <UserControl x:Class="KnolTeacher.Desktop.Views.Controls.Widgets.QrWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d">
-    <Grid Margin="6">
+    <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Input Box -->
-        <TextBox x:Name="TbWidgetUrl" Grid.Row="0" Height="28" Padding="6,2" VerticalContentAlignment="Center" FontSize="11" Text="https://pinky-ne.com/" TextChanged="TbWidgetUrl_TextChanged" Margin="0,0,0,6"/>
+        <!-- URL/text input. A short debounce keeps typing responsive. -->
+        <Grid Grid.Row="0" Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="TbWidgetUrl"
+                     Grid.Column="0"
+                     Height="34"
+                     Padding="9,4"
+                     VerticalContentAlignment="Center"
+                     FontSize="12"
+                     Background="#F8FAFC"
+                     Foreground="#0F172A"
+                     BorderBrush="#CBD5E1"
+                     Text="https://pinky-ne.com/"
+                     TextChanged="TbWidgetUrl_TextChanged"
+                     ToolTip="웹 주소 또는 QR로 만들 텍스트를 입력하세요. 주소에 https://가 없으면 자동으로 보완합니다."/>
+            <Button Grid.Column="1"
+                    Content="↻ QR 갱신"
+                    Click="BtnRefresh_Click"
+                    Height="34"
+                    Padding="10,0"
+                    Margin="6,0,0,0"
+                    Background="#334155"
+                    Foreground="White"
+                    BorderThickness="0"
+                    FontSize="11"
+                    FontWeight="Bold"
+                    Cursor="Hand"/>
+        </Grid>
 
-        <!-- QR Display -->
-        <Border Grid.Row="1" Background="White" CornerRadius="8" BorderBrush="#CBD5E1" BorderThickness="1" Margin="0,0,0,6" Padding="6">
-            <Image x:Name="ImgWidgetQr" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+        <!-- Scanner-friendly white quiet area -->
+        <Border Grid.Row="1"
+                Background="White"
+                CornerRadius="10"
+                BorderBrush="#CBD5E1"
+                BorderThickness="1"
+                Margin="0,0,0,8"
+                Padding="16">
+            <Grid>
+                <Image x:Name="ImgWidgetQr"
+                       Stretch="Uniform"
+                       RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                <TextBlock x:Name="TxtQrStatus"
+                           Text="QR 준비 중..."
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Bottom"
+                           Margin="8"
+                           Padding="8,3"
+                           FontSize="10.5"
+                           Foreground="#475569"
+                           Background="#E6F8FAFC"/>
+            </Grid>
         </Border>
 
-        <!-- Controls -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Content="📋 복사" Click="BtnCopy_Click" Height="28" Margin="0,0,3,0" Background="#334155" Foreground="White" FontSize="11" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
+            <Button Grid.Column="0" Content="📋 이미지 복사" Click="BtnCopy_Click" Height="34" Margin="0,0,4,0" Background="#334155" Foreground="White" FontSize="11.5" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
             </Button>
-            <Button Grid.Column="1" Content="🔍 크게 보기" Click="BtnZoom_Click" Height="28" Margin="3,0,0,0" Background="#0284C7" Foreground="White" FontSize="11" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
+            <Button Grid.Column="1" Content="🔍 크게 보기" Click="BtnZoom_Click" Height="34" Margin="4,0,0,0" Background="#0284C7" Foreground="White" FontSize="11.5" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
             </Button>
         </Grid>
