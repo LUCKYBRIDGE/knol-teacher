@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 using KnolTeacher.Desktop.Models;
 using KnolTeacher.Desktop.Services;
 using KnolTeacher.Desktop.Views.Controls;
@@ -13,15 +14,27 @@ namespace KnolTeacher.Desktop.Views.Controls.Widgets;
 
 public partial class WeatherWidgetView : UserControl, IWidgetLifecycle
 {
+    private static readonly TimeSpan AutoRefreshInterval = TimeSpan.FromMinutes(15);
+
     private readonly IWeatherService _weatherService;
+    private readonly DispatcherTimer _autoRefreshTimer;
     private CancellationTokenSource? _refreshCts;
-    private bool _isInitialized = false;
-    private bool _isActive = false;
-    private bool _disposed = false;
+    private bool _isInitialized;
+    private bool _isActive;
+    private bool _disposed;
 
     public WeatherWidgetView(IWeatherService? weatherService = null)
     {
         _weatherService = weatherService ?? ((Application.Current as App)?.Services?.GetService(typeof(IWeatherService)) as IWeatherService)!;
+        _autoRefreshTimer = new DispatcherTimer { Interval = AutoRefreshInterval };
+        _autoRefreshTimer.Tick += async (_, _) =>
+        {
+            if (_isActive && !_disposed)
+            {
+                await BeginRefreshAsync();
+            }
+        };
+
         InitializeComponent();
     }
 
@@ -36,6 +49,7 @@ public partial class WeatherWidgetView : UserControl, IWidgetLifecycle
             _isInitialized = true;
         }
 
+        _autoRefreshTimer.Start();
         _ = BeginRefreshAsync();
     }
 
@@ -44,6 +58,7 @@ public partial class WeatherWidgetView : UserControl, IWidgetLifecycle
         if (_disposed || !_isActive) return;
 
         _isActive = false;
+        _autoRefreshTimer.Stop();
         CancelRefresh();
     }
 
@@ -52,6 +67,7 @@ public partial class WeatherWidgetView : UserControl, IWidgetLifecycle
         if (_disposed) return;
 
         Deactivate();
+        _autoRefreshTimer.Stop();
         CancelRefresh();
         _disposed = true;
     }
@@ -88,12 +104,15 @@ public partial class WeatherWidgetView : UserControl, IWidgetLifecycle
 
             CbRegion.SelectedIndex = 0;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Nolboard.Weather] Region init failed: {ex.GetType().Name}");
+        }
     }
 
     private async Task BeginRefreshAsync()
     {
-        if (_disposed || !_isActive) return;
+        if (_disposed || !_isActive || _weatherService == null) return;
 
         CancelRefresh();
         _refreshCts = new CancellationTokenSource();
@@ -113,38 +132,57 @@ public partial class WeatherWidgetView : UserControl, IWidgetLifecycle
     {
         try
         {
-            string selRegion = CbRegion.SelectedItem as string ?? "서울";
-            var weatherTask = _weatherService.GetWeatherAndAirQualityAsync(selRegion);
-            var w = await weatherTask.WaitAsync(cancellationToken);
+            string selectedRegion = CbRegion.SelectedItem as string ?? "서울";
+            var weatherTask = _weatherService.GetWeatherAndAirQualityAsync(selectedRegion);
+            var weather = await weatherTask.WaitAsync(cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
-            if (_disposed || !_isActive || w == null) return;
+            if (_disposed || !_isActive || weather == null)
+            {
+                if (weather == null && TxtUpdatedTime != null)
+                {
+                    TxtUpdatedTime.Text = "날씨 동기화 실패 · 잠시 후 다시 시도합니다";
+                }
+                return;
+            }
 
-            TxtWeatherIcon.Text = w.WeatherIcon;
-            TxtTemperature.Text = $"{w.Temperature:0.0}°C";
-            TxtWeatherDesc.Text = $"{w.WeatherDescription} (체감 {w.ApparentTemperature:0.0}°C)";
-            TxtHumidity.Text = $"💧 습도 {w.Humidity}%";
-            TxtWind.Text = $"💨 풍속 {w.WindSpeed:0.0}m/s";
+            TxtWeatherIcon.Text = weather.WeatherIcon;
+            TxtTemperature.Text = $"{weather.Temperature:0.0}°C";
+            TxtWeatherDesc.Text = $"{weather.WeatherDescription} (체감 {weather.ApparentTemperature:0.0}°C)";
+            TxtHumidity.Text = $"💧 습도 {weather.Humidity}%";
+            TxtWind.Text = $"💨 풍속 {weather.WindSpeed:0.0}m/s";
 
-            TxtPm10.Text = $"{w.Pm10Grade} ({w.Pm10:0}µg)";
-            BdPm10.Background = (Brush)new BrushConverter().ConvertFromString(w.Pm10BadgeBg)!;
-            TxtPm10.Foreground = (Brush)new BrushConverter().ConvertFromString(w.Pm10BadgeFg)!;
+            TxtPm10.Text = $"{weather.Pm10Grade} ({weather.Pm10:0}µg)";
+            BdPm10.Background = (Brush)new BrushConverter().ConvertFromString(weather.Pm10BadgeBg)!;
+            TxtPm10.Foreground = (Brush)new BrushConverter().ConvertFromString(weather.Pm10BadgeFg)!;
 
-            TxtPm25.Text = $"{w.Pm25Grade} ({w.Pm25:0}µg)";
-            BdPm25.Background = (Brush)new BrushConverter().ConvertFromString(w.Pm25BadgeBg)!;
-            TxtPm25.Foreground = (Brush)new BrushConverter().ConvertFromString(w.Pm25BadgeFg)!;
+            TxtPm25.Text = $"{weather.Pm25Grade} ({weather.Pm25:0}µg)";
+            BdPm25.Background = (Brush)new BrushConverter().ConvertFromString(weather.Pm25BadgeBg)!;
+            TxtPm25.Foreground = (Brush)new BrushConverter().ConvertFromString(weather.Pm25BadgeFg)!;
 
-            TxtOutdoorGuide.Text = w.OutdoorActivityGuide;
-            BdOutdoorGuide.Background = (Brush)new BrushConverter().ConvertFromString(w.OutdoorGuideBg)!;
-            TxtOutdoorGuide.Foreground = (Brush)new BrushConverter().ConvertFromString(w.OutdoorGuideFg)!;
+            TxtOutdoorGuide.Text = weather.OutdoorActivityGuide;
+            BdOutdoorGuide.Background = (Brush)new BrushConverter().ConvertFromString(weather.OutdoorGuideBg)!;
+            TxtOutdoorGuide.Foreground = (Brush)new BrushConverter().ConvertFromString(weather.OutdoorGuideFg)!;
+
+            if (TxtUpdatedTime != null)
+            {
+                string updated = string.IsNullOrWhiteSpace(weather.UpdatedTime)
+                    ? DateTime.Now.ToString("HH:mm")
+                    : weather.UpdatedTime;
+                TxtUpdatedTime.Text = $"{updated} 기준 · 열린 동안 15분마다 자동 갱신";
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }
-        catch
+        catch (Exception ex)
         {
-            // Existing widget behavior intentionally treats weather failures as non-fatal.
+            if (TxtUpdatedTime != null)
+            {
+                TxtUpdatedTime.Text = "날씨 동기화 실패 · 기존 정보를 유지합니다";
+            }
+            System.Diagnostics.Debug.WriteLine($"[Nolboard.Weather] Refresh failed: {ex.GetType().Name}");
         }
     }
 

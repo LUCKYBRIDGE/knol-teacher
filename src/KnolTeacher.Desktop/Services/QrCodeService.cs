@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using QRCoder;
@@ -47,21 +48,34 @@ public class QrCodeService : IQrCodeService
 
     public void CopyQrToClipboard(string content)
     {
-        try
+        var bitmap = GenerateQrBitmap(content, 16);
+        Exception? lastError = null;
+
+        // The Windows clipboard can be briefly locked by another process. A few short
+        // retries make classroom use much more reliable without hiding real failures.
+        for (int attempt = 0; attempt < 3; attempt++)
         {
-            var bitmap = GenerateQrBitmap(content, 12);
-            Clipboard.SetImage(bitmap);
+            try
+            {
+                Clipboard.SetImage(bitmap);
+                return;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+                if (attempt < 2)
+                {
+                    Thread.Sleep(60);
+                }
+            }
         }
-        catch { }
+
+        throw new InvalidOperationException("QR image could not be copied to the Windows clipboard.", lastError);
     }
 
     public void SaveQrToFile(string content, string filePath)
     {
-        try
-        {
-            byte[] bytes = GenerateQrPngBytes(content, 16);
-            File.WriteAllBytes(filePath, bytes);
-        }
-        catch { }
+        byte[] bytes = GenerateQrPngBytes(content, 16);
+        File.WriteAllBytes(filePath, bytes);
     }
 }

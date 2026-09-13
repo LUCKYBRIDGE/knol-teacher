@@ -204,6 +204,7 @@ public partial class StudentDisplayWindow : Window
 
         _widgets.Add(host);
         WidgetCanvas.Children.Add(host);
+        ClampAllWidgetsWithinCanvas();
         SelectWidget(host);
         UpdateDockButtonsState();
         UpdateEmptyHint();
@@ -265,6 +266,7 @@ public partial class StudentDisplayWindow : Window
             return false;
         }
 
+        bool migrateLegacyLayout = layout.SchemaVersion < NolboardLayoutConfig.CurrentSchemaVersion;
         BeginLayoutBatch();
         try
         {
@@ -273,6 +275,7 @@ public partial class StudentDisplayWindow : Window
             // An intentionally empty custom workspace must remain empty on next launch.
             if (layout.Widgets == null || layout.Widgets.Count == 0)
             {
+                layout.SchemaVersion = NolboardLayoutConfig.CurrentSchemaVersion;
                 return true;
             }
 
@@ -292,15 +295,19 @@ public partial class StudentDisplayWindow : Window
             {
                 if (string.IsNullOrWhiteSpace(state.Tag)) continue;
 
-                var host = SpawnWidget(state.Tag, state.X * scaleX, state.Y * scaleY);
+                // v2 layouts used much smaller defaults. Reflow once on upgrade so the old
+                // tiny dimensions do not defeat the new classroom-size defaults.
+                var host = migrateLegacyLayout
+                    ? SpawnWidget(state.Tag)
+                    : SpawnWidget(state.Tag, state.X * scaleX, state.Y * scaleY);
                 if (host == null) continue;
 
-                if (state.Width > 100)
+                if (!migrateLegacyLayout && state.Width > 100)
                 {
                     host.Width = Math.Max(host.MinWidth, state.Width * scaleX);
                 }
 
-                if (state.Height > 80)
+                if (!migrateLegacyLayout && state.Height > 80)
                 {
                     host.Height = Math.Max(host.MinHeight, state.Height * scaleY);
                 }
@@ -318,7 +325,7 @@ public partial class StudentDisplayWindow : Window
         }
         finally
         {
-            EndLayoutBatch(saveFinalState: false);
+            EndLayoutBatch(saveFinalState: migrateLegacyLayout);
         }
     }
 
@@ -335,7 +342,8 @@ public partial class StudentDisplayWindow : Window
     {
         if (string.Equals(key, "pinball", StringComparison.OrdinalIgnoreCase))
         {
-            key = "picker";
+            OpenPinballWindow();
+            return;
         }
 
         var existing = FindWidget(key);
@@ -379,6 +387,8 @@ public partial class StudentDisplayWindow : Window
         {
             _pinballWindow = new StudentPickerWindow(_studentService, _soundService, _displayManager);
         }
+
+        if (_pinballWindow == null) return;
 
         _displayManager?.MoveToStudentMonitor(_pinballWindow, maximize: false);
         _pinballWindow.Show();
@@ -487,7 +497,8 @@ public partial class StudentDisplayWindow : Window
     {
         if (string.Equals(tag, "pinball", StringComparison.OrdinalIgnoreCase))
         {
-            tag = "picker";
+            OpenPinballWindow();
+            return null;
         }
 
         var definition = WidgetRegistry.GetOrDefault(tag);
@@ -506,8 +517,10 @@ public partial class StudentDisplayWindow : Window
             }
         }
 
-        double nextX = x ?? (40 + (_widgets.Count * 30) % 360);
-        double nextY = y ?? (40 + (_widgets.Count * 30) % 240);
+        Size spawnSize = GetWidgetSpawnSize(definition);
+        Point spawnPoint = x.HasValue && y.HasValue
+            ? new Point(x.Value, y.Value)
+            : FindFreeSpawnPosition(spawnSize.Width, spawnSize.Height);
 
         UserControl? view = tag switch
         {
@@ -517,6 +530,7 @@ public partial class StudentDisplayWindow : Window
             "wheel" => new WheelWidgetView(_soundService),
             "score" => new ScoreWidgetView(),
             "drawing" => new DrawingWidgetView(),
+            "blackboard" => new DrawingWidgetView(),
             "timetable" => new TimetableWidgetView(_timetableService),
             "meal" => new MealWidgetView(_neisService),
             "memo" => new MemoWidgetView(_configService, _ttsService),
@@ -529,7 +543,64 @@ public partial class StudentDisplayWindow : Window
 
         return view == null
             ? null
-            : AddWidget(definition.Type, definition.Title, view, nextX, nextY, definition.DefaultWidth, definition.DefaultHeight);
+            : AddWidget(
+                definition.Type,
+                definition.Title,
+                view,
+                spawnPoint.X,
+                spawnPoint.Y,
+                spawnSize.Width,
+                spawnSize.Height);
+    }
+
+    private Size GetWidgetSpawnSize(WidgetDefinition definition)
+    {
+        double canvasWidth = WidgetCanvas.ActualWidth > 200
+            ? WidgetCanvas.ActualWidth
+            : Math.Max(800, ActualWidth - 32);
+        double canvasHeight = WidgetCanvas.ActualHeight > 200
+            ? WidgetCanvas.ActualHeight
+            : Math.Max(560, ActualHeight - 140);
+
+        double maxWidth = Math.Max(definition.MinWidth, canvasWidth - 32);
+        double maxHeight = Math.Max(definition.MinHeight, canvasHeight - 32);
+
+        return new Size(
+            Math.Min(definition.DefaultWidth, maxWidth),
+            Math.Min(definition.DefaultHeight, maxHeight));
+    }
+
+    private Point FindFreeSpawnPosition(double width, double height)
+    {
+        double canvasWidth = WidgetCanvas.ActualWidth > 200
+            ? WidgetCanvas.ActualWidth
+            : Math.Max(800, ActualWidth - 32);
+        double canvasHeight = WidgetCanvas.ActualHeight > 200
+            ? WidgetCanvas.ActualHeight
+            : Math.Max(560, ActualHeight - 140);
+
+        var occupied = new List<Rect>(_widgets.Count);
+        foreach (var widget in _widgets)
+        {
+            double left = Canvas.GetLeft(widget);
+            double top = Canvas.GetTop(widget);
+            if (double.IsNaN(left) || double.IsInfinity(left)) left = 16;
+            if (double.IsNaN(top) || double.IsInfinity(top)) top = 16;
+
+            double widgetWidth = widget.ActualWidth > 0 ? widget.ActualWidth : widget.Width;
+            double widgetHeight = widget.ActualHeight > 0 ? widget.ActualHeight : widget.Height;
+            if (double.IsNaN(widgetWidth) || widgetWidth <= 0) widgetWidth = widget.MinWidth;
+            if (double.IsNaN(widgetHeight) || widgetHeight <= 0) widgetHeight = widget.MinHeight;
+
+            occupied.Add(new Rect(left, top, widgetWidth, widgetHeight));
+        }
+
+        return NolboardPlacementPlanner.FindBestPosition(
+            canvasWidth,
+            canvasHeight,
+            width,
+            height,
+            occupied);
     }
 
     public void UpdateDockButtonsState()
@@ -543,6 +614,7 @@ public partial class StudentDisplayWindow : Window
         UpdateBtnState(BtnToolWheel, "wheel");
         UpdateBtnState(BtnToolScore, "score");
         UpdateBtnState(BtnToolDrawing, "drawing");
+        UpdateBtnState(BtnToolBlackboard, "blackboard");
         UpdateBtnState(BtnToolTimetable, "timetable");
         UpdateBtnState(BtnToolMeal, "meal");
         UpdateBtnState(BtnToolMemo, "memo");

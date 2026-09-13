@@ -75,6 +75,38 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Stock WPF radio circles can become nearly black on the dark NolBoard toolbar. -->
+        <Style x:Key="BoardRadioStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#F8FAFC" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Grid Width="18" Height="18" Margin="0,0,5,0">
+                                <Ellipse x:Name="Ring" Fill="#F8FAFC" Stroke="#94A3B8" StrokeThickness="1.5" />
+                                <Ellipse x:Name="Dot" Width="9" Height="9" Fill="#0284C7" Visibility="Collapsed" />
+                            </Grid>
+                            <ContentPresenter ContentSource="Content" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Ring" Property="Stroke" Value="#7DD3FC" />
+                                <Setter TargetName="Dot" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Ring" Property="Stroke" Value="#38BDF8" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.55" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     
     <Grid>
@@ -109,7 +141,35 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Add Widget Dropdown -->
                         <TextBlock Text="+ 위젯:" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <ComboBox x:Name="CbAddWidget" Width="144" Height="32" MinHeight="32" FontSize="11" Padding="6,2" VerticalContentAlignment="Center" Margin="0,0,12,0" SelectionChanged="CbAddWidget_SelectionChanged">
+                        <ComboBox x:Name="CbAddWidget"
+                                  Width="156"
+                                  Height="32"
+                                  MinHeight="32"
+                                  FontSize="11"
+                                  Padding="6,2"
+                                  Background="#F8FAFC"
+                                  Foreground="#0F172A"
+                                  BorderBrush="#CBD5E1"
+                                  VerticalContentAlignment="Center"
+                                  Margin="0,0,12,0"
+                                  SelectionChanged="CbAddWidget_SelectionChanged">
+                            <ComboBox.ItemContainerStyle>
+                                <Style TargetType="ComboBoxItem">
+                                    <Setter Property="Background" Value="#F8FAFC"/>
+                                    <Setter Property="Foreground" Value="#0F172A"/>
+                                    <Setter Property="Padding" Value="7,4"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter Property="Background" Value="#DBEAFE"/>
+                                            <Setter Property="Foreground" Value="#0F172A"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#BAE6FD"/>
+                                            <Setter Property="Foreground" Value="#0C4A6E"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
                             <ComboBoxItem Content="위젯 추가..." IsSelected="True"/>
                             <ComboBoxItem Content="⏱️ 수업 타이머" Tag="timer"/>
                             <ComboBoxItem Content="🌱 뽑기 레이스" Tag="pinball"/>
@@ -118,6 +178,7 @@
                             <ComboBoxItem Content="🎡 회전 돌림판" Tag="wheel"/>
                             <ComboBoxItem Content="🏆 모둠 점수판" Tag="score"/>
                             <ComboBoxItem Content="✏️ 판서 메모장" Tag="drawing"/>
+                            <ComboBoxItem Content="🟩 칠판" Tag="blackboard"/>
                             <ComboBoxItem Content="📅 오늘의 시간표" Tag="timetable"/>
                             <ComboBoxItem Content="🍱 오늘의 급식" Tag="meal"/>
                             <ComboBoxItem Content="📝 학급 알림장" Tag="memo"/>
@@ -171,18 +232,18 @@
                         </ToggleButton>
 
                         <StackPanel x:Name="PanelInkTools" Orientation="Horizontal" Visibility="Collapsed">
-                            <RadioButton x:Name="RbPen" Content="펜" IsChecked="True" Checked="RbPen_Checked" Foreground="White" FontSize="11" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <RadioButton x:Name="RbEraser" Content="지우개" Checked="RbEraser_Checked" Foreground="White" FontSize="11" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                            <Button Width="20" Height="20" Background="White" Click="BtnColor_Click" Tag="#FFFFFF" Margin="0,0,3,0" Cursor="Hand" BorderThickness="0">
+                            <RadioButton x:Name="RbPen" Content="펜" IsChecked="True" Checked="RbPen_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                            <RadioButton x:Name="RbEraser" Content="지우개" Checked="RbEraser_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,9,0" VerticalAlignment="Center"/>
+                            <Button Width="20" Height="20" Background="White" Click="BtnColor_Click" Tag="#FFFFFF" Margin="0,0,3,0" Cursor="Hand" BorderBrush="#94A3B8" BorderThickness="1" ToolTip="흰색">
                                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
                             </Button>
-                            <Button Width="20" Height="20" Background="#FDE047" Click="BtnColor_Click" Tag="#FDE047" Margin="0,0,3,0" Cursor="Hand" BorderThickness="0">
+                            <Button Width="20" Height="20" Background="#FDE047" Click="BtnColor_Click" Tag="#FDE047" Margin="0,0,3,0" Cursor="Hand" BorderThickness="0" ToolTip="노랑">
                                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
                             </Button>
-                            <Button Width="20" Height="20" Background="#F472B6" Click="BtnColor_Click" Tag="#F472B6" Margin="0,0,3,0" Cursor="Hand" BorderThickness="0">
+                            <Button Width="20" Height="20" Background="#F472B6" Click="BtnColor_Click" Tag="#F472B6" Margin="0,0,3,0" Cursor="Hand" BorderThickness="0" ToolTip="분홍">
                                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
                             </Button>
-                            <Button Width="20" Height="20" Background="#38BDF8" Click="BtnColor_Click" Tag="#38BDF8" Margin="0,0,8,0" Cursor="Hand" BorderThickness="0">
+                            <Button Width="20" Height="20" Background="#38BDF8" Click="BtnColor_Click" Tag="#38BDF8" Margin="0,0,8,0" Cursor="Hand" BorderThickness="0" ToolTip="하늘색">
                                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
                             </Button>
                             <Button Content="↩" Click="BtnUndo_Click" Height="26" Padding="6,0" Margin="0,0,3,0" Background="#334155" Foreground="White" FontSize="11" Cursor="Hand" ToolTip="실행 취소"/>
@@ -228,24 +289,32 @@
             <Canvas x:Name="BoardToolsCanvas"
                     IsHitTestVisible="True"/>
 
-            <!-- Empty Board Watermark Hint -->
-            <Border x:Name="EmptyBoardHint" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.4" Visibility="Collapsed">
+            <!-- Keep the empty hint readable on green, white and dark board themes. -->
+            <Border x:Name="EmptyBoardHint"
+                    IsHitTestVisible="False"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Opacity="0.86"
+                    Visibility="Collapsed"
+                    Background="#E60F172A"
+                    BorderBrush="#475569"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="28,22">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="📋" FontSize="52" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                    <TextBlock Text="놀보드 캔버스" FontSize="22" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                    <TextBlock Text="하단 도구 바 또는 상단 '+ 위젯' 메뉴에서 원하는 도구를 클릭하여 자유롭게 띄워보세요." FontSize="13" Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                    <TextBlock Text="(단축키: ESC - 선택된 위젯·필기 닫기 | F2 - 놀보드 닫기)" FontSize="11.5" Foreground="#64748B" HorizontalAlignment="Center"/>
+                    <TextBlock Text="놀보드 캔버스" FontSize="22" FontWeight="Bold" Foreground="#F8FAFC" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="하단 도구 바 또는 상단 '+ 위젯' 메뉴에서 원하는 도구를 클릭하여 자유롭게 띄워보세요." FontSize="13" Foreground="#CBD5E1" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBlock Text="(단축키: ESC - 선택된 위젯·필기 닫기 | F2 - 놀보드 닫기)" FontSize="11.5" Foreground="#94A3B8" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
         </Grid>
 
-        <!-- 3. Bottom Dock Toolbar (프리미엄 Floating Action Pill Dock) -->
+        <!-- 3. Bottom Dock Toolbar -->
         <Border Grid.Row="2" Background="#0A0E1A" BorderBrush="#1E293B" BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.RowDefinitions>
-                    <!-- Handle Bar (Fold/Unfold) -->
                     <RowDefinition Height="24" />
-                    <!-- Dock Body -->
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
@@ -268,21 +337,22 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- Left: 12 Widget Toggle Buttons -->
+                        <!-- NolBoard widget and classroom tool buttons -->
                         <WrapPanel Grid.Column="0" VerticalAlignment="Center">
                             <Button x:Name="BtnToolTimer" Content="⏱️ 수업 타이머" Click="DockToolBtn_Click" Tag="timer" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
-                            <Button x:Name="BtnToolPinball" Content="🌱 뽑기 레이스" Click="DockToolBtn_Click" Tag="pinball" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="32종 동물 아바타 뽑기 레이스"/>
+                            <Button x:Name="BtnToolPinball" Content="🌱 뽑기 레이스" Click="DockToolBtn_Click" Tag="pinball" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="별도 레이스 창에서 32종 동물 아바타로 발표자를 뽑습니다"/>
                             <Button x:Name="BtnToolPicker" Content="🎯 발표자 추첨" Click="DockToolBtn_Click" Tag="picker" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolDice" Content="🎲 주사위·통계" Click="DockToolBtn_Click" Tag="dice" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolWheel" Content="🎡 돌림판" Click="DockToolBtn_Click" Tag="wheel" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolScore" Content="🏆 모둠 점수판" Click="DockToolBtn_Click" Tag="score" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolDrawing" Content="✏️ 판서 메모장" Click="DockToolBtn_Click" Tag="drawing" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="자유롭게 이동 및 크기 조절이 가능한 미니 판서장 위젯"/>
+                            <Button x:Name="BtnToolBlackboard" Content="🟩 칠판" Click="DockToolBtn_Click" Tag="blackboard" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="보드 위에 별도로 띄워 쓰는 이동·크기조절 가능한 칠판 위젯"/>
                             <Button x:Name="BtnToolTimetable" Content="📅 오늘의 시간표" Click="DockToolBtn_Click" Tag="timetable" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolMeal" Content="🍱 오늘의 급식" Click="DockToolBtn_Click" Tag="meal" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolMemo" Content="📝 학급 알림장" Click="DockToolBtn_Click" Tag="memo" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolChecklist" Content="📋 과제 체크리스트" Click="DockToolBtn_Click" Tag="checklist" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="학생 제출물·과제 번호별 완료 체크"/>
-                            <Button x:Name="BtnToolQr" Content="📱 수업 QR코드" Click="DockToolBtn_Click" Tag="qr" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="수업 링크 및 자료 실시간 QR코드 생성"/>
-                            <Button x:Name="BtnToolWeather" Content="☀️ 날씨·미세먼지" Click="DockToolBtn_Click" Tag="weather" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="오늘의 날씨, 기온, 미세먼지 및 체육 실외활동 가이드"/>
+                            <Button x:Name="BtnToolQr" Content="📱 수업 QR코드" Click="DockToolBtn_Click" Tag="qr" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="수업 링크 및 자료 QR코드 생성"/>
+                            <Button x:Name="BtnToolWeather" Content="☀️ 날씨·미세먼지" Click="DockToolBtn_Click" Tag="weather" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="열 때 즉시 확인하고 열린 동안 15분마다 날씨와 미세먼지를 동기화합니다"/>
                             <Button x:Name="BtnToolDDay" Content="🎯 D-Day" Click="DockToolBtn_Click" Tag="dday" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="학급 목표 D-Day 카운트다운"/>
                         </WrapPanel>
 
