@@ -19,6 +19,14 @@ public enum RaceMapInteractionRole
     DynamicObstacle
 }
 
+public enum RaceColliderShape
+{
+    None,
+    Circle,
+    Capsule,
+    Composite
+}
+
 public sealed record RaceMapProp(
     string Key,
     string AssetName,
@@ -35,6 +43,15 @@ public sealed record RaceMapProp(
     RaceMapInteractionRole Interaction = RaceMapInteractionRole.None,
     string? GameplayColliderKey = null);
 
+public sealed record InteractiveRelicRule(
+    string Key,
+    string AssetName,
+    string Label,
+    string Period,
+    RaceMapInteractionRole Interaction,
+    RaceColliderShape ColliderShape,
+    string BehaviorKey);
+
 public sealed record PendingRaceArtAsset(
     string Key,
     string FileName,
@@ -46,10 +63,12 @@ public sealed record PendingRaceArtAsset(
 /// <summary>
 /// Lightweight visual-map contract for the vertical prehistoric picker race.
 ///
-/// What the user sees and what participates in the simulation are separate
-/// concerns. A prop may be decorative, or it may explicitly opt into a simple
-/// gameplay interaction such as a bumper, breakable obstacle or static collider.
-/// The WPF Image itself never owns collision.
+/// Visual composition and simulation are separate. Static map props use bitmap
+/// art and never rely on WPF hit-testing. When a visual must correspond to a
+/// physical obstacle (for example the river rocks), the mapping is explicit.
+/// Historical relics that are intentionally part of gameplay are described by
+/// InteractiveRelics so a relic can be decorative in one place and interactive
+/// in another without conflating its PNG bounds with its hitbox.
 ///
 /// Final map art must be transparent PNG/WebP. Do not add SVG/Path substitutes
 /// for missing historical assets; add the real asset to assets/race instead.
@@ -60,7 +79,6 @@ public static class PrehistoryRaceMapV2
 
     public static IReadOnlyList<RaceMapProp> Props { get; } = new[]
     {
-        // Paleolithic field: large scenery stays outside the racing line.
         new RaceMapProp(
             "paleo-root-left",
             "giant_root.png",
@@ -82,7 +100,6 @@ public static class PrehistoryRaceMapV2
             Label: "찍개",
             Period: "구석기"),
 
-        // Paleolithic cave/rock corridor: use real transparent PNG scenery.
         new RaceMapProp(
             "paleo-fallen-log-left",
             "fallen_log.png",
@@ -103,8 +120,9 @@ public static class PrehistoryRaceMapV2
             RaceMapVisualRole.Decoration,
             Opacity: 0.92),
 
-        // Neolithic river: these visuals correspond to the existing rail
-        // collision islands. The image itself never participates in WPF hit-test.
+        // These PNG stones intentionally correspond to the existing lightweight
+        // rail/island collision geometry. The image bounds themselves are never
+        // used for collision.
         new RaceMapProp(
             "river-rock-main",
             "river_stone.png",
@@ -142,17 +160,15 @@ public static class PrehistoryRaceMapV2
             Label: "간석기",
             Period: "신석기"),
 
-        // Neolithic village/coast. Pottery remains a real race mechanic: it can
-        // obstruct a racer, shatter on impact and create a reversal moment.
+        // This is a map-side landmark. The actual breakable pottery obstacles are
+        // gameplay objects created by the simulation and use the same art family.
         new RaceMapProp(
             "neo-pottery-left",
             "cartoon_comb_pottery.png",
             18, 2060, 110, 135, -9,
             RaceMapVisualRole.Landmark,
             Label: "빗살무늬 토기",
-            Period: "신석기",
-            Interaction: RaceMapInteractionRole.Breakable,
-            GameplayColliderKey: "breakable-pottery"),
+            Period: "신석기"),
         new RaceMapProp(
             "neo-log-right",
             "fallen_log_right.png",
@@ -160,7 +176,6 @@ public static class PrehistoryRaceMapV2
             RaceMapVisualRole.Decoration,
             Opacity: 0.95),
 
-        // Bronze Age: keep the finale visually legible and uncluttered.
         new RaceMapProp(
             "bronze-dolmen-left",
             "cartoon_dolmen.png",
@@ -176,8 +191,6 @@ public static class PrehistoryRaceMapV2
             FlipX: true,
             Opacity: 0.92),
 
-        // Very light foreground occlusion at the outer edges only. These never
-        // cover the center racing line and never participate in physics.
         new RaceMapProp(
             "foreground-branch-left",
             "wood_branch.png",
@@ -190,6 +203,47 @@ public static class PrehistoryRaceMapV2
             560, 2790, 190, 115, 4,
             RaceMapVisualRole.Foreground,
             Opacity: 0.82)
+    };
+
+    /// <summary>
+    /// Relics that are intentionally allowed to affect the race. These rules do
+    /// not make every occurrence interactive; level placement decides where the
+    /// mechanic is actually instantiated.
+    /// </summary>
+    public static IReadOnlyList<InteractiveRelicRule> InteractiveRelics { get; } = new[]
+    {
+        new InteractiveRelicRule(
+            "handaxe-bumper",
+            "cartoon_handaxe.png",
+            "주먹도끼",
+            "구석기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "stone-tool-bumper"),
+        new InteractiveRelicRule(
+            "chopper-bumper",
+            "cartoon_chipped_stone.png",
+            "찍개",
+            "구석기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "stone-tool-bumper"),
+        new InteractiveRelicRule(
+            "polished-stone-bumper",
+            "cartoon_polished_stone.png",
+            "간석기",
+            "신석기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "stone-tool-bumper"),
+        new InteractiveRelicRule(
+            "comb-pottery-breakable",
+            "cartoon_comb_pottery.png",
+            "빗살무늬 토기",
+            "신석기",
+            RaceMapInteractionRole.Breakable,
+            RaceColliderShape.Circle,
+            "breakable-pottery")
     };
 
     /// <summary>
