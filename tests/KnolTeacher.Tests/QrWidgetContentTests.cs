@@ -16,15 +16,19 @@ public class QrWidgetContentTests
         Assert.Equal(expected, QrWidgetView.NormalizeQrContent(raw));
     }
 
-    [Fact]
-    public void NormalizeQrContent_BlankUsesSafeDefault()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void NormalizeQrContent_BlankOrNullUsesSafeDefault(string? raw)
     {
-        Assert.Equal("https://pinky-ne.com/", QrWidgetView.NormalizeQrContent("   "));
+        Assert.Equal("https://pinky-ne.com/", QrWidgetView.NormalizeQrContent(raw));
     }
 
     [Fact]
     public void LongContentWarning_OnlyAppearsForLongPayloads()
     {
+        Assert.False(QrWidgetView.ShouldWarnAboutLongContent(null));
         Assert.False(QrWidgetView.ShouldWarnAboutLongContent(new string('a', 139)));
         Assert.True(QrWidgetView.ShouldWarnAboutLongContent(new string('a', 140)));
     }
