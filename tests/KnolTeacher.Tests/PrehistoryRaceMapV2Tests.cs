@@ -64,7 +64,8 @@ public class PrehistoryRaceMapV2Tests
         Assert.NotEmpty(PrehistoryRaceMapV2.InteractiveRelics);
 
         InteractiveRelicRule pottery = Assert.Single(
-            PrehistoryRaceMapV2.InteractiveRelics.Where(rule => rule.Key == "comb-pottery-breakable"));
+            PrehistoryRaceMapV2.InteractiveRelics,
+            rule => rule.Key == "comb-pottery-breakable");
         Assert.Equal(RaceMapInteractionRole.Breakable, pottery.Interaction);
         Assert.Equal(RaceColliderShape.Circle, pottery.ColliderShape);
         Assert.Equal("breakable-pottery", pottery.BehaviorKey);
@@ -87,7 +88,8 @@ public class PrehistoryRaceMapV2Tests
     public void MapSidePotteryLandmark_DoesNotPretendItsImageBoundsAreTheHitbox()
     {
         RaceMapProp potteryLandmark = Assert.Single(
-            PrehistoryRaceMapV2.Props.Where(prop => prop.Key == "neo-pottery-left"));
+            PrehistoryRaceMapV2.Props,
+            prop => prop.Key == "neo-pottery-left");
 
         Assert.Equal(RaceMapVisualRole.Landmark, potteryLandmark.Role);
         Assert.Equal(RaceMapInteractionRole.None, potteryLandmark.Interaction);
@@ -102,7 +104,8 @@ public class PrehistoryRaceMapV2Tests
     public void PendingPlainPottery_IsPlannedAsBreakable()
     {
         PendingRaceArtAsset plainPottery = Assert.Single(
-            PrehistoryRaceMapV2.PendingArtAssets.Where(asset => asset.Key == "plain-pottery"));
+            PrehistoryRaceMapV2.PendingArtAssets,
+            asset => asset.Key == "plain-pottery");
         Assert.Equal(RaceMapInteractionRole.Breakable, plainPottery.IntendedInteraction);
     }
 
