@@ -38,7 +38,7 @@ public class PrehistoryRaceMapV2Tests
     }
 
     [Fact]
-    public void InteractiveProps_ExplicitlyDeclareTheirGameplayContract()
+    public void InteractiveMapProps_ExplicitlyDeclareTheirGameplayContract()
     {
         var interactive = PrehistoryRaceMapV2.Props
             .Where(prop => prop.Interaction != RaceMapInteractionRole.None)
@@ -59,15 +59,48 @@ public class PrehistoryRaceMapV2Tests
     }
 
     [Fact]
-    public void BreakablePottery_RemainsAnInteractiveRelic()
+    public void InteractiveRelics_CanBeBumpersOrBreakables()
     {
-        RaceMapProp pottery = Assert.Single(
+        Assert.NotEmpty(PrehistoryRaceMapV2.InteractiveRelics);
+
+        InteractiveRelicRule pottery = Assert.Single(
+            PrehistoryRaceMapV2.InteractiveRelics.Where(rule => rule.Key == "comb-pottery-breakable"));
+        Assert.Equal(RaceMapInteractionRole.Breakable, pottery.Interaction);
+        Assert.Equal(RaceColliderShape.Circle, pottery.ColliderShape);
+        Assert.Equal("breakable-pottery", pottery.BehaviorKey);
+
+        string[] bumperRelics = PrehistoryRaceMapV2.InteractiveRelics
+            .Where(rule => rule.Interaction == RaceMapInteractionRole.StaticBumper)
+            .Select(rule => rule.Label)
+            .ToArray();
+
+        Assert.Contains("주먹도끼", bumperRelics);
+        Assert.Contains("찍개", bumperRelics);
+        Assert.Contains("간석기", bumperRelics);
+
+        Assert.All(
+            PrehistoryRaceMapV2.InteractiveRelics,
+            rule => Assert.NotEqual(RaceColliderShape.None, rule.ColliderShape));
+    }
+
+    [Fact]
+    public void MapSidePotteryLandmark_DoesNotPretendItsImageBoundsAreTheHitbox()
+    {
+        RaceMapProp potteryLandmark = Assert.Single(
             PrehistoryRaceMapV2.Props.Where(prop => prop.Key == "neo-pottery-left"));
 
-        Assert.Equal(RaceMapVisualRole.Landmark, pottery.Role);
-        Assert.Equal(RaceMapInteractionRole.Breakable, pottery.Interaction);
-        Assert.Equal("breakable-pottery", pottery.GameplayColliderKey);
+        Assert.Equal(RaceMapVisualRole.Landmark, potteryLandmark.Role);
+        Assert.Equal(RaceMapInteractionRole.None, potteryLandmark.Interaction);
+        Assert.Null(potteryLandmark.GameplayColliderKey);
 
+        Assert.Contains(
+            PrehistoryRaceMapV2.InteractiveRelics,
+            rule => rule.Label == "빗살무늬 토기" && rule.Interaction == RaceMapInteractionRole.Breakable);
+    }
+
+    [Fact]
+    public void PendingPlainPottery_IsPlannedAsBreakable()
+    {
         PendingRaceArtAsset plainPottery = Assert.Single(
             PrehistoryRaceMapV2.PendingArtAssets.Where(asset => asset.Key == "plain-pottery"));
         Assert.Equal(RaceMapInteractionRole.Breakable, plainPottery.IntendedInteraction);
