@@ -12,6 +12,7 @@ namespace KnolTeacher.Desktop.Views.Windows;
 public partial class StudentPickerWindow
 {
     private bool _prehistoryMapV2Applied;
+    private bool _raceMapV2GameplayNormalized;
     private PrehistoryRaceMapRenderer? _prehistoryMapRenderer;
 
     static StudentPickerWindow()
@@ -31,12 +32,12 @@ public partial class StudentPickerWindow
 
         window.ApplyPrehistoryMapV2();
 
-        // Instance Loaded handlers create the gameplay obstacles/racers. Normalize
-        // their WPF hit-testing after that setup finishes; gameplay collision is
-        // handled only by the lightweight simulation loop.
+        // The instance Loaded handler builds the gameplay objects after the class
+        // handler. Normalize them once setup has completed. WPF hit-testing is
+        // never used as the race collision system.
         _ = window.Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
-            new Action(window.NormalizeGameplayVisualHitTesting));
+            new Action(window.NormalizeRaceMapV2Gameplay));
     }
 
     private void ApplyPrehistoryMapV2()
@@ -92,8 +93,6 @@ public partial class StudentPickerWindow
             }
         }
 
-        // XAML scenery is visual only. WPF mouse hit testing must never be used as
-        // a substitute for race physics/collision.
         foreach (Image image in RaceCanvas.Children.OfType<Image>())
         {
             image.IsHitTestVisible = false;
@@ -147,8 +146,14 @@ public partial class StudentPickerWindow
         }
     }
 
-    private void NormalizeGameplayVisualHitTesting()
+    private void NormalizeRaceMapV2Gameplay()
     {
+        if (!_raceMapV2GameplayNormalized)
+        {
+            _raceMapV2GameplayNormalized = true;
+            ReplaceRelicCollidersWithNaturalObstacles();
+        }
+
         foreach (RaceBumper bumper in _bumpers)
         {
             bumper.Visual.IsHitTestVisible = false;
@@ -168,11 +173,58 @@ public partial class StudentPickerWindow
         {
             squirrel.BranchVisual.IsHitTestVisible = false;
             squirrel.SquirrelVisual.IsHitTestVisible = false;
+
+            // Projectiles are created after Loaded, so normalize them at creation
+            // time as well. The simulation's circle collision remains authoritative.
+            squirrel.OnThrowProjectile = projectile =>
+            {
+                projectile.Visual.IsHitTestVisible = false;
+                _projectiles.Add(projectile);
+                RaceCanvas.Children.Add(projectile.Visual);
+            };
         }
 
         foreach (ThrownProjectile projectile in _projectiles)
         {
             projectile.Visual.IsHitTestVisible = false;
         }
+    }
+
+    private void ReplaceRelicCollidersWithNaturalObstacles()
+    {
+        // Earlier prototypes used hand axes, polished stones and comb pottery as
+        // physical bumpers. In the final map those are learning landmarks, not
+        // objects that racers should smash into. Remove the prototype colliders.
+        foreach (RaceBumper bumper in _bumpers.ToArray())
+        {
+            RaceCanvas.Children.Remove(bumper.Visual);
+        }
+        _bumpers.Clear();
+
+        foreach (BreakablePottery pottery in _potteries.ToArray())
+        {
+            RaceCanvas.Children.Remove(pottery.Visual);
+        }
+        _potteries.Clear();
+
+        // A small set of neutral rock bumpers keeps the race playful without
+        // turning every decorative asset into physics. Radius stays intentionally
+        // small so the course does not become a pinball bottleneck.
+        AddNaturalRockBumper(255, 340, 15);
+        AddNaturalRockBumper(430, 455, 15);
+        AddNaturalRockBumper(225, 760, 15);
+        AddNaturalRockBumper(385, 1030, 15);
+        AddNaturalRockBumper(470, 1230, 15);
+        AddNaturalRockBumper(250, 2070, 15);
+        AddNaturalRockBumper(455, 2310, 15);
+        AddNaturalRockBumper(235, 2650, 15);
+        AddNaturalRockBumper(420, 2940, 15);
+        AddNaturalRockBumper(330, 3180, 14);
+    }
+
+    private void AddNaturalRockBumper(double x, double y, double radius)
+    {
+        AddBumper(x, y, radius, "cartoon_pebble_bumper.png");
+        _bumpers[^1].Visual.IsHitTestVisible = false;
     }
 }
