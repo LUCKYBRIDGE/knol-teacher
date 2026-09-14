@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
 using KnolTeacher.Desktop.Models;
+using KnolTeacher.Desktop.Views.Windows;
 using Xunit;
 
 namespace KnolTeacher.Tests;
@@ -282,4 +284,90 @@ public class PrehistoryRaceMapV2Tests
         Assert.All(foreground, prop => Assert.Equal(RaceMapInteractionRole.None, prop.Interaction));
         Assert.All(foreground, prop => Assert.Null(prop.GameplayColliderKey));
     }
+
+    [Fact]
+    public void ProducedRelicPngAssets_ExistOnDiskAndAreValidPng()
+    {
+        string raceDir = ResolveAssetRaceDirectory();
+        Assert.True(Directory.Exists(raceDir), $"assets/race directory must exist at {raceDir}");
+
+        byte[] pngHeader = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+
+        foreach (PendingRaceArtAsset asset in PrehistoryRaceMapV2.PendingArtAssets)
+        {
+            string filePath = Path.Combine(raceDir, asset.FileName);
+            Assert.True(File.Exists(filePath), $"Relic asset file {asset.FileName} must exist on disk");
+
+            var fileInfo = new FileInfo(filePath);
+            Assert.True(fileInfo.Length > 0, $"Relic asset {asset.FileName} must not be empty");
+
+            byte[] header = new byte[8];
+            using (var stream = File.OpenRead(filePath))
+            {
+                int read = stream.Read(header, 0, header.Length);
+                Assert.Equal(8, read);
+            }
+
+            Assert.Equal(pngHeader, header);
+        }
+    }
+
+    [Fact]
+    public void LandmarkProps_StayOutsideDrivableRoad()
+    {
+        var landmarks = PrehistoryRaceMapV2.Props
+            .Where(prop => prop.Role == RaceMapVisualRole.Landmark)
+            .ToArray();
+
+        Assert.NotEmpty(landmarks);
+
+        foreach (RaceMapProp prop in landmarks)
+        {
+            double centerY = prop.Y + prop.Height / 2.0;
+            double centerX = prop.X + prop.Width / 2.0;
+
+            StudentPickerWindow.GetTrackBoundaries(centerY, out double left, out double right);
+            Assert.True(
+                centerX < left || centerX > right,
+                $"{prop.Key} center ({centerX:0.##}) must remain outside drivable road [{left:0.##}, {right:0.##}] at Y={centerY:0.##}");
+        }
+    }
+
+    [Fact]
+    public void InteractivePlacements_StayWithinDrivableRoad()
+    {
+        Assert.NotEmpty(PrehistoryRaceMapV2.InteractiveRelicPlacements);
+
+        foreach (InteractiveRelicPlacement placement in PrehistoryRaceMapV2.InteractiveRelicPlacements)
+        {
+            StudentPickerWindow.GetTrackBoundaries(placement.Y, out double left, out double right);
+            Assert.True(
+                placement.X >= left && placement.X <= right,
+                $"{placement.Key} ({placement.X:0.##}) must stay within drivable road [{left:0.##}, {right:0.##}] at Y={placement.Y:0.##}");
+        }
+    }
+
+    private static string ResolveAssetRaceDirectory()
+    {
+        string? dir = AppContext.BaseDirectory;
+        while (dir != null)
+        {
+            string candidate = Path.Combine(dir, "src", "KnolTeacher.Desktop", "assets", "race");
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            string directCandidate = Path.Combine(dir, "assets", "race");
+            if (Directory.Exists(directCandidate))
+            {
+                return directCandidate;
+            }
+
+            dir = Path.GetDirectoryName(dir);
+        }
+
+        throw new DirectoryNotFoundException("Could not locate assets/race directory.");
+    }
 }
+

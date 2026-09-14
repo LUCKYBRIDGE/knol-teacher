@@ -387,9 +387,10 @@ public static class PrehistoryRaceMapV2
     };
 
     /// <summary>
-    /// Historical assets intentionally left as explicit art slots. They are not
-    /// replaced with programmer-drawn SVG/Path approximations. The reserved prop
-    /// slots above define where each illustration will appear once produced.
+    /// Historical relic assets defined with explicit production specifications.
+    /// These 6 assets are now produced as transparent PNGs in assets/race/ and
+    /// verified on disk. This list remains the authoritative specification contract
+    /// for dimensions, padding ratios, and landmark slot mappings.
     /// </summary>
     public static IReadOnlyList<PendingRaceArtAsset> PendingArtAssets { get; } = new[]
     {
