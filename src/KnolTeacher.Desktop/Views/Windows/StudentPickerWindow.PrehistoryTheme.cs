@@ -224,20 +224,21 @@ public partial class StudentPickerWindow
                         placement.Y,
                         placement.ColliderRadius,
                         rule.AssetName);
-                    ApplyMapV2GameplayVisualLayout(_bumpers[^1].Visual, placement);
+                    ApplyMapV2GameplayVisualLayout(_bumpers[^1].Visual, placement, rule.Label);
                     break;
 
                 case RaceMapInteractionRole.Breakable
                     when rule.ColliderShape == RaceColliderShape.Circle &&
                          string.Equals(rule.BehaviorKey, "breakable-pottery", StringComparison.Ordinal):
                     // BreakablePottery intentionally keeps the established shatter,
-                    // rebound and dizzy/overtake mechanic. Only its placement and
-                    // display footprint are changed by Map v2.
+                    // rebound and dizzy/overtake mechanic. Now supports both Neolithic
+                    // comb pottery and Bronze Age plain pottery.
                     AddBreakablePottery(
                         placement.X,
                         placement.Y,
-                        placement.ColliderRadius);
-                    ApplyMapV2GameplayVisualLayout(_potteries[^1].Visual, placement);
+                        placement.ColliderRadius,
+                        rule.AssetName);
+                    ApplyMapV2GameplayVisualLayout(_potteries[^1].Visual, placement, rule.Label);
                     break;
             }
         }
@@ -245,7 +246,8 @@ public partial class StudentPickerWindow
 
     private static void ApplyMapV2GameplayVisualLayout(
         Grid visual,
-        InteractiveRelicPlacement placement)
+        InteractiveRelicPlacement placement,
+        string? label = null)
     {
         visual.Width = placement.VisualWidth;
         visual.Height = placement.VisualHeight;
@@ -257,6 +259,33 @@ public partial class StudentPickerWindow
             image.Height = placement.VisualHeight;
             image.Stretch = Stretch.Uniform;
             image.IsHitTestVisible = false;
+        }
+
+        // Add a clean, subtle educational badge under the in-track obstacle
+        if (!string.IsNullOrWhiteSpace(label) && !visual.Children.OfType<Border>().Any(b => b.Tag as string == "relic-label"))
+        {
+            var badge = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(190, 15, 23, 42)),
+                BorderBrush = new SolidColorBrush(Color.FromArgb(200, 245, 158, 11)),
+                BorderThickness = new Thickness(0.8),
+                CornerRadius = new CornerRadius(3),
+                Padding = new Thickness(3, 1, 3, 1),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 0, -4),
+                IsHitTestVisible = false,
+                Tag = "relic-label"
+            };
+            badge.Child = new TextBlock
+            {
+                Text = label,
+                Foreground = new SolidColorBrush(Color.FromRgb(254, 243, 199)),
+                FontSize = 8.5,
+                FontWeight = FontWeights.Bold,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            visual.Children.Add(badge);
         }
 
         Canvas.SetLeft(visual, placement.X - placement.VisualWidth / 2.0);

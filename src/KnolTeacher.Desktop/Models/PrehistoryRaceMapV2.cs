@@ -287,12 +287,13 @@ public static class PrehistoryRaceMapV2
     };
 
     /// <summary>
-    /// Relics that are intentionally allowed to affect the race. These rules do
-    /// not make every occurrence interactive; level placement decides where the
-    /// mechanic is actually instantiated.
+    /// Relics that are intentionally allowed to affect the race as physical obstacles.
+    /// All three eras (Paleolithic, Neolithic, Bronze Age) have their historical relics
+    /// represented as interactive bumpers, breakable potteries, or course obstacles.
     /// </summary>
     public static IReadOnlyList<InteractiveRelicRule> InteractiveRelics { get; } = new[]
     {
+        // --- 구석기 시대 유물 방해물 ---
         new InteractiveRelicRule(
             "handaxe-bumper",
             "cartoon_handaxe.png",
@@ -310,6 +311,16 @@ public static class PrehistoryRaceMapV2
             RaceColliderShape.Circle,
             "stone-tool-bumper"),
         new InteractiveRelicRule(
+            "bone-needle-bumper",
+            "prehistoric_bone_needle.png",
+            "뼈바늘",
+            "구석기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "bone-needle-bumper"),
+
+        // --- 신석기 시대 유물 방해물 ---
+        new InteractiveRelicRule(
             "polished-stone-bumper",
             "cartoon_polished_stone.png",
             "간석기",
@@ -318,54 +329,147 @@ public static class PrehistoryRaceMapV2
             RaceColliderShape.Circle,
             "stone-tool-bumper"),
         new InteractiveRelicRule(
+            "spindle-whorl-bumper",
+            "prehistoric_spindle_whorl.png",
+            "가락바퀴",
+            "신석기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "spindle-whorl-bumper"),
+        new InteractiveRelicRule(
+            "shell-mask-bumper",
+            "prehistoric_shell_mask.png",
+            "조개 껍데기 가면",
+            "신석기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "shell-mask-bumper"),
+        new InteractiveRelicRule(
             "comb-pottery-breakable",
             "cartoon_comb_pottery.png",
             "빗살무늬 토기",
             "신석기",
             RaceMapInteractionRole.Breakable,
             RaceColliderShape.Circle,
-            "breakable-pottery")
+            "breakable-pottery"),
+
+        // --- 청동기 시대 유물 방해물 ---
+        new InteractiveRelicRule(
+            "half-moon-knife-bumper",
+            "prehistoric_half_moon_stone_knife.png",
+            "반달 돌칼",
+            "청동기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "half-moon-knife-bumper"),
+        new InteractiveRelicRule(
+            "plain-pottery-breakable",
+            "prehistoric_plain_pottery.png",
+            "민무늬 토기",
+            "청동기",
+            RaceMapInteractionRole.Breakable,
+            RaceColliderShape.Circle,
+            "breakable-pottery"),
+        new InteractiveRelicRule(
+            "bronze-dagger-bumper",
+            "prehistoric_bronze_dagger.png",
+            "비파형 동검",
+            "청동기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "bronze-dagger-bumper"),
+        new InteractiveRelicRule(
+            "dolmen-bumper",
+            "cartoon_dolmen.png",
+            "고인돌",
+            "청동기",
+            RaceMapInteractionRole.StaticBumper,
+            RaceColliderShape.Circle,
+            "dolmen-bumper")
     };
 
     /// <summary>
-    /// Concrete gameplay occurrences. Their eras intentionally match the map
-    /// zones: Paleolithic tools stay above Y=1200, while polished stone and comb
-    /// pottery stay in Neolithic zones. No comb pottery is used to plug the
-    /// 80-pixel Bronze Age finish chute.
+    /// Concrete gameplay occurrences designed directly into the race course.
+    /// Their eras strictly match the map zones: Paleolithic (Y &lt; 1200), Neolithic (1200..2400),
+    /// and Bronze Age (2400..3500). Every obstacle is positioned within drivable road bounds
+    /// with sufficient clearance on both sides to prevent bottlenecks.
     /// </summary>
     public static IReadOnlyList<InteractiveRelicPlacement> InteractiveRelicPlacements { get; } = new[]
     {
+        // 1. 구석기 구역 (Paleolithic: Y = 200 ~ 1200)
         new InteractiveRelicPlacement(
             "paleo-handaxe-bumper-1", "handaxe-bumper",
             340, 330, 15, 48, 48),
         new InteractiveRelicPlacement(
             "paleo-chopper-bumper-1", "chopper-bumper",
-            180, 410, 15, 48, 48),
+            230, 420, 15, 48, 48),
         new InteractiveRelicPlacement(
             "paleo-handaxe-bumper-2", "handaxe-bumper",
-            210, 760, 15, 48, 48),
+            360, 660, 15, 48, 48),
         new InteractiveRelicPlacement(
             "paleo-chopper-bumper-2", "chopper-bumper",
-            460, 1040, 15, 48, 48),
+            240, 760, 15, 48, 48),
+        new InteractiveRelicPlacement(
+            "paleo-bone-needle-bumper-1", "bone-needle-bumper",
+            280, 890, 14, 40, 56),
+        new InteractiveRelicPlacement(
+            "paleo-chopper-bumper-3", "chopper-bumper",
+            420, 1050, 15, 48, 48),
 
+        // 2. 신석기 구역 (Neolithic: Y = 1200 ~ 2400)
         new InteractiveRelicPlacement(
             "neo-polished-bumper-1", "polished-stone-bumper",
-            500, 1280, 15, 48, 48),
-        new InteractiveRelicPlacement(
-            "neo-pottery-breakable-1", "comb-pottery-breakable",
-            220, 1660, 16, 50, 62),
-        new InteractiveRelicPlacement(
-            "neo-pottery-breakable-2", "comb-pottery-breakable",
-            465, 1740, 16, 50, 62),
-        new InteractiveRelicPlacement(
-            "neo-pottery-breakable-3", "comb-pottery-breakable",
-            250, 2030, 16, 50, 62),
-        new InteractiveRelicPlacement(
-            "neo-pottery-breakable-4", "comb-pottery-breakable",
-            440, 2030, 16, 50, 62),
+            380, 1320, 15, 48, 48),
         new InteractiveRelicPlacement(
             "neo-polished-bumper-2", "polished-stone-bumper",
-            255, 2260, 15, 48, 48)
+            195, 1540, 15, 48, 48),
+        new InteractiveRelicPlacement(
+            "neo-spindle-bumper-1", "spindle-whorl-bumper",
+            485, 1540, 15, 48, 48),
+        new InteractiveRelicPlacement(
+            "neo-pottery-breakable-1", "comb-pottery-breakable",
+            230, 1680, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "neo-spindle-bumper-2", "spindle-whorl-bumper",
+            450, 1760, 15, 48, 48),
+        new InteractiveRelicPlacement(
+            "neo-shell-mask-bumper-1", "shell-mask-bumper",
+            340, 1950, 16, 50, 56),
+        new InteractiveRelicPlacement(
+            "neo-pottery-breakable-2", "comb-pottery-breakable",
+            260, 2040, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "neo-pottery-breakable-3", "comb-pottery-breakable",
+            420, 2040, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "neo-shell-mask-bumper-2", "shell-mask-bumper",
+            330, 2260, 16, 50, 56),
+
+        // 3. 청동기 구역 (Bronze Age: Y = 2400 ~ 3500)
+        new InteractiveRelicPlacement(
+            "bronze-half-moon-bumper-1", "half-moon-knife-bumper",
+            290, 2520, 15, 52, 44),
+        new InteractiveRelicPlacement(
+            "bronze-half-moon-bumper-2", "half-moon-knife-bumper",
+            440, 2680, 15, 52, 44),
+        new InteractiveRelicPlacement(
+            "bronze-plain-pottery-breakable-1", "plain-pottery-breakable",
+            340, 2820, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "bronze-dagger-bumper-1", "bronze-dagger-bumper",
+            270, 2940, 15, 46, 60),
+        new InteractiveRelicPlacement(
+            "bronze-dagger-bumper-2", "bronze-dagger-bumper",
+            420, 2940, 15, 46, 60),
+        new InteractiveRelicPlacement(
+            "bronze-dolmen-bumper-1", "dolmen-bumper",
+            340, 3080, 20, 64, 52),
+        new InteractiveRelicPlacement(
+            "bronze-plain-pottery-breakable-2", "plain-pottery-breakable",
+            315, 3190, 16, 50, 62),
+        new InteractiveRelicPlacement(
+            "bronze-plain-pottery-breakable-3", "plain-pottery-breakable",
+            365, 3190, 16, 50, 62)
     };
 
     /// <summary>

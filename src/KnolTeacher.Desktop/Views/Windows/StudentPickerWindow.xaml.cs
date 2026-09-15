@@ -481,9 +481,9 @@ public partial class StudentPickerWindow : Window
         RaceCanvas.Children.Add(bumper.Visual);
     }
 
-    private void AddBreakablePottery(double x, double y, double radius)
+    private void AddBreakablePottery(double x, double y, double radius, string assetName = "cartoon_comb_pottery.png")
     {
-        var pot = new BreakablePottery(x, y, radius);
+        var pot = new BreakablePottery(x, y, radius, assetName);
         _potteries.Add(pot);
         RaceCanvas.Children.Add(pot.Visual);
     }
@@ -2529,15 +2529,17 @@ public class BreakablePottery
     public double Radius { get; }
     public bool IsBroken { get; private set; }
     public Grid Visual { get; }
+    public string AssetName { get; }
 
     private readonly ScaleTransform _scale;
     private readonly RotateTransform _rot;
 
-    public BreakablePottery(double x, double y, double radius)
+    public BreakablePottery(double x, double y, double radius, string assetName = "cartoon_comb_pottery.png")
     {
         X = x;
         Y = y;
         Radius = radius;
+        AssetName = string.IsNullOrWhiteSpace(assetName) ? "cartoon_comb_pottery.png" : assetName;
 
         Visual = new Grid
         {
@@ -2557,7 +2559,7 @@ public class BreakablePottery
         {
             Width = radius * 2.2,
             Height = radius * 2.5,
-            Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_comb_pottery.png")),
+            Source = new BitmapImage(new Uri($"pack://application:,,,/assets/race/{AssetName}")),
             IsHitTestVisible = false
         };
         RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
@@ -2594,14 +2596,22 @@ public class BreakablePottery
 
         // Spawn 10 terracotta pottery shards flying outward! (와장창 깨지는 화려한 파편 효과)
         var rand = new Random();
+        bool isPlainPottery = AssetName.Contains("plain", StringComparison.OrdinalIgnoreCase);
+        Color shardBg = isPlainPottery
+            ? Color.FromArgb(235, 200, 157, 108) // Bronze plain pottery (tan/earthenware)
+            : Color.FromArgb(235, 180, 83, 9);   // Neolithic comb pottery (terracotta)
+        Color shardBorder = isPlainPottery
+            ? Color.FromArgb(255, 120, 85, 45)
+            : Color.FromArgb(255, 69, 26, 3);
+
         for (int i = 0; i < 10; i++)
         {
             var shard = new Border
             {
                 Width = rand.Next(6, 12),
                 Height = rand.Next(6, 12),
-                Background = new SolidColorBrush(Color.FromArgb(235, 180, 83, 9)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(255, 69, 26, 3)),
+                Background = new SolidColorBrush(shardBg),
+                BorderBrush = new SolidColorBrush(shardBorder),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(2),
                 IsHitTestVisible = false

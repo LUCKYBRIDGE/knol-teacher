@@ -104,11 +104,49 @@ public class PrehistoryRaceMapV2Tests
 
         Assert.Contains("주먹도끼", bumperRelics);
         Assert.Contains("찍개", bumperRelics);
+        Assert.Contains("뼈바늘", bumperRelics);
         Assert.Contains("간석기", bumperRelics);
+        Assert.Contains("가락바퀴", bumperRelics);
+        Assert.Contains("조개 껍데기 가면", bumperRelics);
+        Assert.Contains("반달 돌칼", bumperRelics);
+        Assert.Contains("비파형 동검", bumperRelics);
+        Assert.Contains("고인돌", bumperRelics);
+
+        string[] breakableRelics = PrehistoryRaceMapV2.InteractiveRelics
+            .Where(rule => rule.Interaction == RaceMapInteractionRole.Breakable)
+            .Select(rule => rule.Label)
+            .ToArray();
+
+        Assert.Contains("빗살무늬 토기", breakableRelics);
+        Assert.Contains("민무늬 토기", breakableRelics);
 
         Assert.All(
             PrehistoryRaceMapV2.InteractiveRelics,
             rule => Assert.NotEqual(RaceColliderShape.None, rule.ColliderShape));
+    }
+
+    [Fact]
+    public void InteractiveRelics_RepresentAllThreeErasOnTheCourse()
+    {
+        var periods = PrehistoryRaceMapV2.InteractiveRelics
+            .Select(rule => rule.Period)
+            .ToHashSet();
+
+        Assert.Contains("구석기", periods);
+        Assert.Contains("신석기", periods);
+        Assert.Contains("청동기", periods);
+
+        var placedPeriods = PrehistoryRaceMapV2.InteractiveRelicPlacements
+            .Select(placement =>
+            {
+                var rule = PrehistoryRaceMapV2.InteractiveRelics.First(r => r.Key == placement.RuleKey);
+                return rule.Period;
+            })
+            .ToHashSet();
+
+        Assert.Contains("구석기", placedPeriods);
+        Assert.Contains("신석기", placedPeriods);
+        Assert.Contains("청동기", placedPeriods);
     }
 
     [Fact]
