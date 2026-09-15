@@ -127,6 +127,13 @@ public static class PrehistoryRaceThemeSpec
             2140,
             true),
         new PrehistoryArtifactLandmark(
+            "comb-pottery",
+            "빗살무늬 토기",
+            "신석기",
+            "곡식과 음식을 조리하고 저장하던 대표적인 신석기 토기",
+            1950,
+            false),
+        new PrehistoryArtifactLandmark(
             "half-moon-stone-knife",
             "반달 돌칼",
             "청동기",

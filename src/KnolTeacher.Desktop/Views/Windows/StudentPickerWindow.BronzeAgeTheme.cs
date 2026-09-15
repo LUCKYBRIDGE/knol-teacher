@@ -265,33 +265,8 @@ public partial class StudentPickerWindow
 
     private void PopulateBronzeAgeArtifactCards()
     {
-        foreach (var border in RaceCanvas.Children.OfType<Border>())
-        {
-            if (border.Child is not Grid grid)
-            {
-                continue;
-            }
-
-            var title = grid.Children
-                .OfType<StackPanel>()
-                .SelectMany(panel => panel.Children.OfType<TextBlock>())
-                .FirstOrDefault(text => text.Text.StartsWith("청동기 · ", StringComparison.Ordinal));
-
-            if (title == null)
-            {
-                continue;
-            }
-
-            border.BorderBrush = BrushFrom("#8A633C");
-            var iconCanvas = grid.Children.OfType<Canvas>().FirstOrDefault();
-            if (iconCanvas == null || iconCanvas.Children.Count > 0)
-            {
-                continue;
-            }
-
-            string name = title.Text["청동기 · ".Length..];
-            PopulateBronzeArtifactIcon(iconCanvas, name);
-        }
+        // 사용자 요구사항: 유물 아래 한글 이름 라벨 제거
+        // 10종 유물은 맵 내부의 실제 충돌 장애물/구조물로 다양한 각도로 직접 배치됩니다.
     }
 
     private static void PopulateBronzeArtifactIcon(Canvas canvas, string name)
