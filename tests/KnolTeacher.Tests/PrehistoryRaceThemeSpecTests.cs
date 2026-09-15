@@ -83,4 +83,31 @@ public class PrehistoryRaceThemeSpecTests
         Assert.Contains("고인돌", lastZone.Title);
         Assert.Equal(PrehistoryRaceThemeSpec.TrackHeight, lastZone.EndY);
     }
+
+    [Fact]
+    public void Artifacts_HaveUniqueKeysAndCoverAllThreeEras()
+    {
+        var artifacts = PrehistoryRaceThemeSpec.Artifacts;
+        var keys = artifacts.Select(a => a.Key).ToHashSet();
+        Assert.Equal(artifacts.Count, keys.Count);
+
+        string[] expectedKeys =
+        {
+            "chopper",
+            "handaxe",
+            "bone-needle",
+            "polished-stone",
+            "spindle-whorl",
+            "shell-mask",
+            "half-moon-stone-knife",
+            "plain-pottery",
+            "bronze-dagger",
+            "dolmen"
+        };
+
+        foreach (var k in expectedKeys)
+        {
+            Assert.Contains(k, keys);
+        }
+    }
 }

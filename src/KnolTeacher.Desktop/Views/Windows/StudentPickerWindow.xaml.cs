@@ -402,58 +402,64 @@ public partial class StudentPickerWindow : Window
         _rails.Add(new RaceRail(418, 1905, 450, 1975, 14));
         _rails.Add(new RaceRail(482, 1905, 450, 1975, 14));
 
-        // 2. ROTATING LOGS (회전 통나무 동적 장애물 - 폭을 110px로 최적화하여 좌우 통로 120px 이상 완전 개방)
+        // 2. ROTATING LOGS (회전 통나무 동적 장애물 - 폭 100px로 통로 130px 이상 확보)
         // Upper Canyon Chicane: Clockwise Rotating Log
-        AddRotatingLog(275, 680, 110, 22, 2.2, 15);
+        AddRotatingLog(280, 680, 100, 22, 2.0, 15);
 
-        // Fossil Mesa Twin Rapids Stone Age Relic Bumpers (선사시대 유물 범퍼 배치 - 무병목 보장)
-        AddBumper(195, 1540, 15, "cartoon_handaxe.png");
-        AddBumper(485, 1540, 15, "cartoon_chipped_stone.png");
+        // Lower Mushroom Forest: Counter-Clockwise Rotating Log
+        AddRotatingLog(380, 2180, 100, 22, -1.8, 0);
 
-        // Lower Mushroom Forest: Heavy Rotating Log
-        AddRotatingLog(380, 2180, 110, 22, -2.0, 0);
+        // 3. 선사시대 10종 유물 구조물 & 방해물 (다양한 각도로 맵 내부에 직접 배치)
+        // --- [구석기 구역: 들판과 동굴 협곡 (Y = 240 ~ 1200)] ---
+        // 찍개 (chopper), 주먹도끼 (handaxe), 뼈바늘 (bone-needle)
+        AddBumper(235, 275, 18, "chopper", -25);
+        AddBumper(445, 275, 18, "chopper", 35);
+        AddBumper(340, 350, 19, "handaxe", 15);
+        AddBumper(195, 430, 18, "bone-needle", -60);
+        AddBumper(485, 430, 18, "bone-needle", 55);
+        AddBumper(340, 520, 19, "handaxe", -30);
 
-        // 3. SMALL CARTOON BUMPERS & STONE AGE RELICS (히트박스 1:1 완벽 대응)
-        // --- Meadow & Early Forest (Y = 240 ~ 600) ---
-        AddBreakablePottery(210, 260, 16);
-        AddBreakablePottery(470, 260, 16);
-        AddBumper(340, 330, 15, "cartoon_handaxe.png");
-        AddBumper(180, 410, 16, "cartoon_chipped_stone.png");
-        AddBumper(500, 410, 16, "cartoon_polished_stone.png");
-        AddBreakablePottery(340, 500, 16);
+        AddBumper(225, 650, 18, "chopper", -45);
+        AddBumper(435, 650, 18, "handaxe", 40);
+        AddBumper(190, 830, 17, "bone-needle", 70);
+        AddBumper(380, 830, 19, "chopper", -15);
+        AddBumper(290, 1010, 19, "handaxe", 25);
+        AddBumper(460, 1010, 18, "bone-needle", -40);
+        AddBumper(340, 1180, 19, "handaxe", -20);
 
-        // --- Canyon & Cave Winding Trail (Y = 620 ~ 1350) ---
-        AddBumper(210, 640, 15, "cartoon_handaxe.png");
-        AddBumper(380, 640, 15, "cartoon_chipped_stone.png");
-        AddBumper(190, 820, 15, "cartoon_polished_stone.png");
-        AddBreakablePottery(350, 820, 16);
-        AddBumper(290, 1000, 15, "cartoon_handaxe.png");
-        AddBumper(460, 1000, 15, "cartoon_chipped_stone.png");
-        AddBreakablePottery(380, 1100, 16);
-        AddBumper(340, 1180, 15, "cartoon_polished_stone.png");
+        // --- [신석기 구역: 강가 정착지와 바닷가 마을 (Y = 1200 ~ 2400)] ---
+        // 간석기 (polished-stone), 가락바퀴 (spindle-whorl), 조개 가면 (shell-mask)
+        AddBumper(205, 1370, 19, "polished-stone", -30);
+        AddBumper(475, 1370, 19, "polished-stone", 35);
+        AddBumper(205, 1540, 18, "spindle-whorl", 25);
+        AddBumper(475, 1540, 18, "spindle-whorl", -45);
+        AddBumper(205, 1720, 19, "shell-mask", -20);
+        AddBumper(475, 1720, 19, "shell-mask", 20);
 
-        // --- Megalith Sanctuary (Y = 1360 ~ 2080) ---
-        AddBreakablePottery(210, 2030, 16);
-        AddBumper(470, 2030, 15, "cartoon_handaxe.png");
+        AddBumper(280, 2030, 19, "polished-stone", 45);
+        AddBumper(420, 2030, 18, "spindle-whorl", -35);
+        AddBumper(240, 2260, 19, "shell-mask", -15);
+        AddBumper(440, 2260, 19, "polished-stone", 30);
 
-        // --- Primeval Forest (Y = 2100 ~ 2780) ---
-        AddBumper(280, 2320, 16, "cartoon_chipped_stone.png");
-        AddBumper(480, 2320, 16, "cartoon_polished_stone.png");
-        AddBreakablePottery(230, 2520, 16);
-        AddBumper(410, 2520, 16, "cartoon_handaxe.png");
-        AddBreakablePottery(340, 2700, 16);
+        // --- [청동기 구역: 농경 마을과 고인돌 언덕 (Y = 2400 ~ 3200)] ---
+        // 반달 돌칼 (half-moon-stone-knife), 민무늬 토기 (plain-pottery), 비파형 동검 (bronze-dagger), 고인돌 (dolmen)
+        AddBumper(265, 2490, 19, "half-moon-stone-knife", -40);
+        AddBumper(425, 2490, 19, "plain-pottery", 20);
+        AddBumper(340, 2630, 20, "bronze-dagger", 50);
+        AddBumper(250, 2760, 19, "plain-pottery", -25);
+        AddBumper(430, 2760, 19, "half-moon-stone-knife", 40);
+        AddBumper(275, 2920, 20, "bronze-dagger", -45);
+        AddBumper(415, 2920, 19, "plain-pottery", 15);
+        AddBumper(250, 3070, 19, "half-moon-stone-knife", -30);
+        AddBumper(430, 3070, 20, "bronze-dagger", 35);
 
-        // --- River Rapids (Y = 2800 ~ 3260) ---
-        AddBumper(210, 2960, 15, "cartoon_polished_stone.png");
-        AddBreakablePottery(340, 3050, 16);
-        AddBumper(470, 2960, 15, "cartoon_chipped_stone.png");
+        // 고인돌 중심 구조물 (피니시 깔때기 입구 전 둔덕형 완충 장애물)
+        AddBumper(340, 3160, 22, "dolmen", 0);
 
-        // 4. 2x2 Breakable Comb Pottery Gauntlet (가로 2개 x 2줄, 총 4개)
-        // 80px 초밀착 피니시 협곡 입구를 가로막아 선두가 깨뜨리며 튕겨나와 극적 역전 연출!
-        AddBreakablePottery(320, 3285, 16.5);
-        AddBreakablePottery(360, 3285, 16.5);
-        AddBreakablePottery(320, 3325, 16.5);
-        AddBreakablePottery(360, 3325, 16.5);
+        // 4. 피니시 직전 빗살무늬토기 (병목 없는 좌우 분산 배치)
+        // 80px 협곡 내부의 2x2 병목 완전 제거! 입구 전 넓은 구간(Y=3215)에 중앙 70px 통로를 두고 좌우 1개씩만 배치
+        AddBreakablePottery(295, 3215, 15);
+        AddBreakablePottery(385, 3215, 15);
 
         // --- 5. Perched Animated Squirrels (5마리 청설모 솔방울 투척) ---
         AddSquirrel(x: 95, y: 780, radius: 26, isFacingRight: true, startDelay: 0.3, projectileAsset: "cartoon_pinecone.png");
@@ -470,9 +476,9 @@ public partial class StudentPickerWindow : Window
         RaceCanvas.Children.Add(log.Visual);
     }
 
-    private void AddBumper(double x, double y, double radius, string assetName)
+    private void AddBumper(double x, double y, double radius, string assetOrRelicKey, double angleDegrees = 0)
     {
-        var bumper = new RaceBumper(x, y, radius, assetName);
+        var bumper = new RaceBumper(x, y, radius, assetOrRelicKey, angleDegrees);
         _bumpers.Add(bumper);
         RaceCanvas.Children.Add(bumper.Visual);
     }
@@ -782,34 +788,34 @@ public partial class StudentPickerWindow : Window
             if (r.IsBlownByPinecone)
             {
                 r.Vx = Math.Clamp(r.Vx, -620.0, 620.0);
-                r.Vy = Math.Clamp(r.Vy, -40.0, 60.0);
+                r.Vy = Math.Clamp(r.Vy, -30.0, 70.0);
             }
             else
             {
                 r.Vx = Math.Clamp(r.Vx, -240.0, 240.0);
-                r.Vy = Math.Clamp(r.Vy, -160.0, 360.0);
+                r.Vy = Math.Clamp(r.Vy, -80.0, 360.0);
             }
 
             r.X += r.Vx * dt;
             r.Y += r.Vy * dt;
 
-            // Anti-jam & flow watchdog: actively propel any racer getting slow or stuck above finish
+            // Anti-jam & zero-bottleneck watchdog: 어떤 주자도 좁은 길이나 장애물에 갇히지 않도록 지속 하향 추진
             if (r.Y > 160 && r.Y < FinishY)
             {
-                if (r.Vy < 35.0 && r.PinnedTimer <= 0)
+                if (r.Vy < 45.0 && r.PinnedTimer <= 0)
                 {
-                    r.Vy += 90.0 * dt; // Gentle forward drive ensuring zero bottlenecks
+                    r.Vy += 130.0 * dt; // 일정한 하향 유도 가속
                 }
 
-                if (Math.Abs(r.Vx) < 14.0 && r.Vy < 35.0)
+                if (Math.Abs(r.Vx) < 22.0 && r.Vy < 45.0)
                 {
                     r.StuckTimer += dt;
-                    if (r.StuckTimer > 0.20)
+                    if (r.StuckTimer > 0.16) // 0.16초 이상 정체 시 즉각 돌파 임펄스 발동!
                     {
-                        // Direct impulse downhill toward the track center
+                        // 중앙 및 하향 방향으로 강력한 펄스
                         double centerNudge = (340.0 - r.X);
-                        r.Vx += Math.Sign(centerNudge) * (50.0 + rand.NextDouble() * 30.0);
-                        r.Vy = Math.Max(r.Vy + 90.0, 140.0 + rand.NextDouble() * 60.0);
+                        r.Vx += Math.Sign(centerNudge) * (65.0 + rand.NextDouble() * 45.0);
+                        r.Vy = Math.Max(r.Vy + 140.0, 180.0 + rand.NextDouble() * 70.0);
                         r.StuckTimer = 0;
                     }
                 }
@@ -826,8 +832,8 @@ public partial class StudentPickerWindow : Window
                 r.X = leftWall + r.Radius;
                 if (r.IsBlownByPinecone)
                 {
-                    // Pinned to the left wall like a target hit by a shuriken!
-                    r.PinToWall(-1, 1.35);
+                    // 병목 방지: 벽 고정 시간을 0.12초로 단축하여 잠깐의 스턴 후 즉시 레이스 지속
+                    r.PinToWall(-1, 0.12);
                 }
                 else
                 {
@@ -849,8 +855,8 @@ public partial class StudentPickerWindow : Window
                 r.X = rightWall - r.Radius;
                 if (r.IsBlownByPinecone)
                 {
-                    // Pinned to the right wall like a target hit by a shuriken!
-                    r.PinToWall(1, 1.35);
+                    // 병목 방지: 벽 고정 시간을 0.12초로 단축하여 잠깐의 스턴 후 즉시 레이스 지속
+                    r.PinToWall(1, 0.12);
                 }
                 else
                 {
@@ -1074,7 +1080,7 @@ public partial class StudentPickerWindow : Window
                 }
             }
 
-            // Collisions with Breakable Comb Potteries ("부딪히면 와장창 깨지며 튕겨나오는 빗살무늬토기 2x2 관문")
+            // Collisions with Breakable Comb Potteries (빗살무늬토기 파괴: 통쾌한 파편 산란 + 하향 전진 유지)
             foreach (var pot in _potteries)
             {
                 if (pot.IsBroken) continue;
@@ -1089,20 +1095,20 @@ public partial class StudentPickerWindow : Window
                     // Shatter the comb pottery! (와장창 깨뜨리기)
                     pot.Break(RaceCanvas);
 
-                    // Dramatic Race Reversal: 빗살무늬토기 파괴 반발 & 역전 드라마 연출!
-                    // 선두를 뒤쪽으로 대폭 강하게 튕겨 올리고 외곽으로 밀쳐내며
-                    // 어지러움 별 연출을 주어, 뒤따르던 2등·3등 주자가 뚫린 틈으로 역전하도록 유도!
+                    // 병목 없는 빗살무늬토기 파괴 연출:
+                    // 위로 거꾸로 치솟는 역주행(-460)을 없애고, 횡방향 산란과 함께 하향 속도를 유지하여
+                    // 선두와 후속 주자가 지체 없이 피니시 협곡으로 질주하도록 보장!
                     double nx = dist > 0.001 ? dx / dist : (rand.NextDouble() - 0.5);
-                    double ny = dist > 0.001 ? dy / dist : -1.0;
+                    double ny = dist > 0.001 ? dy / dist : 0.5;
 
                     // Push out of pottery
-                    r.X = pot.X + nx * (minDist + 4.0);
-                    r.Y = pot.Y + ny * (minDist + 4.0);
+                    r.X = pot.X + nx * (minDist + 3.0);
+                    r.Y = pot.Y + Math.Abs(ny) * (minDist + 3.0);
 
-                    // Rebound upwards and deflect horizontally with dizzy spin (초강력 반발 및 튕김)
-                    r.Vx = (nx >= 0 ? 1.0 : -1.0) * (240.0 + rand.NextDouble() * 120.0);
-                    r.Vy = -460.0 - rand.NextDouble() * 140.0;
-                    r.DizzyTimer = 1.1;
+                    // Rebound with lateral scatter and maintain downward speed
+                    r.Vx = (nx >= 0 ? 1.0 : -1.0) * (120.0 + rand.NextDouble() * 70.0);
+                    r.Vy = Math.Max(r.Vy * 0.5, 80.0) + rand.NextDouble() * 40.0;
+                    r.DizzyTimer = 0.25;
                 }
             }
 
@@ -2335,44 +2341,74 @@ public class RaceBumper
     public double X { get; }
     public double Y { get; }
     public double Radius { get; }
+    public double AngleDegrees { get; }
     public Grid Visual { get; }
     private double _flashTimer;
     private readonly ScaleTransform _scale;
 
-    public RaceBumper(double x, double y, double radius, string assetName)
+    public RaceBumper(double x, double y, double radius, string assetOrRelicKey, double angleDegrees = 0)
     {
         X = x;
         Y = y;
         Radius = radius;
+        AngleDegrees = angleDegrees;
 
         Visual = new Grid
         {
-            Width = radius * 2,
-            Height = radius * 2
+            Width = radius * 2.4,
+            Height = radius * 2.4,
+            IsHitTestVisible = false
         };
 
         _scale = new ScaleTransform(1, 1);
+        var rot = new RotateTransform(angleDegrees);
+        var group = new TransformGroup();
+        group.Children.Add(rot);
+        group.Children.Add(_scale);
+
         Visual.RenderTransformOrigin = new Point(0.5, 0.5);
-        Visual.RenderTransform = _scale;
+        Visual.RenderTransform = group;
 
-        var img = new Image
+        if (assetOrRelicKey.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
         {
-            Width = radius * 2,
-            Height = radius * 2,
-            Source = new BitmapImage(new Uri($"pack://application:,,,/assets/race/{assetName}")),
-        };
-        RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-        Visual.Children.Add(img);
+            var img = new Image
+            {
+                Width = radius * 2,
+                Height = radius * 2,
+                Source = new BitmapImage(new Uri($"pack://application:,,,/assets/race/{assetOrRelicKey}")),
+            };
+            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+            Visual.Children.Add(img);
+        }
+        else
+        {
+            // 선사시대 유물 벡터 비주얼 (다양한 각도로 회전된 구조물/방해물)
+            // 사용자 요구사항: 유물 아래 한글 이름 라벨 없음! 순수 유물 그래픽 자체만 표출
+            var relicElement = StudentPickerWindow.CreateArtifactIcon(assetOrRelicKey);
+            if (relicElement is Canvas canvas)
+            {
+                double targetDim = Math.Max(canvas.Width, canvas.Height);
+                if (targetDim > 0)
+                {
+                    double scaleFactor = (radius * 2.0) / targetDim;
+                    canvas.RenderTransformOrigin = new Point(0.5, 0.5);
+                    canvas.RenderTransform = new ScaleTransform(scaleFactor, scaleFactor);
+                }
+                canvas.HorizontalAlignment = HorizontalAlignment.Center;
+                canvas.VerticalAlignment = VerticalAlignment.Center;
+            }
+            Visual.Children.Add(relicElement);
+        }
 
-        Canvas.SetLeft(Visual, x - radius);
-        Canvas.SetTop(Visual, y - radius);
+        Canvas.SetLeft(Visual, x - (radius * 1.2));
+        Canvas.SetTop(Visual, y - (radius * 1.2));
     }
 
     public void Flash()
     {
-        _flashTimer = 0.25;
-        _scale.ScaleX = 1.25;
-        _scale.ScaleY = 1.25;
+        _flashTimer = 0.22;
+        _scale.ScaleX = 1.28;
+        _scale.ScaleY = 1.28;
     }
 
     public void Update(double dt)

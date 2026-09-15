@@ -226,56 +226,12 @@ public partial class StudentPickerWindow
 
     private void AddArtifactLandmark(PrehistoryArtifactLandmark artifact)
     {
-        const double cardWidth = 154;
-        const double cardHeight = 78;
-        var card = new Border
-        {
-            Width = cardWidth,
-            Height = cardHeight,
-            Background = BrushFrom("#F4E5C8"),
-            BorderBrush = BrushFrom(artifact.Period == "구석기" ? "#7C5539" : "#576B3B"),
-            BorderThickness = new Thickness(2),
-            CornerRadius = new CornerRadius(12),
-            Padding = new Thickness(7, 6, 7, 6),
-            Opacity = 0.96,
-            IsHitTestVisible = false
-        };
-
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-        FrameworkElement icon = CreateArtifactIcon(artifact.Key);
-        Grid.SetColumn(icon, 0);
-        grid.Children.Add(icon);
-
-        var text = new StackPanel { Margin = new Thickness(5, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        text.Children.Add(new TextBlock
-        {
-            Text = $"{artifact.Period} · {artifact.Name}",
-            Foreground = BrushFrom("#3A2A21"),
-            FontSize = 11.5,
-            FontWeight = FontWeights.Bold
-        });
-        text.Children.Add(new TextBlock
-        {
-            Text = artifact.Caption,
-            Foreground = BrushFrom("#5F4B3E"),
-            FontSize = 8.5,
-            TextWrapping = TextWrapping.Wrap,
-            Margin = new Thickness(0, 3, 0, 0)
-        });
-        Grid.SetColumn(text, 1);
-        grid.Children.Add(text);
-        card.Child = grid;
-
-        Canvas.SetLeft(card, artifact.AlignRight ? TrackWidth - cardWidth - 8 : 8);
-        Canvas.SetTop(card, artifact.Y);
-        Panel.SetZIndex(card, -6);
-        RaceCanvas.Children.Add(card);
+        // 사용자 요구사항: 유물 아래 한글 이름 라벨 제거
+        // 10종 유물은 맵 내부의 실제 충돌 장애물/구조물로 다양한 각도로 직접 배치되므로,
+        // 트랙 외곽의 한글 이름/설명 카드는 생성하지 않습니다.
     }
 
-    private FrameworkElement CreateArtifactIcon(string key)
+    public static FrameworkElement CreateArtifactIcon(string key)
     {
         var canvas = new Canvas { Width = 46, Height = 56, IsHitTestVisible = false };
         Brush outline = BrushFrom("#4A3427");
@@ -382,6 +338,89 @@ public partial class StudentPickerWindow
                 AddLine(canvas, 34, 13, 28, 47, "#D8C397", 1.1);
                 AddMaskEye(canvas, 12, 23);
                 AddMaskEye(canvas, 28, 23);
+                break;
+
+            case "half-moon-stone-knife":
+                canvas.Children.Add(new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M5,22 C13,8 34,5 42,18 C35,38 15,47 5,22 Z"),
+                    Fill = BrushFrom("#8D8372"),
+                    Stroke = outline,
+                    StrokeThickness = 2.2
+                });
+                AddLine(canvas, 12, 22, 35, 15, "#C8BDA9", 1.7);
+                var hole1 = new Ellipse { Width = 4, Height = 4, Fill = outline };
+                Canvas.SetLeft(hole1, 15);
+                Canvas.SetTop(hole1, 29);
+                canvas.Children.Add(hole1);
+                var hole2 = new Ellipse { Width = 4, Height = 4, Fill = outline };
+                Canvas.SetLeft(hole2, 27);
+                Canvas.SetTop(hole2, 25);
+                canvas.Children.Add(hole2);
+                break;
+
+            case "plain-pottery":
+                canvas.Children.Add(new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M12,5 L35,5 C33,13 34,18 39,24 C44,32 42,45 35,51 C28,57 18,57 11,51 C4,45 2,32 7,24 C12,18 14,13 12,5 Z"),
+                    Fill = BrushFrom("#B8734B"),
+                    Stroke = outline,
+                    StrokeThickness = 2.2
+                });
+                AddLine(canvas, 13, 11, 34, 11, "#D99A69", 1.4);
+                break;
+
+            case "bronze-dagger":
+                canvas.Children.Add(new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M23,3 L31,16 L28,38 L25,47 L21,47 L18,38 L15,16 Z"),
+                    Fill = BrushFrom("#B88743"),
+                    Stroke = outline,
+                    StrokeThickness = 2
+                });
+                AddLine(canvas, 23, 7, 23, 43, "#E3BE76", 1.5);
+                var guard = new Rectangle
+                {
+                    Width = 25,
+                    Height = 5,
+                    RadiusX = 2,
+                    RadiusY = 2,
+                    Fill = BrushFrom("#8D6333"),
+                    Stroke = outline,
+                    StrokeThickness = 1
+                };
+                Canvas.SetLeft(guard, 10.5);
+                Canvas.SetTop(guard, 44);
+                canvas.Children.Add(guard);
+                AddLine(canvas, 23, 48, 23, 55, "#6F4A2D", 4);
+                break;
+
+            case "dolmen":
+                var left = new Polygon
+                {
+                    Points = new PointCollection { new(7, 48), new(11, 23), new(20, 20), new(23, 48) },
+                    Fill = BrushFrom("#77716B"),
+                    Stroke = outline,
+                    StrokeThickness = 1.7
+                };
+                canvas.Children.Add(left);
+                var right = new Polygon
+                {
+                    Points = new PointCollection { new(29, 48), new(32, 20), new(40, 23), new(43, 48) },
+                    Fill = BrushFrom("#77716B"),
+                    Stroke = outline,
+                    StrokeThickness = 1.7
+                };
+                canvas.Children.Add(right);
+                var cap = new Polygon
+                {
+                    Points = new PointCollection { new(3, 24), new(8, 10), new(39, 7), new(45, 19), new(40, 27), new(8, 28) },
+                    Fill = BrushFrom("#8C8781"),
+                    Stroke = outline,
+                    StrokeThickness = 2
+                };
+                canvas.Children.Add(cap);
+                AddLine(canvas, 10, 19, 36, 17, "#AEA9A2", 1.5);
                 break;
         }
 
