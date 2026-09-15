@@ -3,10 +3,9 @@ using System.Collections.Generic;
 namespace KnolTeacher.Desktop.Models;
 
 /// <summary>
-/// Production contract for one large environment illustration that still needs
-/// final transparent bitmap art. Environment art is deliberately visual-only:
-/// it may frame the road, but it never contributes WPF hit testing or gameplay
-/// collision by itself.
+/// Production contract for one large environment illustration.
+/// Environment art is deliberately visual-only: it frames the road, but it never
+/// contributes WPF hit testing or gameplay collision by itself.
 /// </summary>
 public sealed record PendingRaceEnvironmentAsset(
     string Key,
@@ -19,12 +18,12 @@ public sealed record PendingRaceEnvironmentAsset(
     double TransparentPaddingRatio = 0.08);
 
 /// <summary>
-/// Reserved large-scale scenery for the prehistoric race map.
+/// Large-scale scenery for the prehistoric race map.
 ///
 /// These props are intentionally kept separate from historical relic landmarks.
 /// They establish the visual identity of each era while remaining edge-anchored,
-/// non-interactive scenery. Missing files are skipped by the renderer; do not
-/// replace them with C# Path/SVG programmer art.
+/// non-interactive scenery. All 6 transparent PNG assets are produced in assets/race/
+/// and rendered with high-quality downscaling and negative Z-index.
 /// </summary>
 public static class PrehistoryRaceEnvironmentV2
 {

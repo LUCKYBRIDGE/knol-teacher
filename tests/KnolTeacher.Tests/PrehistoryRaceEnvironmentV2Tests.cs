@@ -81,4 +81,55 @@ public class PrehistoryRaceEnvironmentV2Tests
             Assert.InRange(prop.Opacity, 0.90, 1.0);
         }
     }
+
+    [Fact]
+    public void ProducedEnvironmentPngAssets_ExistOnDiskAndAreValidPng()
+    {
+        string raceDir = ResolveAssetRaceDirectory();
+        Assert.True(System.IO.Directory.Exists(raceDir), $"assets/race directory must exist at {raceDir}");
+
+        byte[] pngHeader = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+
+        foreach (PendingRaceEnvironmentAsset asset in PrehistoryRaceEnvironmentV2.PendingArtAssets)
+        {
+            string filePath = System.IO.Path.Combine(raceDir, asset.FileName);
+            Assert.True(System.IO.File.Exists(filePath), $"Environment asset file {asset.FileName} must exist on disk");
+
+            var fileInfo = new System.IO.FileInfo(filePath);
+            Assert.True(fileInfo.Length > 0, $"Environment asset {asset.FileName} must not be empty");
+
+            byte[] header = new byte[8];
+            using (var stream = System.IO.File.OpenRead(filePath))
+            {
+                int read = stream.Read(header, 0, header.Length);
+                Assert.Equal(8, read);
+            }
+
+            Assert.Equal(pngHeader, header);
+        }
+    }
+
+    private static string ResolveAssetRaceDirectory()
+    {
+        string? dir = AppContext.BaseDirectory;
+        while (dir != null)
+        {
+            string candidate = System.IO.Path.Combine(dir, "src", "KnolTeacher.Desktop", "assets", "race");
+            if (System.IO.Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            string directCandidate = System.IO.Path.Combine(dir, "assets", "race");
+            if (System.IO.Directory.Exists(directCandidate))
+            {
+                return directCandidate;
+            }
+
+            dir = System.IO.Path.GetDirectoryName(dir);
+        }
+
+        throw new System.IO.DirectoryNotFoundException("Could not locate assets/race directory.");
+    }
 }
+
