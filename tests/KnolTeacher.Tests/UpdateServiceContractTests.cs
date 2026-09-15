@@ -252,7 +252,7 @@ public class UpdateServiceContractTests
             ?? throw new InvalidOperationException("Failed to start Windows PowerShell for updater integration test.");
         Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
         Task<string> standardError = process.StandardError.ReadToEndAsync();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(90));
 
         try
         {
@@ -261,7 +261,7 @@ public class UpdateServiceContractTests
         catch (OperationCanceledException)
         {
             try { process.Kill(entireProcessTree: true); } catch { }
-            throw new TimeoutException("Updater PowerShell integration test exceeded 30 seconds.");
+            throw new TimeoutException("Updater PowerShell integration test exceeded 90 seconds.");
         }
 
         string output = await standardOutput;

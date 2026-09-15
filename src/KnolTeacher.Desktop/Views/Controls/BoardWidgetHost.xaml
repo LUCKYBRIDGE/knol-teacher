@@ -6,19 +6,16 @@
              mc:Ignorable="d"
              MinWidth="240" MinHeight="180">
     <UserControl.Resources>
-        <!--
-            Large transparent hit targets are intentional for classroom touch displays.
-            The visible marker is small, but each Thumb is at least 32 DIP thick.
-        -->
-        <Style x:Key="ResizeHandleStyle" TargetType="Thumb">
+        <!-- Corner resize handle with subtle grip dot -->
+        <Style x:Key="ResizeHandleStyle" TargetType="{x:Type Thumb}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Opacity" Value="0.72"/>
+            <Setter Property="Opacity" Value="0.6"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
-                        <Border Background="Transparent">
+                        <Border Background="Transparent" SnapsToDevicePixels="True">
                             <Ellipse x:Name="Marker"
-                                     Width="6" Height="6"
+                                     Width="5" Height="5"
                                      Fill="#64748B"
                                      Stroke="#38BDF8"
                                      StrokeThickness="0.8"
@@ -28,11 +25,23 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Opacity" Value="1"/>
-                                <Setter TargetName="Marker" Property="Width" Value="9"/>
-                                <Setter TargetName="Marker" Property="Height" Value="9"/>
+                                <Setter TargetName="Marker" Property="Width" Value="8"/>
+                                <Setter TargetName="Marker" Property="Height" Value="8"/>
                                 <Setter TargetName="Marker" Property="Fill" Value="#38BDF8"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Edge resize handle: transparent hit-test border, no visual clutter -->
+        <Style x:Key="ResizeEdgeHandleStyle" TargetType="{x:Type Thumb}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border Background="Transparent" SnapsToDevicePixels="True"/>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -163,40 +172,37 @@
         </Border>
 
         <!--
-            8-direction resize layer. It has no Background so only the Thumb hit targets
-            intercept pointer/touch input; the widget body remains interactive.
+            Resize layer: only bottom, sides, and bottom corners (strictly below the 46px TitleBar).
+            Top handles (N, NW, NE) are omitted so the TitleBar and its top-right
+            close button ('✕') are completely free from resize hit tests.
         -->
         <Grid x:Name="ResizeLayer" Panel.ZIndex="50">
-            <Thumb Tag="N" Width="72" Height="32"
-                   HorizontalAlignment="Center" VerticalAlignment="Top"
-                   Cursor="SizeNS" Style="{StaticResource ResizeHandleStyle}"
-                   DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted"/>
-            <Thumb Tag="S" Width="72" Height="32"
-                   HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                   Cursor="SizeNS" Style="{StaticResource ResizeHandleStyle}"
-                   DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted"/>
-            <Thumb Tag="W" Width="32" Height="72"
-                   HorizontalAlignment="Left" VerticalAlignment="Center"
-                   Cursor="SizeWE" Style="{StaticResource ResizeHandleStyle}"
-                   DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted"/>
-            <Thumb Tag="E" Width="32" Height="72"
-                   HorizontalAlignment="Right" VerticalAlignment="Center"
-                   Cursor="SizeWE" Style="{StaticResource ResizeHandleStyle}"
+            <!-- Bottom edge (8px thin hit band along bottom border) -->
+            <Thumb Tag="S" Height="8"
+                   HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Margin="20,0,20,0"
+                   Cursor="SizeNS" Style="{StaticResource ResizeEdgeHandleStyle}"
                    DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted"/>
 
-            <Thumb Tag="NW" Width="36" Height="36"
-                   HorizontalAlignment="Left" VerticalAlignment="Top"
-                   Cursor="SizeNWSE" Style="{StaticResource ResizeHandleStyle}"
+            <!-- Left edge (starts below 46px TitleBar, stops before 20px corner) -->
+            <Thumb Tag="W" Width="8"
+                   HorizontalAlignment="Left" VerticalAlignment="Stretch" Margin="0,46,0,20"
+                   Cursor="SizeWE" Style="{StaticResource ResizeEdgeHandleStyle}"
                    DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted"/>
-            <Thumb Tag="NE" Width="36" Height="36"
-                   HorizontalAlignment="Right" VerticalAlignment="Top"
-                   Cursor="SizeNESW" Style="{StaticResource ResizeHandleStyle}"
+
+            <!-- Right edge (starts below 46px TitleBar, stops before 20px corner) -->
+            <Thumb Tag="E" Width="8"
+                   HorizontalAlignment="Right" VerticalAlignment="Stretch" Margin="0,46,0,20"
+                   Cursor="SizeWE" Style="{StaticResource ResizeEdgeHandleStyle}"
                    DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted"/>
-            <Thumb Tag="SW" Width="36" Height="36"
+
+            <!-- Bottom-Left corner -->
+            <Thumb Tag="SW" Width="20" Height="20"
                    HorizontalAlignment="Left" VerticalAlignment="Bottom"
                    Cursor="SizeNESW" Style="{StaticResource ResizeHandleStyle}"
                    DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted"/>
-            <Thumb Tag="SE" Width="36" Height="36"
+
+            <!-- Bottom-Right corner (Primary corner resize grip) -->
+            <Thumb Tag="SE" Width="20" Height="20"
                    HorizontalAlignment="Right" VerticalAlignment="Bottom"
                    Cursor="SizeNWSE" Style="{StaticResource ResizeHandleStyle}"
                    DragDelta="ResizeThumb_DragDelta" DragCompleted="ResizeThumb_DragCompleted"/>

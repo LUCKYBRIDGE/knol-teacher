@@ -63,4 +63,60 @@ public class NolboardWidgetRegistryTests
     {
         Assert.False(WidgetRegistry.TryGet(type, out _));
     }
+
+    [Fact]
+    public void BoardWidgetHost_ResizeLayer_DoesNotObstructTitleBarCloseButton()
+    {
+        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        string[] candidates = new[]
+        {
+            System.IO.Path.Combine(baseDir, "..", "..", "..", "..", "src", "KnolTeacher.Desktop", "Views", "Controls", "BoardWidgetHost.xaml"),
+            System.IO.Path.Combine(baseDir, "Views", "Controls", "BoardWidgetHost.xaml")
+        };
+        string? xamlPath = candidates.FirstOrDefault(System.IO.File.Exists);
+        if (xamlPath == null) return; // Skip if source file not found in test runner
+
+        string content = System.IO.File.ReadAllText(xamlPath);
+
+        // Top handles must NOT exist so that TitleBar buttons (especially BtnClose at top-right)
+        // are never blocked or intercepted by resize thumbs
+        Assert.DoesNotContain("Tag=\"NE\"", content);
+        Assert.DoesNotContain("Tag=\"N\"", content);
+        Assert.DoesNotContain("Tag=\"NW\"", content);
+
+        // Natural bottom and corner resize handles must exist
+        Assert.Contains("Tag=\"SE\"", content);
+        Assert.Contains("Tag=\"SW\"", content);
+        Assert.Contains("Tag=\"S\"", content);
+        Assert.Contains("Tag=\"E\"", content);
+        Assert.Contains("Tag=\"W\"", content);
+    }
+
+    [Fact]
+    public void StudentDisplayWindow_PopupUx_DoesNotHijackPinballToPicker()
+    {
+        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        string[] candidates = new[]
+        {
+            System.IO.Path.Combine(baseDir, "..", "..", "..", "..", "src", "KnolTeacher.Desktop", "Views", "Windows", "StudentDisplayWindow.PopupUx.cs"),
+            System.IO.Path.Combine(baseDir, "Views", "Windows", "StudentDisplayWindow.PopupUx.cs")
+        };
+        string? csPath = candidates.FirstOrDefault(System.IO.File.Exists);
+        if (csPath == null) return;
+
+        string content = System.IO.File.ReadAllText(csPath);
+
+        // BtnToolPinball must NOT be hijacked to toggle the "picker" widget
+        Assert.DoesNotContain("BtnToolPinball.Click += (s, e) => ToggleWidget(\"picker\");", content);
+        Assert.Contains("BtnPinballWindow_Click", content);
+    }
+
+    [Fact]
+    public void StudentPickerWindow_ExposesCurrentMonitorIndexProperty()
+    {
+        var prop = typeof(KnolTeacher.Desktop.Views.Windows.StudentPickerWindow)
+            .GetProperty("CurrentMonitorIndex");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(int), prop.PropertyType);
+    }
 }
