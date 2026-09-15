@@ -60,10 +60,13 @@ public partial class StudentDisplayWindow
 
         _v309PopupLaunchPreferences = new PopupLaunchPreferences(_configService.ConfigDir);
 
-        // Pinball in the board dock toggles the picker widget inside the board, maintaining single-window workspace integrity
+        // Connect Pinball (뽑기 레이스) to StudentPickerWindow with dual-monitor support
         BtnToolPinball.Click -= DockToolBtn_Click;
-        BtnToolPinball.Click += (s, e) => ToggleWidget("picker");
-        BtnToolPinball.ToolTip = "위젯 · 발표자 및 학생 뽑기 위젯을 놀보드 안에 열거나 닫습니다.";
+        BtnToolPinball.Click -= BtnPinballWindow_Click;
+        BtnToolPinball.Click += BtnPinballWindow_Click;
+        BtnToolPinball.MouseRightButtonUp -= BtnPinballWindow_MouseRightButtonUp;
+        BtnToolPinball.MouseRightButtonUp += BtnPinballWindow_MouseRightButtonUp;
+        BtnToolPinball.ToolTip = "뽑기 레이스 · 별도 레이스 창에서 32종 동물 아바타로 발표자를 뽑습니다 (우클릭: 다른 모니터로 열기)";
 
         RefreshV309LauncherVisuals();
     }
@@ -116,13 +119,14 @@ public partial class StudentDisplayWindow
             }
         }
 
-        bool pickerActive = FindWidget("picker") != null;
+        bool pinballActive = _pinballWindow != null && _pinballWindow.IsVisible;
         BtnToolPinball.Style = baseStyle;
-        BtnToolPinball.Background = pickerActive ? widgetActiveBackground : widgetIdleBackground;
-        BtnToolPinball.BorderBrush = pickerActive ? widgetActiveBorder : widgetIdleBorder;
-        BtnToolPinball.Foreground = pickerActive ? Brushes.White : widgetIdleForeground;
-        BtnToolPinball.BorderThickness = new Thickness(pickerActive ? 1.5 : 1.0);
-        BtnToolPinball.FontWeight = pickerActive ? FontWeights.Bold : FontWeights.SemiBold;
+        BtnToolPinball.Background = pinballActive ? widgetActiveBackground : widgetIdleBackground;
+        BtnToolPinball.BorderBrush = pinballActive ? widgetActiveBorder : widgetIdleBorder;
+        BtnToolPinball.Foreground = pinballActive ? Brushes.White : widgetIdleForeground;
+        BtnToolPinball.BorderThickness = new Thickness(pinballActive ? 1.5 : 1.0);
+        BtnToolPinball.FontWeight = pinballActive ? FontWeights.Bold : FontWeights.SemiBold;
+        BtnToolPinball.ToolTip = "뽑기 레이스 · 별도 레이스 창에서 32종 동물 아바타로 발표자를 뽑습니다 (우클릭: 다른 모니터로 열기)";
 
         CbAddWidget.Background = BrushFrom("#1E293B");
         CbAddWidget.Foreground = widgetIdleForeground;
@@ -132,8 +136,16 @@ public partial class StudentDisplayWindow
 
     private void BtnPinballWindow_Click(object sender, RoutedEventArgs e)
     {
-        OpenPinballOnMonitor(0);
+        if (_pinballWindow != null && _pinballWindow.IsVisible)
+        {
+            _pinballWindow.Hide();
+        }
+        else
+        {
+            OpenPinballOnMonitor(_currentMonitorIndex);
+        }
         e.Handled = true;
+        RefreshV309LauncherVisuals();
     }
 
     private void BtnPinballWindow_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
@@ -144,9 +156,20 @@ public partial class StudentDisplayWindow
             return;
         }
 
-        int targetMonitor = _displayManager?.IsDualMonitor == true ? 1 : 0;
-        OpenPinballOnMonitor(targetMonitor);
+        int targetMonitor = _displayManager?.IsDualMonitor == true
+            ? (_currentMonitorIndex == 0 ? 1 : 0)
+            : 0;
+
+        if (_pinballWindow != null && _pinballWindow.IsVisible && _pinballWindow.CurrentMonitorIndex == targetMonitor)
+        {
+            _pinballWindow.Hide();
+        }
+        else
+        {
+            OpenPinballOnMonitor(targetMonitor);
+        }
         e.Handled = true;
+        RefreshV309LauncherVisuals();
     }
 
     private void OpenPinballOnMonitor(int monitorIndex)
@@ -164,14 +187,16 @@ public partial class StudentDisplayWindow
 
         if (_pinballWindow == null) return;
 
-        if (_displayManager != null)
-        {
-            _displayManager.MoveWindowToScreen(_pinballWindow, monitorIndex, maximize: false);
-        }
+        _pinballWindow.IsVisibleChanged -= PinballWindow_IsVisibleChanged;
+        _pinballWindow.IsVisibleChanged += PinballWindow_IsVisibleChanged;
 
-        _pinballWindow.Show();
-        _pinballWindow.Activate();
+        _pinballWindow.ShowOnMonitor(monitorIndex);
         RefreshV309LauncherVisuals();
+    }
+
+    private void PinballWindow_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(RefreshV309LauncherVisuals));
     }
 
     private static SolidColorBrush BrushFrom(string hex)
