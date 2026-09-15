@@ -428,30 +428,39 @@ public partial class StudentPickerWindow : Window
         AddBumper(340, 1180, 19, "handaxe", -20);
 
         // --- [신석기 구역: 강가 정착지와 바닷가 마을 (Y = 1200 ~ 2400)] ---
-        // 간석기 (polished-stone), 가락바퀴 (spindle-whorl), 조개 가면 (shell-mask)
-        AddBumper(205, 1370, 19, "polished-stone", -30);
-        AddBumper(475, 1370, 19, "polished-stone", 35);
-        AddBumper(205, 1540, 18, "spindle-whorl", 25);
-        AddBumper(475, 1540, 18, "spindle-whorl", -45);
-        AddBumper(205, 1720, 19, "shell-mask", -20);
-        AddBumper(475, 1720, 19, "shell-mask", 20);
+        // 간석기 (polished-stone), 빗살무늬 토기 (comb-pottery), 가락바퀴 (spindle-whorl), 조개 가면 (shell-mask)
+        AddBumper(205, 1360, 20, "polished-stone", -35);
+        AddBumper(480, 1360, 18, "spindle-whorl", 25);
+        AddBumper(205, 1470, 19, "comb-pottery", 18);
+        AddBumper(480, 1470, 20, "polished-stone", 30);
+        AddBumper(205, 1580, 18, "spindle-whorl", -45);
+        AddBumper(480, 1580, 19, "shell-mask", 20);
 
-        AddBumper(280, 2030, 19, "polished-stone", 45);
-        AddBumper(420, 2030, 18, "spindle-whorl", -35);
-        AddBumper(240, 2260, 19, "shell-mask", -15);
-        AddBumper(440, 2260, 19, "polished-stone", 30);
+        AddBumper(340, 1660, 20, "comb-pottery", -20);
+        AddBumper(205, 1720, 19, "shell-mask", -20);
+        AddBumper(480, 1720, 18, "spindle-whorl", 35);
+        AddBumper(340, 1815, 20, "polished-stone", -15);
+        AddBumper(340, 1960, 20, "comb-pottery", 15);
+
+        AddBumper(275, 2130, 20, "polished-stone", 50);
+        AddBumper(330, 2210, 20, "comb-pottery", -10);
+        AddBumper(245, 2260, 19, "shell-mask", 15);
+        AddBumper(435, 2330, 20, "polished-stone", -25);
 
         // --- [청동기 구역: 농경 마을과 고인돌 언덕 (Y = 2400 ~ 3200)] ---
         // 반달 돌칼 (half-moon-stone-knife), 민무늬 토기 (plain-pottery), 비파형 동검 (bronze-dagger), 고인돌 (dolmen)
-        AddBumper(265, 2490, 19, "half-moon-stone-knife", -40);
-        AddBumper(425, 2490, 19, "plain-pottery", 20);
-        AddBumper(340, 2630, 20, "bronze-dagger", 50);
-        AddBumper(250, 2760, 19, "plain-pottery", -25);
-        AddBumper(430, 2760, 19, "half-moon-stone-knife", 40);
-        AddBumper(275, 2920, 20, "bronze-dagger", -45);
-        AddBumper(415, 2920, 19, "plain-pottery", 15);
-        AddBumper(250, 3070, 19, "half-moon-stone-knife", -30);
-        AddBumper(430, 3070, 20, "bronze-dagger", 35);
+        AddBumper(260, 2480, 21, "half-moon-stone-knife", -40);
+        AddBumper(420, 2480, 19, "plain-pottery", 18);
+        AddBumper(340, 2550, 20, "bronze-dagger", 55);
+        AddBumper(430, 2620, 21, "half-moon-stone-knife", 35);
+        AddBumper(340, 2690, 20, "plain-pottery", -20);
+        AddBumper(260, 2760, 21, "half-moon-stone-knife", -30);
+        AddBumper(260, 2840, 20, "bronze-dagger", -50);
+        AddBumper(420, 2840, 19, "plain-pottery", 25);
+        AddBumper(435, 2920, 21, "half-moon-stone-knife", 45);
+        AddBumper(340, 3010, 20, "plain-pottery", 15);
+        AddBumper(255, 3060, 21, "half-moon-stone-knife", -25);
+        AddBumper(425, 3060, 20, "bronze-dagger", 40);
 
         // 고인돌 중심 구조물 (피니시 깔때기 입구 전 둔덕형 완충 장애물)
         AddBumper(340, 3160, 22, "dolmen", 0);

@@ -288,14 +288,65 @@ public partial class StudentPickerWindow
                 break;
 
             case "polished-stone":
+                // 간석기 (마제석부 / 간돌도끼): 상단 슴베에서 하단 날로 넓어지는 단단한 돌도끼 조형
                 canvas.Children.Add(new System.Windows.Shapes.Path
                 {
-                    Data = Geometry.Parse("M12,45 C7,37 8,24 15,12 C20,4 30,5 35,13 C40,23 39,36 32,46 C27,52 17,51 12,45 Z"),
-                    Fill = BrushFrom("#748477"),
+                    Data = Geometry.Parse("M16,6 C16,4 30,4 30,6 L37,41 C38,47 34,51 23,52 C12,51 8,47 9,41 Z"),
+                    Fill = BrushFrom("#4F6157"),
                     Stroke = outline,
                     StrokeThickness = 2.2
                 });
-                AddLine(canvas, 15, 39, 33, 17, "#AFC1B4", 2.2);
+                // 연마된 날 부분 경사면 (Bevel cutting edge)
+                canvas.Children.Add(new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M9,41 C12,46 23,47 37,41 C35,46 32,50 23,52 C14,50 11,46 9,41 Z"),
+                    Fill = BrushFrom("#8CA496")
+                });
+                // 중앙 능선 연마 하이라이트
+                AddLine(canvas, 23, 8, 23, 44, "#768E80", 2.2);
+                // 칼날 끝 반짝이는 하이라이트 엣지
+                canvas.Children.Add(new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M11,46 C16,49.5 30,49.5 35,46"),
+                    Stroke = BrushFrom("#DDF0E6"),
+                    StrokeThickness = 1.8
+                });
+                break;
+
+            case "comb-pottery":
+                // 빗살무늬 토기: V자형 밑이 뾰족한 전형적인 신석기 토기와 생선뼈 빗살 문양
+                canvas.Children.Add(new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M8,8 L38,8 C37,24 33,41 23,53 C13,41 9,24 8,8 Z"),
+                    Fill = BrushFrom("#BC7142"),
+                    Stroke = outline,
+                    StrokeThickness = 2.2
+                });
+                // 입구 전면 테두리 림
+                var rim = new Rectangle
+                {
+                    Width = 34,
+                    Height = 4,
+                    RadiusX = 2,
+                    RadiusY = 2,
+                    Fill = BrushFrom("#944E24"),
+                    Stroke = outline,
+                    StrokeThickness = 1
+                };
+                Canvas.SetLeft(rim, 6);
+                Canvas.SetTop(rim, 6);
+                canvas.Children.Add(rim);
+                // 빗살무늬 (생선뼈/빗살 선각 문양)
+                AddLine(canvas, 13, 16, 23, 23, "#5E2E14", 1.8);
+                AddLine(canvas, 33, 16, 23, 23, "#5E2E14", 1.8);
+                AddLine(canvas, 14, 25, 23, 32, "#5E2E14", 1.8);
+                AddLine(canvas, 32, 25, 23, 32, "#5E2E14", 1.8);
+                AddLine(canvas, 16, 34, 23, 40, "#5E2E14", 1.8);
+                AddLine(canvas, 30, 34, 23, 40, "#5E2E14", 1.8);
+                AddLine(canvas, 18, 42, 23, 46, "#5E2E14", 1.6);
+                AddLine(canvas, 28, 42, 23, 46, "#5E2E14", 1.6);
+                // 토기 중앙 하이라이트
+                AddLine(canvas, 23, 10, 23, 50, "#E89F70", 1.0);
                 break;
 
             case "spindle-whorl":
@@ -341,22 +392,41 @@ public partial class StudentPickerWindow
                 break;
 
             case "half-moon-stone-knife":
+                // 반달돌칼: 반원형 등곡선과 직선 날, 끈을 꿰는 2개의 동그란 구멍
                 canvas.Children.Add(new System.Windows.Shapes.Path
                 {
-                    Data = Geometry.Parse("M5,22 C13,8 34,5 42,18 C35,38 15,47 5,22 Z"),
-                    Fill = BrushFrom("#8D8372"),
+                    Data = Geometry.Parse("M4,34 C6,10 40,10 42,34 Z"),
+                    Fill = BrushFrom("#6A655E"),
                     Stroke = outline,
                     StrokeThickness = 2.2
                 });
-                AddLine(canvas, 12, 22, 35, 15, "#C8BDA9", 1.7);
-                var hole1 = new Ellipse { Width = 4, Height = 4, Fill = outline };
-                Canvas.SetLeft(hole1, 15);
-                Canvas.SetTop(hole1, 29);
-                canvas.Children.Add(hole1);
-                var hole2 = new Ellipse { Width = 4, Height = 4, Fill = outline };
-                Canvas.SetLeft(hole2, 27);
-                Canvas.SetTop(hole2, 25);
-                canvas.Children.Add(hole2);
+                // 칼날(직선 날) 연마 하이라이트
+                AddLine(canvas, 5, 33, 41, 33, "#D5CEC3", 2.2);
+                // 끈을 꿰는 구멍 1 (왼쪽)
+                var hole1Border = new Ellipse { Width = 7, Height = 7, Fill = BrushFrom("#362F28") };
+                Canvas.SetLeft(hole1Border, 14);
+                Canvas.SetTop(hole1Border, 20);
+                canvas.Children.Add(hole1Border);
+                var hole1Inner = new Ellipse { Width = 4, Height = 4, Fill = BrushFrom("#211C18") };
+                Canvas.SetLeft(hole1Inner, 15.5);
+                Canvas.SetTop(hole1Inner, 21.5);
+                canvas.Children.Add(hole1Inner);
+                // 끈을 꿰는 구멍 2 (오른쪽)
+                var hole2Border = new Ellipse { Width = 7, Height = 7, Fill = BrushFrom("#362F28") };
+                Canvas.SetLeft(hole2Border, 25);
+                Canvas.SetTop(hole2Border, 20);
+                canvas.Children.Add(hole2Border);
+                var hole2Inner = new Ellipse { Width = 4, Height = 4, Fill = BrushFrom("#211C18") };
+                Canvas.SetLeft(hole2Inner, 26.5);
+                Canvas.SetTop(hole2Inner, 21.5);
+                canvas.Children.Add(hole2Inner);
+                // 등쪽 반원 연마 음영선
+                canvas.Children.Add(new System.Windows.Shapes.Path
+                {
+                    Data = Geometry.Parse("M9,30 C12,15 34,15 37,30"),
+                    Stroke = BrushFrom("#88827A"),
+                    StrokeThickness = 1.3
+                });
                 break;
 
             case "plain-pottery":

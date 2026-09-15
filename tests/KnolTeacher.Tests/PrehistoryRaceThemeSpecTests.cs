@@ -42,6 +42,7 @@ public class PrehistoryRaceThemeSpecTests
             "주먹도끼",
             "간석기",
             "조개 껍데기 가면",
+            "빗살무늬 토기",
             "찍개",
             "반달 돌칼",
             "민무늬 토기",
@@ -64,6 +65,7 @@ public class PrehistoryRaceThemeSpecTests
     [InlineData("간석기", "신석기")]
     [InlineData("가락바퀴", "신석기")]
     [InlineData("조개 껍데기 가면", "신석기")]
+    [InlineData("빗살무늬 토기", "신석기")]
     [InlineData("반달 돌칼", "청동기")]
     [InlineData("민무늬 토기", "청동기")]
     [InlineData("비파형 동검", "청동기")]
@@ -99,6 +101,7 @@ public class PrehistoryRaceThemeSpecTests
             "polished-stone",
             "spindle-whorl",
             "shell-mask",
+            "comb-pottery",
             "half-moon-stone-knife",
             "plain-pottery",
             "bronze-dagger",
