@@ -4,22 +4,54 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style x:Key="MiniStepperBtn" TargetType="Button">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#CBD5E1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#475569"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#334155"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#38BDF8"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#0284C7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="6">
         <Grid.RowDefinitions>
-            <!-- Preset & Edit Mode Bar -->
+            <!-- Top Controls Bar -->
             <RowDefinition Height="Auto" />
-            <!-- Custom Input Area (Collapsible) -->
+            <!-- Collapsible Bulk Input Panel -->
             <RowDefinition Height="Auto" />
-            <!-- Display -->
+            <!-- Main 2-Column Playfield & Management Area -->
             <RowDefinition Height="*" />
-            <!-- Action -->
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Top Presets Bar -->
+        <!-- Top Controls Bar -->
         <Grid Grid.Row="0" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <ComboBox x:Name="CbPresets" Grid.Column="0" Height="28" MinHeight="28" FontSize="11" Padding="6,2" VerticalContentAlignment="Center" SelectionChanged="CbPresets_SelectionChanged">
@@ -29,71 +61,126 @@
                 <ComboBoxItem Content="🧹 학급 1인1역/청소"/>
                 <ComboBoxItem Content="✏️ 사용자 직접 입력"/>
             </ComboBox>
-            <Button x:Name="BtnToggleEdit" Grid.Column="1" Content="✏️ 항목 편집" Click="BtnToggleEdit_Click" Height="28" Padding="8,0" Margin="4,0,0,0" Background="#1E293B" Foreground="#38BDF8" FontSize="10" FontWeight="Bold" BorderThickness="0" Cursor="Hand"/>
+            <Button x:Name="BtnResetRatio" Grid.Column="1" Content="⚖️ 1:1 초기화" Click="BtnResetRatio_Click" Height="28" Padding="8,0" Margin="4,0,0,0" Background="#1E293B" Foreground="#94A3B8" FontSize="10.5" FontWeight="SemiBold" BorderBrush="#334155" BorderThickness="1" Cursor="Hand" ToolTip="모든 항목의 비율을 동일(1:1)하게 맞춥니다">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
+            <Button x:Name="BtnToggleEdit" Grid.Column="2" Content="📝 일괄 입력" Click="BtnToggleEdit_Click" Height="28" Padding="8,0" Margin="4,0,0,0" Background="#1E293B" Foreground="#38BDF8" FontSize="10.5" FontWeight="Bold" BorderBrush="#334155" BorderThickness="1" Cursor="Hand" ToolTip="쉼표나 줄바꿈으로 많은 항목을 한 번에 입력합니다">
+                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+            </Button>
         </Grid>
 
-        <!-- Custom Items Input (Collapsible) -->
+        <!-- Collapsible Bulk Input Panel -->
         <Border x:Name="PanelCustomInput" Grid.Row="1" Background="#0F172A" CornerRadius="6" BorderBrush="#334155" BorderThickness="1" Padding="6" Margin="0,0,0,6" Visibility="Collapsed">
             <StackPanel>
-                <TextBlock Text="쉼표(,) 또는 줄바꿈으로 항목을 구분하여 입력하세요:" FontSize="10" Foreground="#94A3B8" Margin="0,0,0,4"/>
-                <TextBox x:Name="TbCustomItems" Height="48" FontSize="11" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Background="#1E293B" Foreground="White" BorderBrush="#334155" Padding="4" TextChanged="TbCustomItems_TextChanged"/>
-                <TextBlock x:Name="TxtItemCount" Text="총 6개 항목" FontSize="10" Foreground="#10B981" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                <TextBlock Text="쉼표(,) 또는 줄바꿈으로 구분하여 입력하세요 (예: 사과:2, 바나나:1, 딸기:3):" FontSize="10" Foreground="#94A3B8" Margin="0,0,0,4"/>
+                <TextBox x:Name="TbCustomItems" Height="48" FontSize="11" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Background="#1E293B" Foreground="White" BorderBrush="#334155" Padding="4"/>
+                <Button Content="적용하기" Click="BtnApplyBulk_Click" HorizontalAlignment="Right" Height="22" Padding="10,0" Margin="0,4,0,0" Background="#0284C7" Foreground="White" FontSize="10" FontWeight="Bold" BorderThickness="0" Cursor="Hand">
+                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
+                </Button>
             </StackPanel>
         </Border>
 
-        <!-- Result Display Card & Roulette Wheel Viewport -->
-        <Border Grid.Row="2" Background="#0F172A" CornerRadius="10" BorderBrush="#334155" BorderThickness="1" Margin="0,0,0,6" Padding="6" ClipToBounds="True">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+        <!-- Main 2-Column Split Area -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <!-- Left: Wheel View & Spin Button (*) -->
+                <ColumnDefinition Width="*" MinWidth="220"/>
+                <!-- Right: Item & Ratio Manager (280px) -->
+                <ColumnDefinition Width="280" MinWidth="240" MaxWidth="360"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- Responsive Wheel Viewbox -->
-                <Viewbox Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" MaxHeight="340">
-                    <Grid Width="340" Height="340" Margin="8">
-                        <!-- Outer Shadow & Metallic Ring -->
-                        <Ellipse Width="336" Height="336" Fill="#1E293B" Stroke="#475569" StrokeThickness="4" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Ellipse.Effect>
-                                <DropShadowEffect BlurRadius="14" Color="#000000" Opacity="0.65" ShadowDepth="4"/>
-                            </Ellipse.Effect>
-                        </Ellipse>
+            <!-- Left: Wheel & Spin -->
+            <Border Grid.Column="0" Background="#0F172A" CornerRadius="10" BorderBrush="#334155" BorderThickness="1" Margin="0,0,6,0" Padding="6" ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <!-- Wheel Canvas (Flexible) -->
+                        <RowDefinition Height="*" />
+                        <!-- Result Banner -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Spin Button -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                        <!-- Rotating Wheel Canvas -->
-                        <Canvas x:Name="WheelCanvas" Width="320" Height="320" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Canvas.RenderTransform>
-                                <RotateTransform x:Name="WheelRotateTransform" CenterX="160" CenterY="160" Angle="0"/>
-                            </Canvas.RenderTransform>
-                        </Canvas>
+                    <!-- Responsive Wheel Viewbox -->
+                    <Viewbox Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" MaxHeight="320">
+                        <Grid Width="340" Height="340" Margin="8">
+                            <!-- Outer Ring -->
+                            <Ellipse Width="336" Height="336" Fill="#1E293B" Stroke="#475569" StrokeThickness="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect BlurRadius="14" Color="#000000" Opacity="0.65" ShadowDepth="4"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
 
-                        <!-- Center Hub Cap -->
-                        <Ellipse Width="46" Height="46" Fill="#0F172A" Stroke="#38BDF8" StrokeThickness="3" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Ellipse.Effect>
-                                <DropShadowEffect BlurRadius="8" Color="#000000" Opacity="0.6" ShadowDepth="2"/>
-                            </Ellipse.Effect>
-                        </Ellipse>
-                        <TextBlock Text="🎯" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                            <!-- Rotating Wheel Canvas -->
+                            <Canvas x:Name="WheelCanvas" Width="320" Height="320" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Canvas.RenderTransform>
+                                    <RotateTransform x:Name="WheelRotateTransform" CenterX="160" CenterY="160" Angle="0"/>
+                                </Canvas.RenderTransform>
+                            </Canvas>
 
-                        <!-- Fixed Top Pointer (12 o'clock downward arrow) -->
-                        <Path HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,2,0,0"
-                              Data="M 0,0 L 22,0 L 11,26 Z" Fill="#EF4444" Stroke="#FFFFFF" StrokeThickness="2">
-                            <Path.Effect>
-                                <DropShadowEffect BlurRadius="6" Color="#000000" Opacity="0.7" ShadowDepth="3"/>
-                            </Path.Effect>
-                        </Path>
+                            <!-- Center Cap -->
+                            <Ellipse Width="46" Height="46" Fill="#0F172A" Stroke="#38BDF8" StrokeThickness="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect BlurRadius="8" Color="#000000" Opacity="0.6" ShadowDepth="2"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <TextBlock Text="🎯" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+
+                            <!-- Pointer (12 o'clock downward arrow) -->
+                            <Path HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,2,0,0"
+                                  Data="M 0,0 L 22,0 L 11,26 Z" Fill="#EF4444" Stroke="#FFFFFF" StrokeThickness="2">
+                                <Path.Effect>
+                                    <DropShadowEffect BlurRadius="6" Color="#000000" Opacity="0.7" ShadowDepth="3"/>
+                                </Path.Effect>
+                            </Path>
+                        </Grid>
+                    </Viewbox>
+
+                    <!-- Status / Winner Banner -->
+                    <Border Grid.Row="1" Background="#1E293B" CornerRadius="8" Padding="10,5" Margin="4,4,4,6" BorderBrush="#334155" BorderThickness="1" HorizontalAlignment="Center">
+                        <TextBlock x:Name="TxtResult" Text="돌림판을 돌려보세요!" FontSize="15" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Spin Button -->
+                    <Button x:Name="BtnSpin" Grid.Row="2" Content="🎡 돌리기!" Click="BtnSpin_Click" Height="38" Background="#0284C7" Foreground="White" FontWeight="Bold" FontSize="14" BorderThickness="0" Cursor="Hand">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Right: Item & Ratio Manager Panel -->
+            <Border Grid.Column="1" Background="#0F172A" CornerRadius="10" BorderBrush="#334155" BorderThickness="1" Padding="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <!-- Header -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Items List (Scrollable) -->
+                        <RowDefinition Height="*" />
+                        <!-- Add Button -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Panel Header -->
+                    <Grid Grid.Row="0" Margin="2,0,2,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="항목 및 비율 설정" FontSize="12" FontWeight="Bold" Foreground="#F8FAFC" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtItemSummary" Grid.Column="1" Text="6개 (총 비율: 6)" FontSize="10.5" Foreground="#10B981" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </Grid>
-                </Viewbox>
 
-                <!-- Status & Result Banner -->
-                <Border Grid.Row="1" Background="#1E293B" CornerRadius="8" Padding="12,6" Margin="6,4,6,2" BorderBrush="#334155" BorderThickness="1" HorizontalAlignment="Center">
-                    <TextBlock x:Name="TxtResult" Text="돌림판을 돌려보세요!" FontSize="16" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Center"/>
-                </Border>
-            </Grid>
-        </Border>
+                    <!-- Items ScrollViewer -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,6">
+                        <StackPanel x:Name="PanelItemList"/>
+                    </ScrollViewer>
 
-        <!-- Spin Action Button -->
-        <Button x:Name="BtnSpin" Grid.Row="3" Content="🎡 돌리기!" Click="BtnSpin_Click" Height="36" Background="#0284C7" Foreground="White" FontWeight="Bold" FontSize="14" BorderThickness="0" Cursor="Hand">
-            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
-        </Button>
+                    <!-- Add Item Button -->
+                    <Button x:Name="BtnAddItem" Grid.Row="2" Content="➕ 새 항목 추가" Click="BtnAddItem_Click" Height="30" Background="#1E293B" Foreground="#38BDF8" FontWeight="Bold" FontSize="11.5" BorderBrush="#334155" BorderThickness="1" Cursor="Hand">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>
