@@ -331,12 +331,12 @@
                                 </StackPanel>
                             </Button>
 
-                            <!-- 추첨 Alt+8 -->
-                            <Button x:Name="BtnPillPicker" Click="BtnLaunchPicker_Click" Background="{DynamicResource BeigeDualMonitorBtnBg}" BorderBrush="{DynamicResource BeigeDualMonitorBtnBorder}" BorderThickness="1.5" Foreground="{DynamicResource BeigeTextMain}" Padding="10,5" Margin="2,0" Cursor="Hand" ToolTip="🎲 발표자 추첨 / 레이스 (Alt+8)&#x0a;• 좌클릭: 모니터 1 (선생님 화면)&#x0a;• 우클릭: 모니터 2 (학생 전자칠판)">
+                            <!-- 발표자 추첨 Alt+8 -->
+                            <Button x:Name="BtnPillPicker" Click="BtnLaunchPicker_Click" Background="{DynamicResource BeigeDualMonitorBtnBg}" BorderBrush="{DynamicResource BeigeDualMonitorBtnBorder}" BorderThickness="1.5" Foreground="{DynamicResource BeigeTextMain}" Padding="10,5" Margin="2,0" Cursor="Hand" ToolTip="🎯 발표자 추첨 (뽑기 레이스, Alt+8)&#x0a;• 좌클릭: 모니터 1 (선생님 화면)&#x0a;• 우클릭: 모니터 2 (학생 전자칠판)">
                                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="🎲" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="TxtPillPickerLabel" Text="추첨" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="🎯" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtPillPickerLabel" Text="발표자 추첨" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
                                     <Ellipse x:Name="DotPillPicker" Width="6" Height="6" Fill="#4ADE80" Margin="4,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                     <Border x:Name="BadgePillPicker" Background="#F1F5F9" CornerRadius="4" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center">
                                         <TextBlock x:Name="TxtPillPickerBadge" Text="Alt+8" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource BeigeTextSub}"/>

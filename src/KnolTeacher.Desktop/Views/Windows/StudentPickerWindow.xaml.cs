@@ -207,6 +207,8 @@ public partial class StudentPickerWindow : Window
         {
             StopBgm();
             _soundService.StopAll();
+            e.Cancel = true;
+            Hide();
         };
 
         KeyDown += Window_KeyDown;
@@ -258,6 +260,8 @@ public partial class StudentPickerWindow : Window
     }
 
     #endregion
+
+    public int CurrentMonitorIndex => _currentMonitorIndex;
 
     public void PositionToDefaultMonitor()
     {
