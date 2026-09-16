@@ -413,7 +413,7 @@ public partial class StudentPickerWindow : Window
         // Lower Mushroom Forest: Counter-Clockwise Rotating Log
         AddRotatingLog(380, 2180, 100, 22, -1.8, 0);
 
-        // 3. 선사시대 10종 유물 구조물 & 방해물 (다양한 각도로 맵 내부에 직접 배치)
+        // 3. 선사시대 10종 유물 구조물 & 방해물 (실물 고증 PNG 스프라이트, 병목 없는 지그재그 배치)
         // --- [구석기 구역: 들판과 동굴 협곡 (Y = 240 ~ 1200)] ---
         // 찍개 (chopper), 주먹도끼 (handaxe), 뼈바늘 (bone-needle)
         AddBumper(235, 275, 18, "chopper", -25);
@@ -433,40 +433,31 @@ public partial class StudentPickerWindow : Window
 
         // --- [신석기 구역: 강가 정착지와 바닷가 마을 (Y = 1200 ~ 2400)] ---
         // 간석기 (polished-stone), 빗살무늬 토기 (comb-pottery), 가락바퀴 (spindle-whorl), 조개 가면 (shell-mask)
-        AddBumper(205, 1360, 20, "polished-stone", -35);
-        AddBumper(480, 1360, 18, "spindle-whorl", 25);
-        AddBumper(205, 1470, 19, "comb-pottery", 18);
-        AddBumper(480, 1470, 20, "polished-stone", 30);
-        AddBumper(205, 1580, 18, "spindle-whorl", -45);
-        AddBumper(480, 1580, 19, "shell-mask", 20);
+        // 고인돌 섬(Y=1360~1640) 양옆 협곡 중앙 병목 완전 해소: 벽 쪽으로 분산 및 엇갈림 배치 (70px 이상 자유 통로 확보)
+        AddBumper(180, 1370, 18, "polished-stone", -25);
+        AddBumper(500, 1480, 18, "comb-pottery", 15);
+        AddBumper(185, 1590, 18, "spindle-whorl", -30);
 
-        AddBumper(340, 1660, 20, "comb-pottery", -20);
-        AddBumper(205, 1720, 19, "shell-mask", -20);
-        AddBumper(480, 1720, 18, "spindle-whorl", 35);
-        AddBumper(340, 1815, 20, "polished-stone", -15);
-        AddBumper(340, 1960, 20, "comb-pottery", 15);
+        AddBumper(200, 1680, 18, "shell-mask", -15);
+        AddBumper(480, 1780, 18, "spindle-whorl", 25);
+        AddBumper(340, 1900, 18, "comb-pottery", 0);
 
-        AddBumper(275, 2130, 20, "polished-stone", 50);
-        AddBumper(330, 2210, 20, "comb-pottery", -10);
-        AddBumper(245, 2260, 19, "shell-mask", 15);
-        AddBumper(435, 2330, 20, "polished-stone", -25);
+        AddBumper(240, 2130, 19, "polished-stone", 35);
+        AddBumper(440, 2230, 18, "shell-mask", 15);
+        AddBumper(250, 2330, 19, "polished-stone", -20);
 
         // --- [청동기 구역: 농경 마을과 고인돌 언덕 (Y = 2400 ~ 3200)] ---
         // 반달 돌칼 (half-moon-stone-knife), 민무늬 토기 (plain-pottery), 비파형 동검 (bronze-dagger), 고인돌 (dolmen)
-        AddBumper(260, 2480, 21, "half-moon-stone-knife", -40);
-        AddBumper(420, 2480, 19, "plain-pottery", 18);
-        AddBumper(340, 2550, 20, "bronze-dagger", 55);
-        AddBumper(430, 2620, 21, "half-moon-stone-knife", 35);
-        AddBumper(340, 2690, 20, "plain-pottery", -20);
-        AddBumper(260, 2760, 21, "half-moon-stone-knife", -30);
-        AddBumper(260, 2840, 20, "bronze-dagger", -50);
-        AddBumper(420, 2840, 19, "plain-pottery", 25);
-        AddBumper(435, 2920, 21, "half-moon-stone-knife", 45);
-        AddBumper(340, 3010, 20, "plain-pottery", 15);
-        AddBumper(255, 3060, 21, "half-moon-stone-knife", -25);
-        AddBumper(425, 3060, 20, "bronze-dagger", 40);
+        AddBumper(240, 2480, 20, "half-moon-stone-knife", -30);
+        AddBumper(440, 2580, 19, "bronze-dagger", 40);
+        AddBumper(280, 2680, 19, "plain-pottery", -15);
+        AddBumper(400, 2780, 20, "half-moon-stone-knife", 25);
+        AddBumper(240, 2880, 19, "bronze-dagger", -35);
+        AddBumper(440, 2980, 19, "plain-pottery", 20);
+        AddBumper(260, 3060, 20, "half-moon-stone-knife", -20);
+        AddBumper(420, 3060, 19, "bronze-dagger", 30);
 
-        // 고인돌 중심 구조물 (피니시 깔때기 입구 전 둔덕형 완충 장애물)
+        // 고인돌 중심 구조물 (피니시 깔때기 입구 전 완충 장애물)
         AddBumper(340, 3160, 22, "dolmen", 0);
 
         // 4. 피니시 직전 빗살무늬토기 (병목 없는 좌우 분산 배치)
@@ -815,26 +806,36 @@ public partial class StudentPickerWindow : Window
             // Anti-jam & zero-bottleneck watchdog: 어떤 주자도 좁은 길이나 장애물에 갇히지 않도록 지속 하향 추진
             if (r.Y > 160 && r.Y < FinishY)
             {
-                if (r.Vy < 45.0 && r.PinnedTimer <= 0)
+                if (r.Vy < 55.0 && r.PinnedTimer <= 0)
                 {
-                    r.Vy += 130.0 * dt; // 일정한 하향 유도 가속
+                    r.Vy += 140.0 * dt; // 일정한 하향 유도 가속
                 }
 
-                if (Math.Abs(r.Vx) < 22.0 && r.Vy < 45.0)
+                // 위치 기반 정체 감지 (0.15초 동안 6px 미만 전진 시 즉각 돌파)
+                if (r.PinnedTimer <= 0)
                 {
-                    r.StuckTimer += dt;
-                    if (r.StuckTimer > 0.16) // 0.16초 이상 정체 시 즉각 돌파 임펄스 발동!
+                    r.ProgressCheckTimer += dt;
+                    if (r.ProgressCheckTimer >= 0.15)
                     {
-                        // 중앙 및 하향 방향으로 강력한 펄스
-                        double centerNudge = (340.0 - r.X);
-                        r.Vx += Math.Sign(centerNudge) * (65.0 + rand.NextDouble() * 45.0);
-                        r.Vy = Math.Max(r.Vy + 140.0, 180.0 + rand.NextDouble() * 70.0);
-                        r.StuckTimer = 0;
+                        double progress = r.Y - r.LastProgressY;
+                        r.LastProgressY = r.Y;
+                        r.ProgressCheckTimer = 0;
+
+                        if (progress < 6.0)
+                        {
+                            // 0.15초 동안 6px 미만 진행 -> 장애물/군집 정체 감지! 즉시 하향 돌파 펄스 발동
+                            double sideNudge = (r.X < 340.0)
+                                ? (rand.NextDouble() * 80.0 + 70.0)
+                                : -(rand.NextDouble() * 80.0 + 70.0);
+                            if (Math.Abs(r.X - 340.0) < 25.0)
+                            {
+                                sideNudge = (rand.Next(2) == 0 ? 1 : -1) * (90.0 + rand.NextDouble() * 40.0);
+                            }
+                            r.Vx += sideNudge;
+                            r.Vy = Math.Max(r.Vy + 180.0, 220.0);
+                            r.Y += 8.0; // 장애물 정수리에서 즉각 수직 이탈
+                        }
                     }
-                }
-                else
-                {
-                    r.StuckTimer = 0;
                 }
             }
 
@@ -1078,17 +1079,40 @@ public partial class StudentPickerWindow : Window
                     double nx = dx / dist;
                     double ny = dy / dist;
                     double overlap = minDist - dist;
-                    r.X += nx * overlap;
-                    r.Y += ny * overlap;
 
-                    double dot = r.Vx * nx + r.Vy * ny;
-                    if (dot < 0)
+                    // 정수리 끼임 방지: 캐릭터가 범퍼 상단(ny < 0)에 닿을 때
+                    if (ny < 0)
                     {
-                        double boost = 1.25;
-                        r.Vx = (-dot * nx * boost) + (nx >= 0 ? 32.0 : -32.0);
-                        // Ensure balls deflect around the bumper without flying backwards into traffic
-                        r.Vy = Math.Max(-dot * ny * boost, 45.0);
+                        // 1. 위로 튕겨 올라가는 무한 바운스를 방지하기 위해 Y축 상향 밀어내기 대폭 억제
+                        r.Y += Math.Max(ny, -0.1) * overlap;
+
+                        // 2. 좌우 측면으로 미끄러져 내려가도록 X축 편향 오프셋 부여
+                        double side = (dx >= 0 ? 1.0 : -1.0);
+                        if (Math.Abs(dx) < 6.0)
+                        {
+                            side = (r.X >= 340.0) ? 1.0 : -1.0;
+                        }
+                        r.X += side * (overlap + 3.0);
+
+                        // 3. 측면 슬라이딩 속도 및 하향 전진 속도 보장
+                        r.Vx += side * (110.0 + rand.NextDouble() * 50.0);
+                        r.Vy = Math.Max(r.Vy, 90.0) + rand.NextDouble() * 30.0;
                         bumper.Flash();
+                    }
+                    else
+                    {
+                        // 일반 측면/하단 충돌: 부드러운 튕김 및 하향 유지
+                        r.X += nx * overlap;
+                        r.Y += ny * overlap;
+
+                        double dot = r.Vx * nx + r.Vy * ny;
+                        if (dot < 0)
+                        {
+                            double boost = 1.2;
+                            r.Vx = (-dot * nx * boost) + (nx >= 0 ? 36.0 : -36.0);
+                            r.Vy = Math.Max(r.Vy, 75.0);
+                            bumper.Flash();
+                        }
                     }
                 }
             }
@@ -1234,6 +1258,10 @@ public partial class StudentPickerWindow : Window
                     r.Vy -= p * ny * 0.7;
                     o.Vx += p * nx * 0.7;
                     o.Vy += p * ny * 0.7;
+
+                    // 군집 정체 방지: 볼끼리 겹쳤을 때 하향 전파 및 미세 분산
+                    if (r.Vy < 40.0 && o.Vy > 40.0) r.Vy += 35.0;
+                    if (o.Vy < 40.0 && r.Vy > 40.0) o.Vy += 35.0;
                 }
             }
 
@@ -2095,6 +2123,8 @@ public class RaceRacer
     public bool IsFinished { get; set; } = false;
     public int FinishRank { get; set; } = 0;
     public double StuckTimer { get; set; } = 0;
+    public double LastProgressY { get; set; } = 0;
+    public double ProgressCheckTimer { get; set; } = 0;
 
     // Wall-Pinned (표창 솔방울에 꽂혀 벽에 고정된 상태)
     public double PinnedTimer { get; set; } = 0;
@@ -2395,10 +2425,17 @@ public class RaceBumper
         }
         else
         {
-            // 선사시대 유물 벡터 비주얼 (다양한 각도로 회전된 구조물/방해물)
-            // 사용자 요구사항: 유물 아래 한글 이름 라벨 없음! 순수 유물 그래픽 자체만 표출
+            // 선사시대 유물 비주얼 (실물 고증 PNG 스프라이트 및 스케일)
             var relicElement = StudentPickerWindow.CreateArtifactIcon(assetOrRelicKey);
-            if (relicElement is Canvas canvas)
+            if (relicElement is Image img)
+            {
+                img.Width = radius * 2.2;
+                img.Height = radius * 2.2;
+                img.Stretch = Stretch.Uniform;
+                img.HorizontalAlignment = HorizontalAlignment.Center;
+                img.VerticalAlignment = VerticalAlignment.Center;
+            }
+            else if (relicElement is Canvas canvas)
             {
                 double targetDim = Math.Max(canvas.Width, canvas.Height);
                 if (targetDim > 0)
