@@ -118,4 +118,24 @@ public class NolboardWidgetRegistryTests
         Assert.NotNull(prop);
         Assert.Equal(typeof(int), prop.PropertyType);
     }
+
+    [Fact]
+    public void WheelItem_SupportsWeightsAndProportionalCalculations()
+    {
+        var item1 = new KnolTeacher.Desktop.Views.Controls.Widgets.WheelItem { Name = "1번", Weight = 1 };
+        var item2 = new KnolTeacher.Desktop.Views.Controls.Widgets.WheelItem { Name = "2번", Weight = 2 };
+        var item3 = new KnolTeacher.Desktop.Views.Controls.Widgets.WheelItem { Name = "3번", Weight = 1 };
+
+        var items = new[] { item1, item2, item3 };
+        int totalWeight = items.Sum(it => it.Weight);
+        Assert.Equal(4, totalWeight);
+
+        double angle1 = 360.0 * (item1.Weight / (double)totalWeight);
+        double angle2 = 360.0 * (item2.Weight / (double)totalWeight);
+        double angle3 = 360.0 * (item3.Weight / (double)totalWeight);
+
+        Assert.Equal(90.0, angle1, 2);
+        Assert.Equal(180.0, angle2, 2);
+        Assert.Equal(90.0, angle3, 2);
+    }
 }
