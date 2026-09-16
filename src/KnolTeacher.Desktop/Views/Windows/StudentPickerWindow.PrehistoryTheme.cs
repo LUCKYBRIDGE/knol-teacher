@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using KnolTeacher.Desktop.Models;
 
@@ -89,8 +90,6 @@ public partial class StudentPickerWindow
             Canvas.SetTop(layer, zone.StartY);
             Panel.SetZIndex(layer, -40);
             RaceCanvas.Children.Add(layer);
-
-            AddZoneBanner(zone);
         }
 
         Geometry trackGeometry = BuildPhysicsAlignedTrackGeometry();
@@ -233,268 +232,32 @@ public partial class StudentPickerWindow
 
     public static FrameworkElement CreateArtifactIcon(string key)
     {
-        var canvas = new Canvas { Width = 46, Height = 56, IsHitTestVisible = false };
-        Brush outline = BrushFrom("#4A3427");
-
-        switch (key)
+        string assetFile = key switch
         {
-            case "chopper":
-                canvas.Children.Add(new Polygon
-                {
-                    Points = new PointCollection
-                    {
-                        new(7, 15), new(23, 6), new(39, 13), new(42, 31),
-                        new(30, 44), new(14, 42), new(5, 29)
-                    },
-                    Fill = BrushFrom("#8E8576"),
-                    Stroke = outline,
-                    StrokeThickness = 2.2
-                });
-                AddLine(canvas, 11, 17, 25, 10, "#D5C9B4", 2);
-                AddLine(canvas, 8, 24, 19, 20, "#D5C9B4", 2);
-                AddLine(canvas, 31, 12, 39, 20, "#5E584F", 2);
-                break;
+            "chopper" => "cartoon_chipped_stone.png",
+            "handaxe" => "cartoon_handaxe.png",
+            "bone-needle" => "cartoon_relic_bone_needle.png",
+            "polished-stone" => "cartoon_polished_stone.png",
+            "comb-pottery" => "cartoon_comb_pottery.png",
+            "spindle-whorl" => "cartoon_relic_spindle_whorl.png",
+            "shell-mask" => "cartoon_relic_shell_mask.png",
+            "half-moon-stone-knife" => "cartoon_relic_half_moon_knife.png",
+            "plain-pottery" => "cartoon_relic_plain_pottery.png",
+            "bronze-dagger" => "cartoon_relic_bronze_dagger.png",
+            "dolmen" => "cartoon_dolmen.png",
+            _ => "cartoon_pebble_bumper.png"
+        };
 
-            case "handaxe":
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M23,3 C34,12 41,24 37,35 C34,43 28,49 23,53 C17,48 10,42 8,34 C5,24 12,12 23,3 Z"),
-                    Fill = BrushFrom("#9B8667"),
-                    Stroke = outline,
-                    StrokeThickness = 2.2
-                });
-                AddLine(canvas, 23, 7, 17, 43, "#CDB998", 1.8);
-                AddLine(canvas, 23, 7, 30, 43, "#6E5B45", 1.5);
-                break;
-
-            case "bone-needle":
-                AddLine(canvas, 8, 46, 37, 12, "#F2E4BF", 5.2);
-                AddLine(canvas, 8, 46, 37, 12, "#6C5A42", 1.0);
-                var eye = new Ellipse
-                {
-                    Width = 9,
-                    Height = 9,
-                    Fill = BrushFrom("#F2E4BF"),
-                    Stroke = outline,
-                    StrokeThickness = 1.5
-                };
-                Canvas.SetLeft(eye, 33);
-                Canvas.SetTop(eye, 6);
-                canvas.Children.Add(eye);
-                var hole = new Ellipse { Width = 3, Height = 3, Fill = outline };
-                Canvas.SetLeft(hole, 36);
-                Canvas.SetTop(hole, 9);
-                canvas.Children.Add(hole);
-                break;
-
-            case "polished-stone":
-                // 간석기 (마제석부 / 간돌도끼): 상단 슴베에서 하단 날로 넓어지는 단단한 돌도끼 조형
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M16,6 C16,4 30,4 30,6 L37,41 C38,47 34,51 23,52 C12,51 8,47 9,41 Z"),
-                    Fill = BrushFrom("#4F6157"),
-                    Stroke = outline,
-                    StrokeThickness = 2.2
-                });
-                // 연마된 날 부분 경사면 (Bevel cutting edge)
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M9,41 C12,46 23,47 37,41 C35,46 32,50 23,52 C14,50 11,46 9,41 Z"),
-                    Fill = BrushFrom("#8CA496")
-                });
-                // 중앙 능선 연마 하이라이트
-                AddLine(canvas, 23, 8, 23, 44, "#768E80", 2.2);
-                // 칼날 끝 반짝이는 하이라이트 엣지
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M11,46 C16,49.5 30,49.5 35,46"),
-                    Stroke = BrushFrom("#DDF0E6"),
-                    StrokeThickness = 1.8
-                });
-                break;
-
-            case "comb-pottery":
-                // 빗살무늬 토기: V자형 밑이 뾰족한 전형적인 신석기 토기와 생선뼈 빗살 문양
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M8,8 L38,8 C37,24 33,41 23,53 C13,41 9,24 8,8 Z"),
-                    Fill = BrushFrom("#BC7142"),
-                    Stroke = outline,
-                    StrokeThickness = 2.2
-                });
-                // 입구 전면 테두리 림
-                var rim = new Rectangle
-                {
-                    Width = 34,
-                    Height = 4,
-                    RadiusX = 2,
-                    RadiusY = 2,
-                    Fill = BrushFrom("#944E24"),
-                    Stroke = outline,
-                    StrokeThickness = 1
-                };
-                Canvas.SetLeft(rim, 6);
-                Canvas.SetTop(rim, 6);
-                canvas.Children.Add(rim);
-                // 빗살무늬 (생선뼈/빗살 선각 문양)
-                AddLine(canvas, 13, 16, 23, 23, "#5E2E14", 1.8);
-                AddLine(canvas, 33, 16, 23, 23, "#5E2E14", 1.8);
-                AddLine(canvas, 14, 25, 23, 32, "#5E2E14", 1.8);
-                AddLine(canvas, 32, 25, 23, 32, "#5E2E14", 1.8);
-                AddLine(canvas, 16, 34, 23, 40, "#5E2E14", 1.8);
-                AddLine(canvas, 30, 34, 23, 40, "#5E2E14", 1.8);
-                AddLine(canvas, 18, 42, 23, 46, "#5E2E14", 1.6);
-                AddLine(canvas, 28, 42, 23, 46, "#5E2E14", 1.6);
-                // 토기 중앙 하이라이트
-                AddLine(canvas, 23, 10, 23, 50, "#E89F70", 1.0);
-                break;
-
-            case "spindle-whorl":
-                var whorl = new Ellipse
-                {
-                    Width = 38,
-                    Height = 38,
-                    Fill = BrushFrom("#C77F4C"),
-                    Stroke = outline,
-                    StrokeThickness = 2.2
-                };
-                Canvas.SetLeft(whorl, 4);
-                Canvas.SetTop(whorl, 9);
-                canvas.Children.Add(whorl);
-                var whorlHole = new Ellipse
-                {
-                    Width = 10,
-                    Height = 10,
-                    Fill = BrushFrom("#4A3427"),
-                    Stroke = BrushFrom("#EAB77A"),
-                    StrokeThickness = 1
-                };
-                Canvas.SetLeft(whorlHole, 18);
-                Canvas.SetTop(whorlHole, 23);
-                canvas.Children.Add(whorlHole);
-                AddLine(canvas, 10, 20, 36, 36, "#EAB77A", 1.3);
-                AddLine(canvas, 10, 36, 36, 20, "#EAB77A", 1.3);
-                break;
-
-            case "shell-mask":
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M23,4 C36,7 43,18 42,31 C41,43 34,51 23,53 C12,51 5,43 4,31 C3,18 10,7 23,4 Z"),
-                    Fill = BrushFrom("#EFE2C2"),
-                    Stroke = outline,
-                    StrokeThickness = 2.2
-                });
-                AddLine(canvas, 23, 8, 23, 48, "#C9AE7C", 1.2);
-                AddLine(canvas, 12, 13, 18, 47, "#D8C397", 1.1);
-                AddLine(canvas, 34, 13, 28, 47, "#D8C397", 1.1);
-                AddMaskEye(canvas, 12, 23);
-                AddMaskEye(canvas, 28, 23);
-                break;
-
-            case "half-moon-stone-knife":
-                // 반달돌칼: 반원형 등곡선과 직선 날, 끈을 꿰는 2개의 동그란 구멍
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M4,34 C6,10 40,10 42,34 Z"),
-                    Fill = BrushFrom("#6A655E"),
-                    Stroke = outline,
-                    StrokeThickness = 2.2
-                });
-                // 칼날(직선 날) 연마 하이라이트
-                AddLine(canvas, 5, 33, 41, 33, "#D5CEC3", 2.2);
-                // 끈을 꿰는 구멍 1 (왼쪽)
-                var hole1Border = new Ellipse { Width = 7, Height = 7, Fill = BrushFrom("#362F28") };
-                Canvas.SetLeft(hole1Border, 14);
-                Canvas.SetTop(hole1Border, 20);
-                canvas.Children.Add(hole1Border);
-                var hole1Inner = new Ellipse { Width = 4, Height = 4, Fill = BrushFrom("#211C18") };
-                Canvas.SetLeft(hole1Inner, 15.5);
-                Canvas.SetTop(hole1Inner, 21.5);
-                canvas.Children.Add(hole1Inner);
-                // 끈을 꿰는 구멍 2 (오른쪽)
-                var hole2Border = new Ellipse { Width = 7, Height = 7, Fill = BrushFrom("#362F28") };
-                Canvas.SetLeft(hole2Border, 25);
-                Canvas.SetTop(hole2Border, 20);
-                canvas.Children.Add(hole2Border);
-                var hole2Inner = new Ellipse { Width = 4, Height = 4, Fill = BrushFrom("#211C18") };
-                Canvas.SetLeft(hole2Inner, 26.5);
-                Canvas.SetTop(hole2Inner, 21.5);
-                canvas.Children.Add(hole2Inner);
-                // 등쪽 반원 연마 음영선
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M9,30 C12,15 34,15 37,30"),
-                    Stroke = BrushFrom("#88827A"),
-                    StrokeThickness = 1.3
-                });
-                break;
-
-            case "plain-pottery":
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M12,5 L35,5 C33,13 34,18 39,24 C44,32 42,45 35,51 C28,57 18,57 11,51 C4,45 2,32 7,24 C12,18 14,13 12,5 Z"),
-                    Fill = BrushFrom("#B8734B"),
-                    Stroke = outline,
-                    StrokeThickness = 2.2
-                });
-                AddLine(canvas, 13, 11, 34, 11, "#D99A69", 1.4);
-                break;
-
-            case "bronze-dagger":
-                canvas.Children.Add(new System.Windows.Shapes.Path
-                {
-                    Data = Geometry.Parse("M23,3 L31,16 L28,38 L25,47 L21,47 L18,38 L15,16 Z"),
-                    Fill = BrushFrom("#B88743"),
-                    Stroke = outline,
-                    StrokeThickness = 2
-                });
-                AddLine(canvas, 23, 7, 23, 43, "#E3BE76", 1.5);
-                var guard = new Rectangle
-                {
-                    Width = 25,
-                    Height = 5,
-                    RadiusX = 2,
-                    RadiusY = 2,
-                    Fill = BrushFrom("#8D6333"),
-                    Stroke = outline,
-                    StrokeThickness = 1
-                };
-                Canvas.SetLeft(guard, 10.5);
-                Canvas.SetTop(guard, 44);
-                canvas.Children.Add(guard);
-                AddLine(canvas, 23, 48, 23, 55, "#6F4A2D", 4);
-                break;
-
-            case "dolmen":
-                var left = new Polygon
-                {
-                    Points = new PointCollection { new(7, 48), new(11, 23), new(20, 20), new(23, 48) },
-                    Fill = BrushFrom("#77716B"),
-                    Stroke = outline,
-                    StrokeThickness = 1.7
-                };
-                canvas.Children.Add(left);
-                var right = new Polygon
-                {
-                    Points = new PointCollection { new(29, 48), new(32, 20), new(40, 23), new(43, 48) },
-                    Fill = BrushFrom("#77716B"),
-                    Stroke = outline,
-                    StrokeThickness = 1.7
-                };
-                canvas.Children.Add(right);
-                var cap = new Polygon
-                {
-                    Points = new PointCollection { new(3, 24), new(8, 10), new(39, 7), new(45, 19), new(40, 27), new(8, 28) },
-                    Fill = BrushFrom("#8C8781"),
-                    Stroke = outline,
-                    StrokeThickness = 2
-                };
-                canvas.Children.Add(cap);
-                AddLine(canvas, 10, 19, 36, 17, "#AEA9A2", 1.5);
-                break;
-        }
-
-        return canvas;
+        var img = new Image
+        {
+            Width = 48,
+            Height = 48,
+            Stretch = Stretch.Uniform,
+            Source = new BitmapImage(new Uri($"pack://application:,,,/assets/race/{assetFile}")),
+            IsHitTestVisible = false
+        };
+        RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+        return img;
     }
 
     private void AddPrehistoryStructures()

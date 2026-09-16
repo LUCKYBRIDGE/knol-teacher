@@ -305,9 +305,6 @@
                             <TextBlock Canvas.Left="15" Canvas.Top="2500" Text="— 2500m —" Foreground="#334155" FontSize="11" FontWeight="Bold" IsHitTestVisible="False"/>
                             <TextBlock Canvas.Left="15" Canvas.Top="3000" Text="— 3000m —" Foreground="#334155" FontSize="11" FontWeight="Bold" IsHitTestVisible="False"/>
                             
-                            <!-- Finish Line Water Basin Base -->
-                            <Rectangle Canvas.Left="260" Canvas.Top="3320" Width="160" Height="140" Fill="#0C2548" RadiusX="12" RadiusY="12" IsHitTestVisible="False"/>
-                            <Border Canvas.Left="260" Canvas.Top="3320" Width="160" Height="140" BorderBrush="#0284C7" BorderThickness="2" CornerRadius="12" IsHitTestVisible="False"/>
 
                             <!-- ================================================= -->
                             <!-- START BANNER (출발 축하 페스티벌 아치 배너)         -->
