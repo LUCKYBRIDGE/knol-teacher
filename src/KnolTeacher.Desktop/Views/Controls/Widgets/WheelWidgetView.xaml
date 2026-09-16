@@ -41,23 +41,59 @@
             </StackPanel>
         </Border>
 
-        <!-- Result Display Card (Responsive Viewbox) -->
-        <Border Grid.Row="2" Background="#0F172A" CornerRadius="10" BorderBrush="#334155" BorderThickness="1" Margin="0,0,0,6" Padding="8">
-            <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+        <!-- Result Display Card & Roulette Wheel Viewport -->
+        <Border Grid.Row="2" Background="#0F172A" CornerRadius="10" BorderBrush="#334155" BorderThickness="1" Margin="0,0,0,6" Padding="6" ClipToBounds="True">
+            <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="🎡" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,2"/>
-                <Viewbox Grid.Row="1" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" MaxHeight="60">
-                    <TextBlock x:Name="TxtResult" Text="돌림판을 돌려보세요!" FontSize="20" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Center"/>
+
+                <!-- Responsive Wheel Viewbox -->
+                <Viewbox Grid.Row="0" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" MaxHeight="340">
+                    <Grid Width="340" Height="340" Margin="8">
+                        <!-- Outer Shadow & Metallic Ring -->
+                        <Ellipse Width="336" Height="336" Fill="#1E293B" Stroke="#475569" StrokeThickness="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Ellipse.Effect>
+                                <DropShadowEffect BlurRadius="14" Color="#000000" Opacity="0.65" ShadowDepth="4"/>
+                            </Ellipse.Effect>
+                        </Ellipse>
+
+                        <!-- Rotating Wheel Canvas -->
+                        <Canvas x:Name="WheelCanvas" Width="320" Height="320" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Canvas.RenderTransform>
+                                <RotateTransform x:Name="WheelRotateTransform" CenterX="160" CenterY="160" Angle="0"/>
+                            </Canvas.RenderTransform>
+                        </Canvas>
+
+                        <!-- Center Hub Cap -->
+                        <Ellipse Width="46" Height="46" Fill="#0F172A" Stroke="#38BDF8" StrokeThickness="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Ellipse.Effect>
+                                <DropShadowEffect BlurRadius="8" Color="#000000" Opacity="0.6" ShadowDepth="2"/>
+                            </Ellipse.Effect>
+                        </Ellipse>
+                        <TextBlock Text="🎯" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+
+                        <!-- Fixed Top Pointer (12 o'clock downward arrow) -->
+                        <Path HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,2,0,0"
+                              Data="M 0,0 L 22,0 L 11,26 Z" Fill="#EF4444" Stroke="#FFFFFF" StrokeThickness="2">
+                            <Path.Effect>
+                                <DropShadowEffect BlurRadius="6" Color="#000000" Opacity="0.7" ShadowDepth="3"/>
+                            </Path.Effect>
+                        </Path>
+                    </Grid>
                 </Viewbox>
+
+                <!-- Status & Result Banner -->
+                <Border Grid.Row="1" Background="#1E293B" CornerRadius="8" Padding="12,6" Margin="6,4,6,2" BorderBrush="#334155" BorderThickness="1" HorizontalAlignment="Center">
+                    <TextBlock x:Name="TxtResult" Text="돌림판을 돌려보세요!" FontSize="16" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Center"/>
+                </Border>
             </Grid>
         </Border>
 
         <!-- Spin Action Button -->
-        <Button x:Name="BtnSpin" Grid.Row="3" Content="🎡 돌리기!" Click="BtnSpin_Click" Height="34" Background="#0284C7" Foreground="White" FontWeight="Bold" FontSize="13" BorderThickness="0" Cursor="Hand">
-            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+        <Button x:Name="BtnSpin" Grid.Row="3" Content="🎡 돌리기!" Click="BtnSpin_Click" Height="36" Background="#0284C7" Foreground="White" FontWeight="Bold" FontSize="14" BorderThickness="0" Cursor="Hand">
+            <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
         </Button>
     </Grid>
 </UserControl>
