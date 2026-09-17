@@ -8,7 +8,7 @@
         Title="스마트 화면 &amp; 칠판 판서 (Alt+2)"
         WindowStyle="None"
         AllowsTransparency="True"
-        Background="Transparent"
+        Background="#01000000"
         Topmost="True"
         ShowInTaskbar="False"
         WindowStartupLocation="Manual">
@@ -102,12 +102,12 @@
 
         <!-- GPU Accelerated InkCanvas for instant, lag-free drawing -->
         <InkCanvas x:Name="OverlayInkCanvas"
-                   Background="Transparent" />
+                   Background="#01000000" />
 
         <!-- Overlay Tools Canvas for Ruler, Triangle, Protractor -->
         <Canvas x:Name="OverlayToolsCanvas"
                 Background="{x:Null}"
-                IsHitTestVisible="True" />
+                IsHitTestVisible="False" />
 
         <!-- 1. Floating Top Toolbar (Draggable, 2-Row / 1-Row Smart Layout, Non-clipping) -->
         <Border x:Name="ToolbarBorder" HorizontalAlignment="Center" VerticalAlignment="Top"

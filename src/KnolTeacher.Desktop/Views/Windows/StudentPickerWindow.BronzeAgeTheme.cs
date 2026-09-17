@@ -44,61 +44,10 @@ public partial class StudentPickerWindow
 
         Title = "뽑기 레이스 · 구석기 → 신석기 → 청동기";
 
-        MoveFirstEraTransitionRibbon();
-        AddBronzeAgeTransitionRibbon();
         RelocateNeolithicCoastWaves();
         AddBronzeAgeStructures();
         PopulateBronzeAgeArtifactCards();
         RebuildThreeEraMinimap();
-    }
-
-    private void MoveFirstEraTransitionRibbon()
-    {
-        foreach (var border in RaceCanvas.Children.OfType<Border>())
-        {
-            if (border.Child is TextBlock label &&
-                label.Text.Contains("구석기 → 신석기", StringComparison.Ordinal))
-            {
-                Canvas.SetTop(border, 1146);
-                return;
-            }
-        }
-    }
-
-    private void AddBronzeAgeTransitionRibbon()
-    {
-        if (RaceCanvas.Children
-            .OfType<Border>()
-            .Any(border => border.Child is TextBlock text &&
-                           text.Text.Contains("신석기 → 청동기", StringComparison.Ordinal)))
-        {
-            return;
-        }
-
-        var ribbon = new Border
-        {
-            Width = 360,
-            Height = 42,
-            Background = BrushFrom("#E93A3027"),
-            BorderBrush = BrushFrom("#C99554"),
-            BorderThickness = new Thickness(1.5),
-            CornerRadius = new CornerRadius(21),
-            IsHitTestVisible = false
-        };
-        ribbon.Child = new TextBlock
-        {
-            Text = "농경과 마을의 성장 · 신석기 → 청동기",
-            Foreground = BrushFrom("#FFF0CF"),
-            FontSize = 12.5,
-            FontWeight = FontWeights.Bold,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
-        Canvas.SetLeft(ribbon, 160);
-        Canvas.SetTop(ribbon, 2346);
-        Panel.SetZIndex(ribbon, -5);
-        RaceCanvas.Children.Add(ribbon);
     }
 
     private void RelocateNeolithicCoastWaves()

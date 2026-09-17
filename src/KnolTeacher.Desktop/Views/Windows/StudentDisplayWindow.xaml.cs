@@ -34,7 +34,6 @@ public partial class StudentDisplayWindow : Window
     private double _currentCardOpacity = 0.95;
     private bool _isReady = false;
     private int _layoutSaveSuppressionDepth = 0;
-    private readonly MultiTouchInkHelper _multiTouchInk;
 
     public StudentDisplayWindow(
         ISoundService soundService,
@@ -71,8 +70,8 @@ public partial class StudentDisplayWindow : Window
         Stylus.SetIsPressAndHoldEnabled(BoardInkCanvas, false);
         Stylus.SetIsFlicksEnabled(BoardInkCanvas, false);
 
-        _multiTouchInk = new MultiTouchInkHelper(BoardInkCanvas);
-        _multiTouchInk.StrokeCollected += (s) => _undoStack.Clear();
+        BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        BoardInkCanvas.StrokeCollected += (s, e) => _undoStack.Clear();
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (s, e) => TxtClock.Text = DateTime.Now.ToString("HH:mm:ss");
@@ -967,22 +966,33 @@ public partial class StudentDisplayWindow : Window
         PanelInkTools.Visibility = Visibility.Visible;
         BoardInkCanvas.Visibility = Visibility.Visible;
         BoardInkCanvas.IsHitTestVisible = true;
+        BoardInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        BoardInkCanvas.Cursor = Cursors.Pen;
     }
 
     private void ToggleInkMode_Unchecked(object sender, RoutedEventArgs e)
     {
         PanelInkTools.Visibility = Visibility.Collapsed;
         BoardInkCanvas.IsHitTestVisible = false;
+        BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
     }
 
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
-        if (_multiTouchInk != null) _multiTouchInk.IsEraserMode = false;
+        if (BoardInkCanvas != null)
+        {
+            BoardInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+            BoardInkCanvas.Cursor = Cursors.Pen;
+        }
     }
 
     private void RbEraser_Checked(object sender, RoutedEventArgs e)
     {
-        if (_multiTouchInk != null) _multiTouchInk.IsEraserMode = true;
+        if (BoardInkCanvas != null)
+        {
+            BoardInkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
+            BoardInkCanvas.Cursor = Cursors.Cross;
+        }
     }
 
     private void BtnColor_Click(object sender, RoutedEventArgs e)

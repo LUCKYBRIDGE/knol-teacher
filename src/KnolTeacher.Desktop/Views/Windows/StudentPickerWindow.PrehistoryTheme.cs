@@ -124,8 +124,6 @@ public partial class StudentPickerWindow
         {
             AddArtifactLandmark(artifact);
         }
-
-        AddEraTransitionRibbon();
     }
 
     private Geometry BuildPhysicsAlignedTrackGeometry()
@@ -461,32 +459,7 @@ public partial class StudentPickerWindow
         RaceCanvas.Children.Add(coastImg);
     }
 
-    private void AddEraTransitionRibbon()
-    {
-        var ribbon = new Border
-        {
-            Width = 360,
-            Height = 42,
-            Background = BrushFrom("#E9372F27"),
-            BorderBrush = BrushFrom("#D6B47A"),
-            BorderThickness = new Thickness(1.5),
-            CornerRadius = new CornerRadius(21),
-            IsHitTestVisible = false
-        };
-        ribbon.Child = new TextBlock
-        {
-            Text = "이동 생활에서 정착 생활로 · 구석기 → 신석기",
-            Foreground = BrushFrom("#FFF0CF"),
-            FontSize = 12.5,
-            FontWeight = FontWeights.Bold,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        Canvas.SetLeft(ribbon, 160);
-        Canvas.SetTop(ribbon, 2025);
-        Panel.SetZIndex(ribbon, -5);
-        RaceCanvas.Children.Add(ribbon);
-    }
+
 
     private void ApplyPrehistoryMinimapTheme()
     {

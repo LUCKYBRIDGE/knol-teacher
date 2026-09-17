@@ -1,7 +1,9 @@
-﻿using System;
+using System;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Input;
 using KnolTeacher.Desktop.Views.Controls;
 using Xunit;
 

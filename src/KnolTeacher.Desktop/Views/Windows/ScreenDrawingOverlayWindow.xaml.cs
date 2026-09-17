@@ -16,7 +16,7 @@ public partial class ScreenDrawingOverlayWindow : Window
 {
     private readonly IConfigService? _configService;
     private readonly IDisplayManager? _displayManager;
-    private readonly MultiTouchInkHelper _multiTouch;
+    private double _lastPenWidth = 4;
 
     public ScreenDrawingOverlayWindow(IConfigService? configService = null, IDisplayManager? displayManager = null)
     {
@@ -33,9 +33,12 @@ public partial class ScreenDrawingOverlayWindow : Window
             IgnorePressure = false
         };
 
-        // Disable Windows Touch Stylus Press-and-Hold circle lag
+        // 표준 WPF 잉크 엔진 직접 활성화: 마우스·펜·터치 즉각 드로잉 100% 보장
+        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        OverlayInkCanvas.Cursor = Cursors.Pen;
+
+        // Windows Touch Stylus Press-and-Hold 원형 랙 비활성화
         Stylus.SetIsPressAndHoldEnabled(OverlayInkCanvas, false);
-        _multiTouch = new MultiTouchInkHelper(OverlayInkCanvas);
 
         // ESC key to close
         PreviewKeyDown += (s, e) =>
@@ -207,6 +210,14 @@ public partial class ScreenDrawingOverlayWindow : Window
         Hide();
     }
 
+    private void UpdateToolsCanvasHitTest()
+    {
+        if (OverlayToolsCanvas != null)
+        {
+            OverlayToolsCanvas.IsHitTestVisible = OverlayToolsCanvas.Children.Count > 0;
+        }
+    }
+
     private void BtnToggleRuler_Click(object sender, RoutedEventArgs e)
     {
         if (_ruler == null)
@@ -216,17 +227,20 @@ public partial class ScreenDrawingOverlayWindow : Window
             {
                 OverlayToolsCanvas.Children.Remove(_ruler);
                 _ruler = null;
+                UpdateToolsCanvasHitTest();
             };
             double x = Math.Max(40, (ActualWidth - 460) / 2);
             double y = Math.Max(100, (ActualHeight - 80) / 2);
             Canvas.SetLeft(_ruler, x);
             Canvas.SetTop(_ruler, y);
             OverlayToolsCanvas.Children.Add(_ruler);
+            UpdateToolsCanvasHitTest();
         }
         else
         {
             OverlayToolsCanvas.Children.Remove(_ruler);
             _ruler = null;
+            UpdateToolsCanvasHitTest();
         }
     }
 
@@ -239,17 +253,20 @@ public partial class ScreenDrawingOverlayWindow : Window
             {
                 OverlayToolsCanvas.Children.Remove(_triangle);
                 _triangle = null;
+                UpdateToolsCanvasHitTest();
             };
             double x = Math.Max(40, (ActualWidth - 320) / 2);
             double y = Math.Max(100, (ActualHeight - 260) / 2);
             Canvas.SetLeft(_triangle, x);
             Canvas.SetTop(_triangle, y);
             OverlayToolsCanvas.Children.Add(_triangle);
+            UpdateToolsCanvasHitTest();
         }
         else
         {
             OverlayToolsCanvas.Children.Remove(_triangle);
             _triangle = null;
+            UpdateToolsCanvasHitTest();
         }
     }
 
@@ -262,17 +279,20 @@ public partial class ScreenDrawingOverlayWindow : Window
             {
                 OverlayToolsCanvas.Children.Remove(_protractor);
                 _protractor = null;
+                UpdateToolsCanvasHitTest();
             };
             double x = Math.Max(40, (ActualWidth - 380) / 2);
             double y = Math.Max(100, (ActualHeight - 210) / 2);
             Canvas.SetLeft(_protractor, x);
             Canvas.SetTop(_protractor, y);
             OverlayToolsCanvas.Children.Add(_protractor);
+            UpdateToolsCanvasHitTest();
         }
         else
         {
             OverlayToolsCanvas.Children.Remove(_protractor);
             _protractor = null;
+            UpdateToolsCanvasHitTest();
         }
     }
 
@@ -399,16 +419,18 @@ public partial class ScreenDrawingOverlayWindow : Window
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
         if (OverlayInkCanvas == null) return;
-        if (_multiTouch != null) _multiTouch.IsEraserMode = false;
+        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        OverlayInkCanvas.Cursor = Cursors.Pen;
         OverlayInkCanvas.DefaultDrawingAttributes.IsHighlighter = false;
-        OverlayInkCanvas.DefaultDrawingAttributes.Width = 4;
-        OverlayInkCanvas.DefaultDrawingAttributes.Height = 4;
+        OverlayInkCanvas.DefaultDrawingAttributes.Width = _lastPenWidth;
+        OverlayInkCanvas.DefaultDrawingAttributes.Height = _lastPenWidth;
     }
 
     private void RbHighlighter_Checked(object sender, RoutedEventArgs e)
     {
         if (OverlayInkCanvas == null) return;
-        if (_multiTouch != null) _multiTouch.IsEraserMode = false;
+        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        OverlayInkCanvas.Cursor = Cursors.Pen;
         OverlayInkCanvas.DefaultDrawingAttributes.IsHighlighter = true;
         OverlayInkCanvas.DefaultDrawingAttributes.Width = 18;
         OverlayInkCanvas.DefaultDrawingAttributes.Height = 28;
@@ -416,7 +438,9 @@ public partial class ScreenDrawingOverlayWindow : Window
 
     private void RbEraser_Checked(object sender, RoutedEventArgs e)
     {
-        if (_multiTouch != null) _multiTouch.IsEraserMode = true;
+        if (OverlayInkCanvas == null) return;
+        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
+        OverlayInkCanvas.Cursor = Cursors.Cross;
     }
 
     private void BtnColor_Click(object sender, RoutedEventArgs e)
@@ -529,6 +553,7 @@ public partial class ScreenDrawingOverlayWindow : Window
     {
         if (sender is Button btn && double.TryParse(btn.Tag?.ToString(), out double width))
         {
+            _lastPenWidth = width;
             if (OverlayInkCanvas != null)
             {
                 OverlayInkCanvas.DefaultDrawingAttributes.Width = width;

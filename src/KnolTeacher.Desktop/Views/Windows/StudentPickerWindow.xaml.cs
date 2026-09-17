@@ -406,29 +406,32 @@ public partial class StudentPickerWindow : Window
         _rails.Add(new RaceRail(418, 1905, 450, 1975, 14));
         _rails.Add(new RaceRail(482, 1905, 450, 1975, 14));
 
-        // 2. ROTATING LOGS (회전 통나무 동적 장애물 - 폭 100px로 통로 130px 이상 확보)
-        // Upper Canyon Chicane: Clockwise Rotating Log
+        // 2. ROTATING OBSTACLES (회전 통나무 & 회전 뼈바늘 동적 구조물)
+        // A. Upper Paleolithic: Rotating Bone Needle (상부 회전 뼈바늘 장애물)
+        AddRotatingBoneNeedle(340, 440, 94, 22, -2.2, 40);
+
+        // B. Upper Canyon Chicane: Clockwise Rotating Log (상부 회전 통나무)
         AddRotatingLog(280, 680, 100, 22, 2.0, 15);
 
-        // Lower Mushroom Forest: Counter-Clockwise Rotating Log
+        // C. Lower Paleolithic: Rotating Bone Needle (중하부 회전 뼈바늘 장애물)
+        AddRotatingBoneNeedle(300, 890, 88, 22, 2.2, -25);
+
+        // D. Lower Mushroom Forest: Counter-Clockwise Rotating Log (하부 회전 통나무)
         AddRotatingLog(380, 2180, 100, 22, -1.8, 0);
 
         // 3. 선사시대 10종 유물 구조물 & 방해물 (실물 고증 PNG 스프라이트, 병목 없는 지그재그 배치)
         // --- [구석기 구역: 들판과 동굴 협곡 (Y = 240 ~ 1200)] ---
-        // 찍개 (chopper), 주먹도끼 (handaxe), 뼈바늘 (bone-needle)
+        // 찍개 (chopper), 주먹도끼 (handaxe)
         AddBumper(235, 275, 18, "chopper", -25);
         AddBumper(445, 275, 18, "chopper", 35);
         AddBumper(340, 350, 19, "handaxe", 15);
-        AddBumper(195, 430, 18, "bone-needle", -60);
-        AddBumper(485, 430, 18, "bone-needle", 55);
-        AddBumper(340, 520, 19, "handaxe", -30);
+        AddBumper(340, 530, 19, "handaxe", -30);
 
         AddBumper(225, 650, 18, "chopper", -45);
         AddBumper(435, 650, 18, "handaxe", 40);
-        AddBumper(190, 830, 17, "bone-needle", 70);
-        AddBumper(380, 830, 19, "chopper", -15);
-        AddBumper(290, 1010, 19, "handaxe", 25);
-        AddBumper(460, 1010, 18, "bone-needle", -40);
+        AddBumper(220, 810, 18, "chopper", -15);
+        AddBumper(250, 1010, 19, "handaxe", 25);
+        AddBumper(410, 1010, 18, "chopper", -20);
         AddBumper(340, 1180, 19, "handaxe", -20);
 
         // --- [신석기 구역: 강가 정착지와 바닷가 마을 (Y = 1200 ~ 2400)] ---
@@ -475,9 +478,16 @@ public partial class StudentPickerWindow : Window
 
     private void AddRotatingLog(double x, double y, double length, double thickness, double angularVelocity, double initialAngleDeg)
     {
-        var log = new RotatingLog(x, y, length, thickness, angularVelocity, initialAngleDeg);
+        var log = new RotatingLog(x, y, length, thickness, angularVelocity, initialAngleDeg, RotatingObstacleKind.Log);
         _rotatingLogs.Add(log);
         RaceCanvas.Children.Add(log.Visual);
+    }
+
+    private void AddRotatingBoneNeedle(double x, double y, double length, double thickness, double angularVelocity, double initialAngleDeg)
+    {
+        var needle = new RotatingLog(x, y, length, thickness, angularVelocity, initialAngleDeg, RotatingObstacleKind.BoneNeedle);
+        _rotatingLogs.Add(needle);
+        RaceCanvas.Children.Add(needle.Visual);
     }
 
     private void AddBumper(double x, double y, double radius, string assetOrRelicKey, double angleDegrees = 0)
@@ -2475,6 +2485,12 @@ public class RaceBumper
     }
 }
 
+public enum RotatingObstacleKind
+{
+    Log,
+    BoneNeedle
+}
+
 public class RotatingLog
 {
     public double X { get; }
@@ -2483,11 +2499,12 @@ public class RotatingLog
     public double Thickness { get; }
     public double AngularVelocity { get; set; } // rad/s
     public double Angle { get; private set; } // radians
+    public RotatingObstacleKind Kind { get; }
 
     public Grid Visual { get; }
     private readonly RotateTransform _rotateTransform;
 
-    public RotatingLog(double x, double y, double length, double thickness, double angularVelocity, double initialAngleDeg = 0)
+    public RotatingLog(double x, double y, double length, double thickness, double angularVelocity, double initialAngleDeg = 0, RotatingObstacleKind kind = RotatingObstacleKind.Log)
     {
         X = x;
         Y = y;
@@ -2495,25 +2512,103 @@ public class RotatingLog
         Thickness = thickness;
         AngularVelocity = angularVelocity;
         Angle = initialAngleDeg * Math.PI / 180.0;
+        Kind = kind;
 
+        double visualHeight = thickness * (100.0 / 56.0);
         Visual = new Grid
         {
             Width = length,
-            Height = thickness * (100.0 / 56.0),
+            Height = visualHeight,
+            IsHitTestVisible = false
         };
 
         _rotateTransform = new RotateTransform(initialAngleDeg);
         Visual.RenderTransformOrigin = new Point(0.5, 0.5);
         Visual.RenderTransform = _rotateTransform;
 
-        var img = new Image
+        if (kind == RotatingObstacleKind.BoneNeedle)
         {
-            Width = length,
-            Height = Visual.Height,
-            Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_log_rotating.png")),
-        };
-        RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-        Visual.Children.Add(img);
+            // 1. Backing wooden beam: Gives it authentic rotating wooden obstacle structure
+            var woodBeam = new Border
+            {
+                Width = length * 0.96,
+                Height = thickness * 0.82,
+                CornerRadius = new CornerRadius(thickness * 0.41),
+                Background = new LinearGradientBrush(
+                    (Color)ColorConverter.ConvertFromString("#8C5424"),
+                    (Color)ColorConverter.ConvertFromString("#533113"),
+                    new Point(0, 0), new Point(0, 1)),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#361B07")),
+                BorderThickness = new Thickness(1.5),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Effect = new DropShadowEffect
+                {
+                    BlurRadius = 8,
+                    Opacity = 0.5,
+                    ShadowDepth = 3,
+                    Color = Colors.Black
+                }
+            };
+            Visual.Children.Add(woodBeam);
+
+            // 2. Bone needle relic image (rotated 90 deg so the needle lays horizontally along the wooden beam)
+            var needleGrid = new Grid
+            {
+                Width = visualHeight * 0.9,
+                Height = length * 0.92,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                RenderTransformOrigin = new Point(0.5, 0.5),
+                RenderTransform = new RotateTransform(90)
+            };
+            var needleImg = new Image
+            {
+                Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_relic_bone_needle.png")),
+                Stretch = Stretch.Uniform
+            };
+            RenderOptions.SetBitmapScalingMode(needleImg, BitmapScalingMode.HighQuality);
+            needleGrid.Children.Add(needleImg);
+            Visual.Children.Add(needleGrid);
+
+            // 3. Center pivot pin/rivet (회전축 고정 핀/리벳)
+            var pivotPin = new Border
+            {
+                Width = thickness * 0.92,
+                Height = thickness * 0.92,
+                CornerRadius = new CornerRadius(thickness * 0.46),
+                Background = new RadialGradientBrush(
+                    (Color)ColorConverter.ConvertFromString("#FDE68A"),
+                    (Color)ColorConverter.ConvertFromString("#78350F"))
+                {
+                    Center = new Point(0.35, 0.35),
+                    GradientOrigin = new Point(0.35, 0.35)
+                },
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#451A03")),
+                BorderThickness = new Thickness(1.5),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Effect = new DropShadowEffect
+                {
+                    BlurRadius = 4,
+                    Opacity = 0.65,
+                    ShadowDepth = 1.5,
+                    Color = Colors.Black
+                }
+            };
+            Visual.Children.Add(pivotPin);
+        }
+        else
+        {
+            var img = new Image
+            {
+                Width = length,
+                Height = Visual.Height,
+                Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_log_rotating.png")),
+            };
+            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+            Visual.Children.Add(img);
+        }
 
         Canvas.SetLeft(Visual, X - Visual.Width / 2.0);
         Canvas.SetTop(Visual, Y - Visual.Height / 2.0);

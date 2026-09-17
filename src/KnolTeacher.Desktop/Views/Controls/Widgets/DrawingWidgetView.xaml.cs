@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace KnolTeacher.Desktop.Views.Controls.Widgets;
@@ -10,7 +11,6 @@ namespace KnolTeacher.Desktop.Views.Controls.Widgets;
 public partial class DrawingWidgetView : UserControl
 {
     private readonly Stack<Stroke> _undoStack = new();
-    private readonly MultiTouchInkHelper _multiTouch;
     private bool _isReady = false;
 
     public DrawingWidgetView()
@@ -24,8 +24,9 @@ public partial class DrawingWidgetView : UserControl
             FitToCurve = true
         };
 
-        _multiTouch = new MultiTouchInkHelper(MiniInkCanvas);
-        _multiTouch.StrokeCollected += s => _undoStack.Clear();
+        MiniInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        MiniInkCanvas.Cursor = Cursors.Pen;
+        MiniInkCanvas.StrokeCollected += (s, e) => _undoStack.Clear();
         _isReady = true;
     }
 
@@ -44,13 +45,15 @@ public partial class DrawingWidgetView : UserControl
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
         if (!_isReady) return;
-        _multiTouch.IsEraserMode = false;
+        MiniInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
+        MiniInkCanvas.Cursor = Cursors.Pen;
     }
 
     private void RbEraser_Checked(object sender, RoutedEventArgs e)
     {
         if (!_isReady) return;
-        _multiTouch.IsEraserMode = true;
+        MiniInkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
+        MiniInkCanvas.Cursor = Cursors.Cross;
     }
 
     private void BtnColor_Click(object sender, RoutedEventArgs e)
