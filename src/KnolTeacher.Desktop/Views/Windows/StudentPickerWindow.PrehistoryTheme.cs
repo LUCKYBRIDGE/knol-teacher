@@ -326,94 +326,139 @@ public partial class StudentPickerWindow
 
     private void AddRiverStones()
     {
-        var river = new Rectangle
+        // 1. Natural AI-generated River Stream crossing
+        double riverW = TrackWidth;
+        double riverH = 210;
+        double riverY = 1720;
+        var riverImg = new Image
         {
-            Width = 680,
-            Height = 150,
-            Fill = BrushFrom("#3F7A78"),
-            Opacity = 0.46,
+            Width = riverW,
+            Height = riverH,
+            Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_river_stream.png")),
+            Stretch = Stretch.Fill,
             IsHitTestVisible = false
         };
-        Canvas.SetLeft(river, 0);
-        Canvas.SetTop(river, 1760);
-        Panel.SetZIndex(river, -25);
-        RaceCanvas.Children.Add(river);
+        RenderOptions.SetBitmapScalingMode(riverImg, BitmapScalingMode.HighQuality);
+        Canvas.SetLeft(riverImg, 0);
+        Canvas.SetTop(riverImg, riverY);
+        Panel.SetZIndex(riverImg, -25);
+        RaceCanvas.Children.Add(riverImg);
 
-        var stones = new (double X, double Y, double W)[]
+        // 2. Realistic Stepping Stones (신석기 강가 징검다리)
+        var stones = new (double X, double Y, double W, double H)[]
         {
-            (160, 1795, 58), (235, 1825, 52), (310, 1788, 60),
-            (390, 1825, 54), (470, 1798, 58)
+            (145, 1810, 68, 52),
+            (225, 1835, 62, 48),
+            (305, 1805, 74, 56),
+            (395, 1840, 64, 50),
+            (475, 1812, 70, 54)
         };
         foreach (var item in stones)
         {
-            var stone = new Ellipse
+            var stoneImg = new Image
             {
                 Width = item.W,
-                Height = 26,
-                Fill = BrushFrom("#8D8B79"),
-                Stroke = BrushFrom("#4E5148"),
-                StrokeThickness = 2,
+                Height = item.H,
+                Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/river_stone.png")),
+                Stretch = Stretch.Uniform,
                 IsHitTestVisible = false
             };
-            Canvas.SetLeft(stone, item.X);
-            Canvas.SetTop(stone, item.Y);
-            Panel.SetZIndex(stone, -23);
-            RaceCanvas.Children.Add(stone);
+            RenderOptions.SetBitmapScalingMode(stoneImg, BitmapScalingMode.HighQuality);
+            Canvas.SetLeft(stoneImg, item.X);
+            Canvas.SetTop(stoneImg, item.Y);
+            Panel.SetZIndex(stoneImg, -23);
+            RaceCanvas.Children.Add(stoneImg);
         }
+
+        // 3. Water splashes around stepping stones
+        var splashes = new (double X, double Y, double W, double H)[]
+        {
+            (185, 1835, 42, 22),
+            (350, 1828, 48, 24),
+            (440, 1838, 44, 22)
+        };
+        foreach (var sp in splashes)
+        {
+            var splashImg = new Image
+            {
+                Width = sp.W,
+                Height = sp.H,
+                Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_water_splash.png")),
+                Stretch = Stretch.Uniform,
+                Opacity = 0.75,
+                IsHitTestVisible = false
+            };
+            RenderOptions.SetBitmapScalingMode(splashImg, BitmapScalingMode.HighQuality);
+            Canvas.SetLeft(splashImg, sp.X);
+            Canvas.SetTop(splashImg, sp.Y);
+            Panel.SetZIndex(splashImg, -22);
+            RaceCanvas.Children.Add(splashImg);
+        }
+
+        // 4. Natural shallow water immersion wash (자연스러운 얕은 여울물 침수 연출)
+        // 상하 가장자리는 0 투명도로 부드럽게 감쇄되어 레이서가 물에 들어오고 나갈 때 자연스럽게 반투명 물빛에 잠김
+        var waterWash = new Rectangle
+        {
+            Width = riverW,
+            Height = 120,
+            Fill = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(0, 56, 189, 248), 0.0),
+                    new GradientStop(Color.FromArgb(42, 56, 189, 248), 0.22),
+                    new GradientStop(Color.FromArgb(58, 14, 165, 233), 0.5),
+                    new GradientStop(Color.FromArgb(42, 56, 189, 248), 0.78),
+                    new GradientStop(Color.FromArgb(0, 56, 189, 248), 1.0)
+                }
+            },
+            IsHitTestVisible = false
+        };
+        Canvas.SetLeft(waterWash, 0);
+        Canvas.SetTop(waterWash, riverY + 45);
+        Panel.SetZIndex(waterWash, 5);
+        RaceCanvas.Children.Add(waterWash);
     }
 
-    private void AddNeolithicHut(double x, double y)
+    private void AddNeolithicHut(double x, double y, double scale = 1.0)
     {
-        var scene = new Canvas { Width = 158, Height = 104, IsHitTestVisible = false, Opacity = 0.94 };
-        var wall = new Border
+        double w = 142 * scale;
+        double h = 134 * scale;
+        var hutImg = new Image
         {
-            Width = 118,
-            Height = 54,
-            Background = BrushFrom("#B68A55"),
-            BorderBrush = BrushFrom("#5C412A"),
-            BorderThickness = new Thickness(2),
-            CornerRadius = new CornerRadius(5)
+            Width = w,
+            Height = h,
+            Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_neolithic_hut.png")),
+            Stretch = Stretch.Uniform,
+            IsHitTestVisible = false
         };
-        Canvas.SetLeft(wall, 20);
-        Canvas.SetTop(wall, 47);
-        scene.Children.Add(wall);
-        var roof = new Polygon
-        {
-            Points = new PointCollection { new(8, 55), new(78, 4), new(150, 55) },
-            Fill = BrushFrom("#827044"),
-            Stroke = BrushFrom("#463A28"),
-            StrokeThickness = 3
-        };
-        scene.Children.Add(roof);
-        var door = new Rectangle { Width = 28, Height = 42, Fill = BrushFrom("#433229"), RadiusX = 12, RadiusY = 12 };
-        Canvas.SetLeft(door, 65);
-        Canvas.SetTop(door, 59);
-        scene.Children.Add(door);
-        AddLine(scene, 32, 58, 48, 96, "#D1A86E", 2);
-        AddLine(scene, 126, 58, 110, 96, "#D1A86E", 2);
-        Canvas.SetLeft(scene, x);
-        Canvas.SetTop(scene, y);
-        Panel.SetZIndex(scene, -12);
-        RaceCanvas.Children.Add(scene);
+        RenderOptions.SetBitmapScalingMode(hutImg, BitmapScalingMode.HighQuality);
+        Canvas.SetLeft(hutImg, x);
+        Canvas.SetTop(hutImg, y);
+        Panel.SetZIndex(hutImg, -12);
+        RaceCanvas.Children.Add(hutImg);
     }
 
     private void AddCoastWaves()
     {
-        for (int row = 0; row < 4; row++)
+        // 신석기 바닷가 정착지 (조개 채집과 바닷가 풍경) - AI 생성 해변과 파도 아트
+        double coastW = 210;
+        double coastH = 138;
+        var coastImg = new Image
         {
-            var wave = new System.Windows.Shapes.Path
-            {
-                Data = Geometry.Parse("M0,12 C24,0 48,24 72,12 C96,0 120,24 144,12 C168,0 192,24 216,12"),
-                Stroke = BrushFrom(row % 2 == 0 ? "#A7E3E7" : "#78C6CE"),
-                StrokeThickness = 3,
-                Opacity = 0.56,
-                IsHitTestVisible = false
-            };
-            Canvas.SetLeft(wave, row % 2 == 0 ? 42 : 418);
-            Canvas.SetTop(wave, 3190 + row * 52);
-            Panel.SetZIndex(wave, -15);
-            RaceCanvas.Children.Add(wave);
-        }
+            Width = coastW,
+            Height = coastH,
+            Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_sea_shore.png")),
+            Stretch = Stretch.Uniform,
+            IsHitTestVisible = false
+        };
+        RenderOptions.SetBitmapScalingMode(coastImg, BitmapScalingMode.HighQuality);
+        Canvas.SetLeft(coastImg, 465);
+        Canvas.SetTop(coastImg, 2140);
+        Panel.SetZIndex(coastImg, -15);
+        RaceCanvas.Children.Add(coastImg);
     }
 
     private void AddEraTransitionRibbon()

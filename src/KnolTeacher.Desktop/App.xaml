@@ -141,6 +141,50 @@
                 <Setter Property="Padding" Value="8,4" />
                 <Setter Property="VerticalContentAlignment" Value="Center" />
             </Style>
+
+            <!-- 🎯 Dark / Board Surface High-Visibility RadioButton Style: 배경 묻힘 방지 고대비 라디오 -->
+            <Style x:Key="DarkBoardRadioStyle" TargetType="RadioButton">
+                <Setter Property="Foreground" Value="#F1F5F9"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Grid Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Ellipse x:Name="Ring" Fill="#0F172A" Stroke="#94A3B8" StrokeThickness="1.5"/>
+                                    <Ellipse x:Name="Dot" Width="8" Height="8" Fill="#38BDF8" Visibility="Collapsed"/>
+                                </Grid>
+                                <ContentPresenter ContentSource="Content" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Ring" Property="Stroke" Value="#38BDF8"/>
+                                    <Setter TargetName="Ring" Property="Fill" Value="#0369A1"/>
+                                    <Setter TargetName="Dot" Property="Fill" Value="#FFFFFF"/>
+                                    <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+                                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Ring" Property="Stroke" Value="#E2E8F0"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- 🎯 Compact Numeric TextBox Style: 위아래 잘림 방지 컴팩트 텍스트박스 -->
+            <Style x:Key="CompactNumericTextBoxStyle" TargetType="TextBox">
+                <Setter Property="FontFamily" Value="Malgun Gothic" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="MinHeight" Value="0" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="TextAlignment" Value="Center" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

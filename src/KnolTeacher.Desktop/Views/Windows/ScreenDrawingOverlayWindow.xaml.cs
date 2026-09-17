@@ -89,10 +89,12 @@ public partial class ScreenDrawingOverlayWindow : Window
             // Position window exactly over the targeted monitor
             Show();
             var helper = new System.Windows.Interop.WindowInteropHelper(this);
-            NativeMethods.SetWindowPos(helper.Handle, IntPtr.Zero, left, top, width, height, NativeMethods.SWP_SHOWWINDOW | NativeMethods.SWP_NOZORDER);
+            NativeMethods.SetWindowPos(helper.Handle, new IntPtr(-1), left, top, width, height, NativeMethods.SWP_SHOWWINDOW);
 
+            Topmost = true;
             Activate();
             Focus();
+            OverlayInkCanvas.Focus();
         }
         catch (Exception ex)
         {
@@ -162,10 +164,12 @@ public partial class ScreenDrawingOverlayWindow : Window
 
             Show();
             var helper = new System.Windows.Interop.WindowInteropHelper(this);
-            NativeMethods.SetWindowPos(helper.Handle, IntPtr.Zero, left, top, width, height, NativeMethods.SWP_SHOWWINDOW | NativeMethods.SWP_NOZORDER);
+            NativeMethods.SetWindowPos(helper.Handle, new IntPtr(-1), left, top, width, height, NativeMethods.SWP_SHOWWINDOW);
 
+            Topmost = true;
             Activate();
             Focus();
+            OverlayInkCanvas.Focus();
         }
         catch (Exception ex)
         {

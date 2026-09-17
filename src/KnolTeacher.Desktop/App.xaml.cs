@@ -237,14 +237,14 @@ public partial class App : Application
                                 if (pickerWindow.IsVisible)
                                 {
                                     pickerWindow.Hide();
-                                    HudNotificationWindow.Instance.ShowToast("🎲", "발표자 추첨 숨김");
+                                    HudNotificationWindow.Instance.ShowToast("🌱", "뽑기 레이스 숨김");
                                 }
                                 else
                                 {
                                     displayManager.MoveToStudentMonitor(pickerWindow, maximize: false);
                                     pickerWindow.Show();
                                     pickerWindow.Activate();
-                                    HudNotificationWindow.Instance.ShowToast("🎲", "발표자 추첨기 (Alt+8)");
+                                    HudNotificationWindow.Instance.ShowToast("🌱", "뽑기 레이스 (Alt+8)");
                                 }
                                 break;
 
