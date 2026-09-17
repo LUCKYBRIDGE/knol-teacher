@@ -472,7 +472,7 @@ public partial class StudentPickerWindow : Window
         AddSquirrel(x: 95, y: 780, radius: 26, isFacingRight: true, startDelay: 0.3, projectileAsset: "cartoon_pinecone.png");
         AddSquirrel(x: 585, y: 1150, radius: 26, isFacingRight: false, startDelay: 0.7, projectileAsset: "cartoon_pinecone.png");
         AddSquirrel(x: 135, y: 1520, radius: 26, isFacingRight: true, startDelay: 0.5, projectileAsset: "cartoon_pinecone.png");
-        AddSquirrel(x: 530, y: 1720, radius: 26, isFacingRight: false, startDelay: 0.9, projectileAsset: "cartoon_pinecone.png");
+        AddSquirrel(x: 545, y: 1610, radius: 26, isFacingRight: false, startDelay: 0.9, projectileAsset: "cartoon_pinecone.png");
         AddSquirrel(x: 135, y: 2300, radius: 26, isFacingRight: true, startDelay: 0.4, projectileAsset: "cartoon_pinecone.png");
     }
 
@@ -2528,39 +2528,22 @@ public class RotatingLog
 
         if (kind == RotatingObstacleKind.BoneNeedle)
         {
-            // 1. Backing wooden beam: Gives it authentic rotating wooden obstacle structure
-            var woodBeam = new Border
-            {
-                Width = length * 0.96,
-                Height = thickness * 0.82,
-                CornerRadius = new CornerRadius(thickness * 0.41),
-                Background = new LinearGradientBrush(
-                    (Color)ColorConverter.ConvertFromString("#8C5424"),
-                    (Color)ColorConverter.ConvertFromString("#533113"),
-                    new Point(0, 0), new Point(0, 1)),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#361B07")),
-                BorderThickness = new Thickness(1.5),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Effect = new DropShadowEffect
-                {
-                    BlurRadius = 8,
-                    Opacity = 0.5,
-                    ShadowDepth = 3,
-                    Color = Colors.Black
-                }
-            };
-            Visual.Children.Add(woodBeam);
-
-            // 2. Bone needle relic image (rotated 90 deg so the needle lays horizontally along the wooden beam)
+            // Pure Bone Needle Obstacle (단독 회전 뼈바늘 장애물 - 통나무 중첩 없음)
             var needleGrid = new Grid
             {
-                Width = visualHeight * 0.9,
-                Height = length * 0.92,
+                Width = thickness * 1.6,
+                Height = length,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 RenderTransformOrigin = new Point(0.5, 0.5),
-                RenderTransform = new RotateTransform(90)
+                RenderTransform = new RotateTransform(90),
+                Effect = new DropShadowEffect
+                {
+                    BlurRadius = 8,
+                    Opacity = 0.55,
+                    ShadowDepth = 3,
+                    Color = Colors.Black
+                }
             };
             var needleImg = new Image
             {
@@ -2570,33 +2553,6 @@ public class RotatingLog
             RenderOptions.SetBitmapScalingMode(needleImg, BitmapScalingMode.HighQuality);
             needleGrid.Children.Add(needleImg);
             Visual.Children.Add(needleGrid);
-
-            // 3. Center pivot pin/rivet (회전축 고정 핀/리벳)
-            var pivotPin = new Border
-            {
-                Width = thickness * 0.92,
-                Height = thickness * 0.92,
-                CornerRadius = new CornerRadius(thickness * 0.46),
-                Background = new RadialGradientBrush(
-                    (Color)ColorConverter.ConvertFromString("#FDE68A"),
-                    (Color)ColorConverter.ConvertFromString("#78350F"))
-                {
-                    Center = new Point(0.35, 0.35),
-                    GradientOrigin = new Point(0.35, 0.35)
-                },
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#451A03")),
-                BorderThickness = new Thickness(1.5),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Effect = new DropShadowEffect
-                {
-                    BlurRadius = 4,
-                    Opacity = 0.65,
-                    ShadowDepth = 1.5,
-                    Color = Colors.Black
-                }
-            };
-            Visual.Children.Add(pivotPin);
         }
         else
         {
