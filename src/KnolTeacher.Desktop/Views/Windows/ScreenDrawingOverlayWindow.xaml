@@ -109,6 +109,11 @@
                 Background="{x:Null}"
                 IsHitTestVisible="False" />
 
+        <!-- Eraser Preview Canvas for Box / Lasso guidelines -->
+        <Canvas x:Name="EraserPreviewCanvas"
+                Background="{x:Null}"
+                IsHitTestVisible="False" />
+
         <!-- 1. Floating Top Toolbar (Draggable, 2-Row / 1-Row Smart Layout, Non-clipping) -->
         <Border x:Name="ToolbarBorder" HorizontalAlignment="Center" VerticalAlignment="Top"
                 Margin="0,12,0,0"
@@ -146,9 +151,21 @@
                     <Separator Margin="0,2,6,2" Width="1" Background="#334155"/>
 
                     <!-- Tool Toggles (고대비 칩 라디오 버튼) -->
-                    <RadioButton x:Name="RbPen" Content="펜" GroupName="OverlayToolGroup" IsChecked="True" Checked="RbPen_Checked" Style="{StaticResource OverlayToolRadioStyle}"/>
-                    <RadioButton x:Name="RbHighlighter" Content="형광펜" GroupName="OverlayToolGroup" Checked="RbHighlighter_Checked" Style="{StaticResource OverlayToolRadioStyle}"/>
-                    <RadioButton x:Name="RbEraser" Content="지우개" GroupName="OverlayToolGroup" Checked="RbEraser_Checked" Style="{StaticResource OverlayToolRadioStyle}" Margin="0,0,6,0"/>
+                    <RadioButton x:Name="RbPen" Content="✏️ 펜" GroupName="OverlayToolGroup" IsChecked="True" Checked="RbPen_Checked" Style="{StaticResource OverlayToolRadioStyle}"/>
+                    <RadioButton x:Name="RbHighlighter" Content="🖍️ 형광펜" GroupName="OverlayToolGroup" Checked="RbHighlighter_Checked" Style="{StaticResource OverlayToolRadioStyle}"/>
+
+                    <Separator Margin="0,2,6,2" Width="1" Background="#334155"/>
+
+                    <!-- 지우개 시스템 세그먼트 (부분, 획, 구역, 영역) -->
+                    <Border Background="#1E293B" BorderBrush="#475569" BorderThickness="1.5" CornerRadius="8" Padding="3" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="지우개:" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="4,0,5,0"/>
+                            <RadioButton x:Name="RbEraserPoint" Content="🧹 부분" GroupName="OverlayToolGroup" Checked="RbEraserPoint_Checked" Style="{StaticResource OverlaySegmentRadioStyle}" ToolTip="마우스나 펜으로 문지른 궤적만 부분 삭제"/>
+                            <RadioButton x:Name="RbEraserStroke" Content="⚡ 획" GroupName="OverlayToolGroup" Checked="RbEraserStroke_Checked" Style="{StaticResource OverlaySegmentRadioStyle}" ToolTip="터치한 글자나 선 단위로 통째로 삭제"/>
+                            <RadioButton x:Name="RbEraserBox" Content="⬚ 구역" GroupName="OverlayToolGroup" Checked="RbEraserBox_Checked" Style="{StaticResource OverlaySegmentRadioStyle}" ToolTip="직사각형 박스를 드래그하여 구역 내 글씨 일괄 삭제"/>
+                            <RadioButton x:Name="RbEraserLasso" Content="⟲ 영역" GroupName="OverlayToolGroup" Checked="RbEraserLasso_Checked" Style="{StaticResource OverlaySegmentRadioStyle}" ToolTip="자유롭게 올가미로 둘러친 영역 안의 글씨 일괄 삭제"/>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Pen Thickness Selection -->
                     <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="6" Padding="3,2" Margin="0,0,8,0">

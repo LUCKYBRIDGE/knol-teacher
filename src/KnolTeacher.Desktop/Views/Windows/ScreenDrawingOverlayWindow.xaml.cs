@@ -16,6 +16,8 @@ public partial class ScreenDrawingOverlayWindow : Window
 {
     private readonly IConfigService? _configService;
     private readonly IDisplayManager? _displayManager;
+    private readonly DrawingUndoManager _undoManager = new();
+    private DrawingEraserHelper? _eraserHelper;
     private double _lastPenWidth = 4;
 
     public ScreenDrawingOverlayWindow(IConfigService? configService = null, IDisplayManager? displayManager = null)
@@ -33,9 +35,9 @@ public partial class ScreenDrawingOverlayWindow : Window
             IgnorePressure = false
         };
 
-        // 표준 WPF 잉크 엔진 직접 활성화: 마우스·펜·터치 즉각 드로잉 100% 보장
-        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
-        OverlayInkCanvas.Cursor = Cursors.Pen;
+        // 표준 WPF 잉크 엔진 및 지우개(부분/획/구역/영역) 헬퍼 초기화
+        _eraserHelper = new DrawingEraserHelper(OverlayInkCanvas, EraserPreviewCanvas, _undoManager);
+        _eraserHelper.SetToolMode(EraserToolMode.Pen, _lastPenWidth);
 
         // Windows Touch Stylus Press-and-Hold 원형 랙 비활성화
         Stylus.SetIsPressAndHoldEnabled(OverlayInkCanvas, false);
@@ -186,7 +188,9 @@ public partial class ScreenDrawingOverlayWindow : Window
 
     public void CloseOverlay()
     {
-        OverlayInkCanvas.Strokes.Clear();
+        _eraserHelper?.CancelInteraction();
+        _eraserHelper?.ClearAll();
+        EraserPreviewCanvas?.Children.Clear();
         OverlayToolsCanvas.Children.Clear();
         _ruler = null;
         _triangle = null;
@@ -418,29 +422,40 @@ public partial class ScreenDrawingOverlayWindow : Window
 
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
-        if (OverlayInkCanvas == null) return;
-        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
-        OverlayInkCanvas.Cursor = Cursors.Pen;
-        OverlayInkCanvas.DefaultDrawingAttributes.IsHighlighter = false;
-        OverlayInkCanvas.DefaultDrawingAttributes.Width = _lastPenWidth;
-        OverlayInkCanvas.DefaultDrawingAttributes.Height = _lastPenWidth;
+        _eraserHelper?.SetToolMode(EraserToolMode.Pen, _lastPenWidth);
     }
 
     private void RbHighlighter_Checked(object sender, RoutedEventArgs e)
     {
-        if (OverlayInkCanvas == null) return;
-        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
-        OverlayInkCanvas.Cursor = Cursors.Pen;
-        OverlayInkCanvas.DefaultDrawingAttributes.IsHighlighter = true;
-        OverlayInkCanvas.DefaultDrawingAttributes.Width = 18;
-        OverlayInkCanvas.DefaultDrawingAttributes.Height = 28;
+        _eraserHelper?.SetToolMode(EraserToolMode.Highlighter);
     }
 
-    private void RbEraser_Checked(object sender, RoutedEventArgs e)
+    private void RbEraserPoint_Checked(object sender, RoutedEventArgs e)
     {
-        if (OverlayInkCanvas == null) return;
-        OverlayInkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
-        OverlayInkCanvas.Cursor = Cursors.Cross;
+        _eraserHelper?.SetToolMode(EraserToolMode.Point);
+    }
+
+    private void RbEraserStroke_Checked(object sender, RoutedEventArgs e)
+    {
+        _eraserHelper?.SetToolMode(EraserToolMode.Stroke);
+    }
+
+    private void RbEraserBox_Checked(object sender, RoutedEventArgs e)
+    {
+        _eraserHelper?.SetToolMode(EraserToolMode.Box);
+    }
+
+    private void RbEraserLasso_Checked(object sender, RoutedEventArgs e)
+    {
+        _eraserHelper?.SetToolMode(EraserToolMode.Lasso);
+    }
+
+    private bool IsAnyEraserSelected()
+    {
+        return RbEraserPoint?.IsChecked == true ||
+               RbEraserStroke?.IsChecked == true ||
+               RbEraserBox?.IsChecked == true ||
+               RbEraserLasso?.IsChecked == true;
     }
 
     private void BtnColor_Click(object sender, RoutedEventArgs e)
@@ -449,7 +464,7 @@ public partial class ScreenDrawingOverlayWindow : Window
         {
             var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex);
             OverlayInkCanvas.DefaultDrawingAttributes.Color = color;
-            if (RbEraser.IsChecked == true)
+            if (IsAnyEraserSelected())
             {
                 RbPen.IsChecked = true;
             }
@@ -458,15 +473,12 @@ public partial class ScreenDrawingOverlayWindow : Window
 
     private void BtnUndo_Click(object sender, RoutedEventArgs e)
     {
-        if (OverlayInkCanvas.Strokes.Count > 0)
-        {
-            OverlayInkCanvas.Strokes.RemoveAt(OverlayInkCanvas.Strokes.Count - 1);
-        }
+        _eraserHelper?.Undo();
     }
 
     private void BtnClear_Click(object sender, RoutedEventArgs e)
     {
-        OverlayInkCanvas.Strokes.Clear();
+        _eraserHelper?.ClearAll();
     }
 
     private void BtnClose_Click(object sender, RoutedEventArgs e)
@@ -558,7 +570,7 @@ public partial class ScreenDrawingOverlayWindow : Window
             {
                 OverlayInkCanvas.DefaultDrawingAttributes.Width = width;
                 OverlayInkCanvas.DefaultDrawingAttributes.Height = width;
-                if (RbEraser.IsChecked == true) RbPen.IsChecked = true;
+                if (IsAnyEraserSelected()) RbPen.IsChecked = true;
             }
         }
     }

@@ -27,7 +27,8 @@ public partial class StudentDisplayWindow : Window
     private readonly IWeatherService? _weatherService;
     private int _currentMonitorIndex = 1;
 
-    private readonly Stack<Stroke> _undoStack = new();
+    private readonly DrawingUndoManager _undoManager = new();
+    private DrawingEraserHelper? _eraserHelper;
     private readonly DispatcherTimer _clockTimer;
     private readonly List<BoardWidgetHost> _widgets = new();
     private bool _isWidgetsLocked = false;
@@ -71,7 +72,9 @@ public partial class StudentDisplayWindow : Window
         Stylus.SetIsFlicksEnabled(BoardInkCanvas, false);
 
         BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
-        BoardInkCanvas.StrokeCollected += (s, e) => _undoStack.Clear();
+
+        // 지우개 시스템 헬퍼 초기화 (부분/획/구역/영역 및 Undo 통합 관리)
+        _eraserHelper = new DrawingEraserHelper(BoardInkCanvas, BoardEraserPreviewCanvas, _undoManager);
 
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (s, e) => TxtClock.Text = DateTime.Now.ToString("HH:mm:ss");
@@ -966,8 +969,8 @@ public partial class StudentDisplayWindow : Window
         PanelInkTools.Visibility = Visibility.Visible;
         BoardInkCanvas.Visibility = Visibility.Visible;
         BoardInkCanvas.IsHitTestVisible = true;
-        BoardInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
-        BoardInkCanvas.Cursor = Cursors.Pen;
+        _eraserHelper?.SetToolMode(EraserToolMode.Pen);
+        if (RbPen != null) RbPen.IsChecked = true;
     }
 
     private void ToggleInkMode_Unchecked(object sender, RoutedEventArgs e)
@@ -975,24 +978,40 @@ public partial class StudentDisplayWindow : Window
         PanelInkTools.Visibility = Visibility.Collapsed;
         BoardInkCanvas.IsHitTestVisible = false;
         BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        _eraserHelper?.CancelInteraction();
     }
 
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
-        if (BoardInkCanvas != null)
-        {
-            BoardInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
-            BoardInkCanvas.Cursor = Cursors.Pen;
-        }
+        _eraserHelper?.SetToolMode(EraserToolMode.Pen);
     }
 
-    private void RbEraser_Checked(object sender, RoutedEventArgs e)
+    private void RbEraserPoint_Checked(object sender, RoutedEventArgs e)
     {
-        if (BoardInkCanvas != null)
-        {
-            BoardInkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
-            BoardInkCanvas.Cursor = Cursors.Cross;
-        }
+        _eraserHelper?.SetToolMode(EraserToolMode.Point);
+    }
+
+    private void RbEraserStroke_Checked(object sender, RoutedEventArgs e)
+    {
+        _eraserHelper?.SetToolMode(EraserToolMode.Stroke);
+    }
+
+    private void RbEraserBox_Checked(object sender, RoutedEventArgs e)
+    {
+        _eraserHelper?.SetToolMode(EraserToolMode.Box);
+    }
+
+    private void RbEraserLasso_Checked(object sender, RoutedEventArgs e)
+    {
+        _eraserHelper?.SetToolMode(EraserToolMode.Lasso);
+    }
+
+    private bool IsAnyEraserSelected()
+    {
+        return RbEraserPoint?.IsChecked == true ||
+               RbEraserStroke?.IsChecked == true ||
+               RbEraserBox?.IsChecked == true ||
+               RbEraserLasso?.IsChecked == true;
     }
 
     private void BtnColor_Click(object sender, RoutedEventArgs e)
@@ -1001,7 +1020,7 @@ public partial class StudentDisplayWindow : Window
         {
             var color = (Color)ColorConverter.ConvertFromString(hex);
             BoardInkCanvas.DefaultDrawingAttributes.Color = color;
-            if (RbEraser.IsChecked == true)
+            if (IsAnyEraserSelected())
             {
                 RbPen.IsChecked = true;
             }
@@ -1010,21 +1029,12 @@ public partial class StudentDisplayWindow : Window
 
     private void BtnUndo_Click(object sender, RoutedEventArgs e)
     {
-        if (BoardInkCanvas.Strokes.Count > 0)
-        {
-            var last = BoardInkCanvas.Strokes[^1];
-            _undoStack.Push(last);
-            BoardInkCanvas.Strokes.Remove(last);
-        }
+        _eraserHelper?.Undo();
     }
 
     private void BtnClear_Click(object sender, RoutedEventArgs e)
     {
-        if (BoardInkCanvas.Strokes.Count > 0)
-        {
-            BoardInkCanvas.Strokes.Clear();
-            _undoStack.Clear();
-        }
+        _eraserHelper?.ClearAll();
     }
 
     #endregion
