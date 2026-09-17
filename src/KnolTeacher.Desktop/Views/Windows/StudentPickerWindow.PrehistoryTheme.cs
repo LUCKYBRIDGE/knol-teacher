@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using KnolTeacher.Desktop.Models;
@@ -324,32 +325,93 @@ public partial class StudentPickerWindow
 
     private void AddRiverStones()
     {
-        // 1. Natural AI-generated River Stream crossing
-        double riverW = TrackWidth;
-        double riverH = 210;
-        double riverY = 1720;
-        var riverImg = new Image
+        // 1. Organic Flowing River Surface (자연스러운 유선형 강줄기 지오메트리)
+        var riverGeo = Geometry.Parse(
+            "M -10,1720 C 160,1702 330,1736 510,1714 C 600,1704 690,1718 " +
+            "L 690,1935 C 520,1952 340,1918 160,1945 C 65,1938 -10,1930 Z");
+
+        var riverPath = new System.Windows.Shapes.Path
         {
-            Width = riverW,
-            Height = riverH,
-            Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_river_stream.png")),
-            Stretch = Stretch.Fill,
+            Data = riverGeo,
+            Fill = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(90, 49, 81, 77), 0.0),    // 젖은 모래/강변 그라데이션
+                    new GradientStop(Color.FromArgb(190, 14, 165, 233), 0.12), // 맑은 여울목 수면 (#0EA5E9)
+                    new GradientStop(Color.FromArgb(235, 2, 132, 199), 0.42),  // 깊은 청록빛 여울 (#0284C7)
+                    new GradientStop(Color.FromArgb(245, 3, 105, 161), 0.60),  // 깊은 물길 중심 (#0369A1)
+                    new GradientStop(Color.FromArgb(190, 14, 165, 233), 0.88), // 맑은 얕은 물빛
+                    new GradientStop(Color.FromArgb(90, 49, 81, 77), 1.0)     // 하류 젖은 모래 그라데이션
+                }
+            },
             IsHitTestVisible = false
         };
-        RenderOptions.SetBitmapScalingMode(riverImg, BitmapScalingMode.HighQuality);
-        Canvas.SetLeft(riverImg, 0);
-        Canvas.SetTop(riverImg, riverY);
-        Panel.SetZIndex(riverImg, -25);
-        RaceCanvas.Children.Add(riverImg);
+        Panel.SetZIndex(riverPath, -25);
+        RaceCanvas.Children.Add(riverPath);
 
-        // 2. Realistic Stepping Stones (신석기 강가 징검다리)
+        // 2. Flowing Water Wave Ripples (강물 수면 유속 물결선)
+        var rippleCurves = new[]
+        {
+            "M 30,1748 C 170,1736 300,1758 460,1742 C 550,1735 650,1746",
+            "M 70,1782 C 210,1768 350,1794 490,1776 C 580,1770 665,1784",
+            "M 25,1822 C 185,1806 330,1832 480,1814 C 570,1808 655,1820",
+            "M 65,1862 C 195,1846 340,1875 500,1856 C 590,1850 670,1865",
+            "M 35,1898 C 175,1885 320,1912 480,1894 C 570,1888 645,1900"
+        };
+        foreach (var data in rippleCurves)
+        {
+            var ripple = new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse(data),
+                Stroke = BrushFrom("#BAE6FD"),
+                StrokeThickness = 2.0,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                Opacity = 0.62,
+                IsHitTestVisible = false
+            };
+            Panel.SetZIndex(ripple, -24);
+            RaceCanvas.Children.Add(ripple);
+        }
+
+        // 3. Shoreline Foam Traces (강둑 얇은 백색 물거품/포말 라인)
+        var topFoam = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M 0,1720 C 160,1702 330,1736 510,1714 C 600,1704 680,1718"),
+            Stroke = BrushFrom("#F0F9FF"),
+            StrokeThickness = 2.4,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            Opacity = 0.55,
+            IsHitTestVisible = false
+        };
+        Panel.SetZIndex(topFoam, -24);
+        RaceCanvas.Children.Add(topFoam);
+
+        var bottomFoam = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M 680,1935 C 520,1952 340,1918 160,1945 C 65,1938 0,1930"),
+            Stroke = BrushFrom("#F0F9FF"),
+            StrokeThickness = 2.4,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            Opacity = 0.55,
+            IsHitTestVisible = false
+        };
+        Panel.SetZIndex(bottomFoam, -24);
+        RaceCanvas.Children.Add(bottomFoam);
+
+        // 4. Realistic River Stepping Stones (신석기 강가 징검돌과 조약돌)
         var stones = new (double X, double Y, double W, double H)[]
         {
-            (145, 1810, 68, 52),
-            (225, 1835, 62, 48),
-            (305, 1805, 74, 56),
-            (395, 1840, 64, 50),
-            (475, 1812, 70, 54)
+            (175, 1785, 56, 42),
+            (255, 1830, 50, 36),
+            (340, 1795, 60, 44),
+            (425, 1835, 52, 38),
+            (495, 1790, 54, 40)
         };
         foreach (var item in stones)
         {
@@ -359,7 +421,14 @@ public partial class StudentPickerWindow
                 Height = item.H,
                 Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/river_stone.png")),
                 Stretch = Stretch.Uniform,
-                IsHitTestVisible = false
+                IsHitTestVisible = false,
+                Effect = new DropShadowEffect
+                {
+                    BlurRadius = 7,
+                    Opacity = 0.45,
+                    ShadowDepth = 2.5,
+                    Color = (Color)ColorConverter.ConvertFromString("#0C4A6E")
+                }
             };
             RenderOptions.SetBitmapScalingMode(stoneImg, BitmapScalingMode.HighQuality);
             Canvas.SetLeft(stoneImg, item.X);
@@ -368,37 +437,41 @@ public partial class StudentPickerWindow
             RaceCanvas.Children.Add(stoneImg);
         }
 
-        // 3. Water splashes around stepping stones
-        var splashes = new (double X, double Y, double W, double H)[]
+        // River pebbles scattered along the riverbed
+        var pebbles = new (double X, double Y, double R)[]
         {
-            (185, 1835, 42, 22),
-            (350, 1828, 48, 24),
-            (440, 1838, 44, 22)
+            (130, 1750, 10), (220, 1770, 8), (470, 1755, 11), (540, 1775, 9),
+            (150, 1905, 9), (290, 1885, 12), (390, 1895, 10), (520, 1880, 8)
         };
-        foreach (var sp in splashes)
+        foreach (var p in pebbles)
         {
-            var splashImg = new Image
+            var pebble = new Ellipse
             {
-                Width = sp.W,
-                Height = sp.H,
-                Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_water_splash.png")),
-                Stretch = Stretch.Uniform,
-                Opacity = 0.75,
+                Width = p.R * 1.3,
+                Height = p.R * 0.9,
+                Fill = BrushFrom("#94A3B8"),
+                Stroke = BrushFrom("#475569"),
+                StrokeThickness = 1,
+                Opacity = 0.7,
                 IsHitTestVisible = false
             };
-            RenderOptions.SetBitmapScalingMode(splashImg, BitmapScalingMode.HighQuality);
-            Canvas.SetLeft(splashImg, sp.X);
-            Canvas.SetTop(splashImg, sp.Y);
-            Panel.SetZIndex(splashImg, -22);
-            RaceCanvas.Children.Add(splashImg);
+            Canvas.SetLeft(pebble, p.X);
+            Canvas.SetTop(pebble, p.Y);
+            Panel.SetZIndex(pebble, -23);
+            RaceCanvas.Children.Add(pebble);
         }
 
-        // 4. Natural shallow water immersion wash (자연스러운 얕은 여울물 침수 연출)
-        // 상하 가장자리는 0 투명도로 부드럽게 감쇄되어 레이서가 물에 들어오고 나갈 때 자연스럽게 반투명 물빛에 잠김
+        // 5. Riverbank Foliage / Reeds (강변 양쪽 수변 갈대 식생)
+        AddRiverbankReeds(55, 1735);
+        AddRiverbankReeds(85, 1885);
+        AddRiverbankReeds(590, 1740);
+        AddRiverbankReeds(620, 1880);
+
+        // 6. Natural shallow water immersion wash (레이서 수면 반사/침수 연출)
         var waterWash = new Rectangle
         {
-            Width = riverW,
-            Height = 120,
+            Width = TrackWidth,
+            Height = 150,
             Fill = new LinearGradientBrush
             {
                 StartPoint = new Point(0, 0),
@@ -406,18 +479,55 @@ public partial class StudentPickerWindow
                 GradientStops = new GradientStopCollection
                 {
                     new GradientStop(Color.FromArgb(0, 56, 189, 248), 0.0),
-                    new GradientStop(Color.FromArgb(42, 56, 189, 248), 0.22),
-                    new GradientStop(Color.FromArgb(58, 14, 165, 233), 0.5),
-                    new GradientStop(Color.FromArgb(42, 56, 189, 248), 0.78),
+                    new GradientStop(Color.FromArgb(28, 56, 189, 248), 0.2),
+                    new GradientStop(Color.FromArgb(46, 14, 165, 233), 0.5),
+                    new GradientStop(Color.FromArgb(28, 56, 189, 248), 0.8),
                     new GradientStop(Color.FromArgb(0, 56, 189, 248), 1.0)
                 }
             },
             IsHitTestVisible = false
         };
         Canvas.SetLeft(waterWash, 0);
-        Canvas.SetTop(waterWash, riverY + 45);
+        Canvas.SetTop(waterWash, 1750);
         Panel.SetZIndex(waterWash, 5);
         RaceCanvas.Children.Add(waterWash);
+    }
+
+    private void AddRiverbankReeds(double x, double y)
+    {
+        var cluster = new Canvas { Width = 30, Height = 40, IsHitTestVisible = false };
+        var reedColors = new[] { "#166534", "#15803D", "#22C55E", "#15803D" };
+        var offsets = new (double x1, double y1, double x2, double y2)[]
+        {
+            (6, 36, 4, 10),
+            (12, 38, 14, 6),
+            (18, 36, 20, 8),
+            (24, 38, 26, 12)
+        };
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            var (x1, y1, x2, y2) = offsets[i];
+            cluster.Children.Add(new Line
+            {
+                X1 = x1, Y1 = y1, X2 = x2, Y2 = y2,
+                Stroke = BrushFrom(reedColors[i]),
+                StrokeThickness = 2.0,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round
+            });
+            var tip = new Ellipse
+            {
+                Width = 4, Height = 9,
+                Fill = BrushFrom("#78350F")
+            };
+            Canvas.SetLeft(tip, x2 - 2);
+            Canvas.SetTop(tip, y2 - 4);
+            cluster.Children.Add(tip);
+        }
+        Canvas.SetLeft(cluster, x);
+        Canvas.SetTop(cluster, y);
+        Panel.SetZIndex(cluster, -18);
+        RaceCanvas.Children.Add(cluster);
     }
 
     private void AddNeolithicHut(double x, double y, double scale = 1.0)
