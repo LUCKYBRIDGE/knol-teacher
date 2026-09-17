@@ -107,6 +107,43 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Board Eraser Segment Radio Style -->
+        <Style x:Key="BoardSegmentRadioStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#CBD5E1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bd"
+                                Background="Transparent"
+                                CornerRadius="5"
+                                Padding="6,2"
+                                Margin="1,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#0284C7"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsChecked" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="bd" Property="Background" Value="#334155"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     
     <Grid>
@@ -231,9 +268,18 @@
                             <ToggleButton.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></ToggleButton.Resources>
                         </ToggleButton>
 
-                        <StackPanel x:Name="PanelInkTools" Orientation="Horizontal" Visibility="Collapsed">
-                            <RadioButton x:Name="RbPen" Content="펜" GroupName="StudentBoardToolGroup" IsChecked="True" Checked="RbPen_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                            <RadioButton x:Name="RbEraser" Content="지우개" GroupName="StudentBoardToolGroup" Checked="RbEraser_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,9,0" VerticalAlignment="Center"/>
+                        <StackPanel x:Name="PanelInkTools" Orientation="Horizontal" Visibility="Collapsed" VerticalAlignment="Center">
+                            <RadioButton x:Name="RbPen" Content="✏️ 펜" GroupName="StudentBoardToolGroup" IsChecked="True" Checked="RbPen_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
+
+                            <!-- 지우개 시스템 세그먼트 (부분, 획, 구역, 영역) -->
+                            <Border Background="#1E293B" BorderBrush="#475569" BorderThickness="1" CornerRadius="6" Padding="2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <RadioButton x:Name="RbEraserPoint" Content="🧹 부분" GroupName="StudentBoardToolGroup" Checked="RbEraserPoint_Checked" Style="{StaticResource BoardSegmentRadioStyle}" ToolTip="마우스/펜으로 문지른 궤적만 부분 삭제"/>
+                                    <RadioButton x:Name="RbEraserStroke" Content="⚡ 획" GroupName="StudentBoardToolGroup" Checked="RbEraserStroke_Checked" Style="{StaticResource BoardSegmentRadioStyle}" ToolTip="터치한 글자나 선 단위로 통째로 삭제"/>
+                                    <RadioButton x:Name="RbEraserBox" Content="⬚ 구역" GroupName="StudentBoardToolGroup" Checked="RbEraserBox_Checked" Style="{StaticResource BoardSegmentRadioStyle}" ToolTip="직사각형 박스를 드래그하여 구역 내 글씨 일괄 삭제"/>
+                                    <RadioButton x:Name="RbEraserLasso" Content="⟲ 영역" GroupName="StudentBoardToolGroup" Checked="RbEraserLasso_Checked" Style="{StaticResource BoardSegmentRadioStyle}" ToolTip="자유롭게 올가미로 둘러친 영역 안의 글씨 일괄 삭제"/>
+                                </StackPanel>
+                            </Border>
                             <Button Width="20" Height="20" Background="White" Click="BtnColor_Click" Tag="#FFFFFF" Margin="0,0,3,0" Cursor="Hand" BorderBrush="#94A3B8" BorderThickness="1" ToolTip="흰색">
                                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
                             </Button>
@@ -284,6 +330,10 @@
                        Background="Transparent"
                        Visibility="Collapsed"
                        IsHitTestVisible="False"/>
+
+            <!-- Eraser Preview Canvas for Box / Lasso guidelines -->
+            <Canvas x:Name="BoardEraserPreviewCanvas"
+                    IsHitTestVisible="False"/>
 
             <!-- Math Tools Canvas (Ruler, Triangle, Protractor) -->
             <Canvas x:Name="BoardToolsCanvas"
