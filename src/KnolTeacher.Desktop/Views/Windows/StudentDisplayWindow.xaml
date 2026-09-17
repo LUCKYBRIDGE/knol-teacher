@@ -232,8 +232,8 @@
                         </ToggleButton>
 
                         <StackPanel x:Name="PanelInkTools" Orientation="Horizontal" Visibility="Collapsed">
-                            <RadioButton x:Name="RbPen" Content="펜" IsChecked="True" Checked="RbPen_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                            <RadioButton x:Name="RbEraser" Content="지우개" Checked="RbEraser_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,9,0" VerticalAlignment="Center"/>
+                            <RadioButton x:Name="RbPen" Content="펜" GroupName="StudentBoardToolGroup" IsChecked="True" Checked="RbPen_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                            <RadioButton x:Name="RbEraser" Content="지우개" GroupName="StudentBoardToolGroup" Checked="RbEraser_Checked" Style="{StaticResource BoardRadioStyle}" FontSize="11" Margin="0,0,9,0" VerticalAlignment="Center"/>
                             <Button Width="20" Height="20" Background="White" Click="BtnColor_Click" Tag="#FFFFFF" Margin="0,0,3,0" Cursor="Hand" BorderBrush="#94A3B8" BorderThickness="1" ToolTip="흰색">
                                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="4"/></Style></Button.Resources>
                             </Button>

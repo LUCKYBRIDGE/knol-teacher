@@ -35,9 +35,9 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="시간입력:" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <TextBox x:Name="TbMinutes" Text="05" Width="28" Height="24" FontSize="11" FontWeight="Bold" TextAlignment="Center" Background="#1E293B" Foreground="White" BorderBrush="#334155" VerticalContentAlignment="Center" KeyDown="TbTime_KeyDown"/>
+                    <TextBox x:Name="TbMinutes" Text="05" Width="32" Height="24" Style="{StaticResource CompactNumericTextBoxStyle}" FontSize="11" FontWeight="Bold" TextAlignment="Center" Background="#1E293B" Foreground="White" BorderBrush="#334155" VerticalContentAlignment="Center" KeyDown="TbTime_KeyDown"/>
                     <TextBlock Text="분" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="2,0,4,0"/>
-                    <TextBox x:Name="TbSeconds" Text="00" Width="28" Height="24" FontSize="11" FontWeight="Bold" TextAlignment="Center" Background="#1E293B" Foreground="White" BorderBrush="#334155" VerticalContentAlignment="Center" KeyDown="TbTime_KeyDown"/>
+                    <TextBox x:Name="TbSeconds" Text="00" Width="32" Height="24" Style="{StaticResource CompactNumericTextBoxStyle}" FontSize="11" FontWeight="Bold" TextAlignment="Center" Background="#1E293B" Foreground="White" BorderBrush="#334155" VerticalContentAlignment="Center" KeyDown="TbTime_KeyDown"/>
                     <TextBlock Text="초" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="2,0,4,0"/>
                     <Button Content="설정" Click="BtnApplyManualTime_Click" Height="24" Padding="6,0" Background="#0284C7" Foreground="White" FontSize="10" FontWeight="Bold" Cursor="Hand"/>
                 </StackPanel>

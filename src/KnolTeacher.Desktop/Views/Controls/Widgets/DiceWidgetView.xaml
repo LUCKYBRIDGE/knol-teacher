@@ -22,8 +22,8 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="개수:" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <RadioButton x:Name="Rb1Dice" Content="1개" IsChecked="True" Foreground="White" FontSize="11" Margin="0,0,6,0" Checked="Config_Changed"/>
-                <RadioButton x:Name="Rb2Dice" Content="2개" Foreground="White" FontSize="11" Checked="Config_Changed"/>
+                <RadioButton x:Name="Rb1Dice" Content="1개" IsChecked="True" Style="{StaticResource DarkBoardRadioStyle}" FontSize="11" Margin="0,0,8,0" Checked="Config_Changed"/>
+                <RadioButton x:Name="Rb2Dice" Content="2개" Style="{StaticResource DarkBoardRadioStyle}" FontSize="11" Checked="Config_Changed"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <TextBlock Text="면수(수기입력):" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>

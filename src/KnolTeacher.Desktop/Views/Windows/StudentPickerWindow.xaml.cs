@@ -444,7 +444,7 @@ public partial class StudentPickerWindow : Window
 
         AddBumper(240, 2130, 19, "polished-stone", 35);
         AddBumper(440, 2230, 18, "shell-mask", 15);
-        AddBumper(250, 2330, 19, "polished-stone", -20);
+        AddBumper(380, 2330, 19, "polished-stone", -20);
 
         // --- [청동기 구역: 농경 마을과 고인돌 언덕 (Y = 2400 ~ 3200)] ---
         // 반달 돌칼 (half-moon-stone-knife), 민무늬 토기 (plain-pottery), 비파형 동검 (bronze-dagger), 고인돌 (dolmen)
@@ -465,12 +465,12 @@ public partial class StudentPickerWindow : Window
         AddBreakablePottery(295, 3215, 15);
         AddBreakablePottery(385, 3215, 15);
 
-        // --- 5. Perched Animated Squirrels (5마리 청설모 솔방울 투척) ---
+        // --- 5. Perched Animated Squirrels (5마리 청설모 솔방울 투척 - 외벽 횃대 배치) ---
         AddSquirrel(x: 95, y: 780, radius: 26, isFacingRight: true, startDelay: 0.3, projectileAsset: "cartoon_pinecone.png");
         AddSquirrel(x: 585, y: 1150, radius: 26, isFacingRight: false, startDelay: 0.7, projectileAsset: "cartoon_pinecone.png");
         AddSquirrel(x: 135, y: 1520, radius: 26, isFacingRight: true, startDelay: 0.5, projectileAsset: "cartoon_pinecone.png");
         AddSquirrel(x: 530, y: 1720, radius: 26, isFacingRight: false, startDelay: 0.9, projectileAsset: "cartoon_pinecone.png");
-        AddSquirrel(x: 195, y: 2320, radius: 26, isFacingRight: true, startDelay: 0.4, projectileAsset: "cartoon_pinecone.png");
+        AddSquirrel(x: 135, y: 2300, radius: 26, isFacingRight: true, startDelay: 0.4, projectileAsset: "cartoon_pinecone.png");
     }
 
     private void AddRotatingLog(double x, double y, double length, double thickness, double angularVelocity, double initialAngleDeg)
@@ -1169,10 +1169,10 @@ public partial class StudentPickerWindow : Window
                     r.X = sq.CurrentX + nx * (minDist + 2.0);
                     r.Y = sq.CurrentY + ny * (minDist + 2.0);
 
-                    // Energetic deflection towards track center
+                    // Energetic deflection towards track center and forward downhill speed
                     double centerPush = sq.IsFacingRight ? 1.0 : -1.0;
-                    r.Vx = centerPush * (120.0 + rand.NextDouble() * 50.0);
-                    r.Vy = -40.0 + (rand.NextDouble() - 0.5) * 60.0;
+                    r.Vx = centerPush * (140.0 + rand.NextDouble() * 50.0);
+                    r.Vy = Math.Max(r.Vy * 0.6, 85.0) + rand.NextDouble() * 35.0;
                 }
             }
 
@@ -2779,9 +2779,9 @@ public class PopOutSquirrel
         _frameThrow = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_squirrel_throw.png"));
         _frameCheer = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_squirrel_cheer.png"));
 
-        // 1. Wooden Branch Perch Visual (Cliff side footing)
-        double branchW = 92;
-        double branchH = 50;
+        // 1. Wooden Branch Perch Visual (Cliff side footing - AI 생성 나뭇가지 에셋)
+        double branchW = 110;
+        double branchH = 75;
         BranchVisual = new Grid
         {
             Width = branchW,
@@ -2799,15 +2799,15 @@ public class PopOutSquirrel
 
         if (isFacingRight)
         {
-            Canvas.SetLeft(BranchVisual, Math.Max(0, X - 35));
-            Canvas.SetTop(BranchVisual, y + 14);
+            Canvas.SetLeft(BranchVisual, Math.Max(0, X - 48));
+            Canvas.SetTop(BranchVisual, Y + 12);
         }
         else
         {
             BranchVisual.RenderTransformOrigin = new Point(0.5, 0.5);
             BranchVisual.RenderTransform = new ScaleTransform(-1.0, 1.0);
-            Canvas.SetLeft(BranchVisual, Math.Min(680 - branchW, X - branchW + 35));
-            Canvas.SetTop(BranchVisual, y + 14);
+            Canvas.SetLeft(BranchVisual, Math.Min(680 - branchW, X - branchW + 48));
+            Canvas.SetTop(BranchVisual, Y + 12);
         }
 
         // 2. Animated Squirrel Visual (Stationed on branch, always visible!)

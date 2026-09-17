@@ -24,8 +24,8 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <RadioButton x:Name="RbName" Content="이름" IsChecked="True" Foreground="White" FontSize="11" Margin="0,0,6,0" Checked="Filter_Changed"/>
-                    <RadioButton x:Name="RbNumber" Content="번호" Foreground="White" FontSize="11" Checked="Filter_Changed"/>
+                    <RadioButton x:Name="RbName" Content="이름" IsChecked="True" Style="{StaticResource DarkBoardRadioStyle}" FontSize="11" Margin="0,0,8,0" Checked="Filter_Changed"/>
+                    <RadioButton x:Name="RbNumber" Content="번호" Style="{StaticResource DarkBoardRadioStyle}" FontSize="11" Checked="Filter_Changed"/>
                 </StackPanel>
                 <ComboBox x:Name="CbGender" Grid.Column="1" Height="28" MinHeight="28" FontSize="11" Padding="6,2" VerticalContentAlignment="Center" SelectionChanged="Filter_Changed" HorizontalAlignment="Right" Width="95">
                     <ComboBoxItem Content="전체" IsSelected="True"/>
@@ -36,9 +36,9 @@
 
             <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="번호 직접입력:" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBox x:Name="TbStartNum" Text="1" Width="28" Height="24" FontSize="11" FontWeight="Bold" TextAlignment="Center" Background="#1E293B" Foreground="White" BorderBrush="#334155" VerticalContentAlignment="Center" TextChanged="Range_TextChanged"/>
+                <TextBox x:Name="TbStartNum" Text="1" Width="30" Height="24" Style="{StaticResource CompactNumericTextBoxStyle}" FontSize="11" FontWeight="Bold" TextAlignment="Center" Background="#1E293B" Foreground="White" BorderBrush="#334155" VerticalContentAlignment="Center" TextChanged="Range_TextChanged"/>
                 <TextBlock Text="~" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="2,0"/>
-                <TextBox x:Name="TbEndNum" Text="25" Width="30" Height="24" FontSize="11" FontWeight="Bold" TextAlignment="Center" Background="#1E293B" Foreground="White" BorderBrush="#334155" VerticalContentAlignment="Center" TextChanged="Range_TextChanged"/>
+                <TextBox x:Name="TbEndNum" Text="25" Width="32" Height="24" Style="{StaticResource CompactNumericTextBoxStyle}" FontSize="11" FontWeight="Bold" TextAlignment="Center" Background="#1E293B" Foreground="White" BorderBrush="#334155" VerticalContentAlignment="Center" TextChanged="Range_TextChanged"/>
                 <TextBlock Text="번까지" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Margin="3,0,0,0"/>
             </StackPanel>
         </Grid>

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using KnolTeacher.Desktop.Models;
@@ -102,9 +103,10 @@ public partial class StudentPickerWindow
 
     private void RelocateNeolithicCoastWaves()
     {
+        // 구석기/신석기 레거시 벡터 파도 선 제거
         var legacyWaves = RaceCanvas.Children
             .OfType<System.Windows.Shapes.Path>()
-            .Where(path => Panel.GetZIndex(path) == -15 && Canvas.GetTop(path) >= 3180)
+            .Where(path => Panel.GetZIndex(path) == -15)
             .ToArray();
 
         foreach (var wave in legacyWaves)
@@ -112,70 +114,58 @@ public partial class StudentPickerWindow
             RaceCanvas.Children.Remove(wave);
         }
 
-        for (int row = 0; row < 4; row++)
+        // AI 생성 해안선 에셋이 이미 배치되어 있는지 확인하고 없으면 신석기 바닷가 위치에 자연스럽게 배치
+        bool hasCoast = RaceCanvas.Children
+            .OfType<Image>()
+            .Any(img => img.Source?.ToString().Contains("cartoon_sea_shore.png", StringComparison.OrdinalIgnoreCase) == true);
+
+        if (!hasCoast)
         {
-            var wave = new System.Windows.Shapes.Path
+            double coastW = 210;
+            double coastH = 138;
+            var coastImg = new Image
             {
-                Data = Geometry.Parse("M0,12 C24,0 48,24 72,12 C96,0 120,24 144,12 C168,0 192,24 216,12"),
-                Stroke = BrushFrom(row % 2 == 0 ? "#A7E3E7" : "#78C6CE"),
-                StrokeThickness = 3,
-                Opacity = 0.56,
+                Width = coastW,
+                Height = coastH,
+                Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_sea_shore.png")),
+                Stretch = Stretch.Uniform,
                 IsHitTestVisible = false
             };
-            Canvas.SetLeft(wave, row % 2 == 0 ? 42 : 418);
-            Canvas.SetTop(wave, 2200 + row * 42);
-            Panel.SetZIndex(wave, -15);
-            RaceCanvas.Children.Add(wave);
+            RenderOptions.SetBitmapScalingMode(coastImg, BitmapScalingMode.HighQuality);
+            Canvas.SetLeft(coastImg, 465);
+            Canvas.SetTop(coastImg, 2140);
+            Panel.SetZIndex(coastImg, -15);
+            RaceCanvas.Children.Add(coastImg);
         }
     }
 
     private void AddBronzeAgeStructures()
     {
-        AddBronzeRiceField(28, 2520);
-        AddBronzeStorageJars(514, 2780);
+        AddBronzeRiceField(24, 2500);
+        AddBronzeRiceField(505, 2640, 0.88);
+        AddBronzeStorageJars(514, 2820);
         AddDolmenStructure(42, 3135);
         AddDolmenStructure(482, 3340, 0.78);
     }
 
-    private void AddBronzeRiceField(double x, double y)
+    private void AddBronzeRiceField(double x, double y, double scale = 1.0)
     {
-        var field = new Canvas
+        // 청동기 벼농사 논밭 (풍요로운 황금빛 벼와 논둑) - AI 생성 2D 게임 에셋
+        double w = 155 * scale;
+        double h = 115 * scale;
+        var fieldImg = new Image
         {
-            Width = 150,
-            Height = 120,
-            IsHitTestVisible = false,
-            Opacity = 0.9
+            Width = w,
+            Height = h,
+            Source = new BitmapImage(new Uri("pack://application:,,,/assets/race/cartoon_rice_field.png")),
+            Stretch = Stretch.Uniform,
+            IsHitTestVisible = false
         };
-
-        var ground = new Rectangle
-        {
-            Width = 148,
-            Height = 108,
-            Fill = BrushFrom("#715536"),
-            Stroke = BrushFrom("#3F3528"),
-            StrokeThickness = 2,
-            RadiusX = 10,
-            RadiusY = 10
-        };
-        field.Children.Add(ground);
-
-        for (int row = 0; row < 5; row++)
-        {
-            double top = 14 + row * 18;
-            AddLine(field, 12, top, 136, top, "#A6814F", 4);
-            for (int plant = 0; plant < 6; plant++)
-            {
-                double px = 20 + plant * 21;
-                AddLine(field, px, top - 6, px, top + 4, "#D6B354", 2);
-                AddLine(field, px, top - 3, px - 5, top - 8, "#D6B354", 1.4);
-                AddLine(field, px, top - 3, px + 5, top - 8, "#D6B354", 1.4);
-            }
-        }
-
-        Canvas.SetLeft(field, x);
-        Canvas.SetTop(field, y);
-        Panel.SetZIndex(field, -12);
-        RaceCanvas.Children.Add(field);
+        RenderOptions.SetBitmapScalingMode(fieldImg, BitmapScalingMode.HighQuality);
+        Canvas.SetLeft(fieldImg, x);
+        Canvas.SetTop(fieldImg, y);
+        Panel.SetZIndex(fieldImg, -12);
+        RaceCanvas.Children.Add(fieldImg);
     }
 
     private void AddBronzeStorageJars(double x, double y)
