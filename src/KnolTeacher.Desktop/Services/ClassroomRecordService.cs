@@ -81,70 +81,46 @@ public class ClassroomRecordService : IClassroomRecordService
         SaveCumulativeRecords();
     }
 
+    // Student records are persisted with the same local-only atomic store as the roster:
+    // write to a temp file, replace, keep a .bak for recovery. A crash or power loss during a
+    // save no longer leaves a truncated file, and a damaged primary falls back to the backup.
     private void LoadChecklists()
     {
-        try
+        if (SafeLocalJsonStore.TryLoad<List<ChecklistGroup>>(_checklistFilePath, _jsonOptions, out var loaded) &&
+            loaded != null)
         {
-            if (File.Exists(_checklistFilePath))
-            {
-                string json = File.ReadAllText(_checklistFilePath);
-                var loaded = JsonSerializer.Deserialize<List<ChecklistGroup>>(json, _jsonOptions);
-                if (loaded != null)
-                {
-                    Checklists = loaded;
-                    return;
-                }
-            }
+            Checklists = loaded;
+            return;
         }
-        catch { }
 
-        // Sample default checklists for teachers
         Checklists = new List<ChecklistGroup>();
     }
 
-    public void SaveChecklists()
-    {
-        try
-        {
-            Directory.CreateDirectory(_configService.ConfigDir);
-            string json = JsonSerializer.Serialize(Checklists, _jsonOptions);
-            File.WriteAllText(_checklistFilePath, json);
-        }
-        catch { }
+    public void SaveChecklists() => PersistChecklists(scrubPreviousContent: false);
 
+    private void PersistChecklists(bool scrubPreviousContent)
+    {
+        SafeLocalJsonStore.TrySave(_checklistFilePath, Checklists, _jsonOptions, scrubPreviousContent: scrubPreviousContent);
         OnChecklistsChanged?.Invoke();
     }
 
     private void LoadCumulativeRecords()
     {
-        try
+        if (SafeLocalJsonStore.TryLoad<List<CumulativeRecordItem>>(_cumulativeFilePath, _jsonOptions, out var loaded) &&
+            loaded != null)
         {
-            if (File.Exists(_cumulativeFilePath))
-            {
-                string json = File.ReadAllText(_cumulativeFilePath);
-                var loaded = JsonSerializer.Deserialize<List<CumulativeRecordItem>>(json, _jsonOptions);
-                if (loaded != null)
-                {
-                    CumulativeRecords = loaded;
-                    return;
-                }
-            }
+            CumulativeRecords = loaded;
+            return;
         }
-        catch { }
 
         CumulativeRecords = new List<CumulativeRecordItem>();
     }
 
-    public void SaveCumulativeRecords()
-    {
-        try
-        {
-            Directory.CreateDirectory(_configService.ConfigDir);
-            string json = JsonSerializer.Serialize(CumulativeRecords, _jsonOptions);
-            File.WriteAllText(_cumulativeFilePath, json);
-        }
-        catch { }
+    public void SaveCumulativeRecords() => PersistCumulativeRecords(scrubPreviousContent: false);
 
+    private void PersistCumulativeRecords(bool scrubPreviousContent)
+    {
+        SafeLocalJsonStore.TrySave(_cumulativeFilePath, CumulativeRecords, _jsonOptions, scrubPreviousContent: scrubPreviousContent);
         OnCumulativeRecordsChanged?.Invoke();
     }
 
@@ -175,7 +151,8 @@ public class ClassroomRecordService : IClassroomRecordService
         if (found != null)
         {
             Checklists.Remove(found);
-            SaveChecklists();
+            // Deleted student data must not survive in the local .bak copy.
+            PersistChecklists(scrubPreviousContent: true);
         }
     }
 
@@ -236,7 +213,8 @@ public class ClassroomRecordService : IClassroomRecordService
         if (found != null)
         {
             CumulativeRecords.Remove(found);
-            SaveCumulativeRecords();
+            // Deleted student data must not survive in the local .bak copy.
+            PersistCumulativeRecords(scrubPreviousContent: true);
         }
     }
 

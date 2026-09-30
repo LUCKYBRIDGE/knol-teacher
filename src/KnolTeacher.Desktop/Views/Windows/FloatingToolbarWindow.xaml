@@ -243,9 +243,9 @@
                 </Button>
 
                 <!-- 4. Student Picker (Alt+8) -->
-                <Button x:Name="BtnPicker" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnPicker_Click" MouseRightButtonUp="BtnPicker_MouseRightButtonUp" ToolTip="동물 뽑기 레이스 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+8)">
+                <Button x:Name="BtnPicker" Style="{StaticResource DockDualMonitorButtonStyle}" Click="BtnPicker_Click" MouseRightButtonUp="BtnPicker_MouseRightButtonUp" ToolTip="뽑기 레이스 (좌클릭: 모니터1 / 우클릭: 모니터2, Alt+8)">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="🎰 " FontSize="11"/>
+                        <TextBlock Text="🌱 " FontSize="11"/>
                         <TextBlock Text="레이스"/>
                         <Ellipse x:Name="DotPicker" Width="6" Height="6" Fill="#8B5CF6" Margin="4,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                     </StackPanel>

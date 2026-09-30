@@ -220,7 +220,7 @@
                                 <Button x:Name="BtnUndoSignature" Grid.Column="0" Content="↺ 1획 취소" Click="BtnUndoSignature_Click" Margin="0,0,4,0" Padding="0,8" Background="#F1F5F9" Foreground="#334155" FontWeight="Bold" FontSize="11" BorderThickness="0" Cursor="Hand" ToolTip="마지막 획 되돌리기 (Ctrl+Z)">
                                     <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                                 </Button>
-                                <Button x:Name="BtnToggleEraser" Grid.Column="1" Content="🧹 부분 지우개" Click="BtnToggleEraser_Click" Margin="2,0,2,0" Padding="0,8" Background="#F1F5F9" Foreground="#334155" FontWeight="Bold" FontSize="11" BorderThickness="0" Cursor="Hand">
+                                <Button x:Name="BtnToggleEraser" Grid.Column="1" Content="🧹 획 지우개" Click="BtnToggleEraser_Click" Margin="2,0,2,0" Padding="0,8" Background="#F1F5F9" Foreground="#334155" FontWeight="Bold" FontSize="11" BorderThickness="0" Cursor="Hand">
                                     <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                                 </Button>
                                 <Button Content="🗑️ 전체 지우기" Click="BtnClearSignature_Click" Grid.Column="2" Margin="4,0,0,0" Padding="0,8" Background="#FEE2E2" Foreground="#B91C1C" FontWeight="Bold" FontSize="11" BorderThickness="0" Cursor="Hand">

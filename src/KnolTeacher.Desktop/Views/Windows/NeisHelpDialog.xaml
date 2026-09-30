@@ -118,7 +118,7 @@
         </ScrollViewer>
 
         <!-- 3. Bottom Close Button -->
-        <Button Grid.Row="2" Content="확인했습니다" Click="BtnClose_Click" Height="40" Background="#2563EB" Foreground="White" FontWeight="Bold" FontSize="13" BorderThickness="0" Cursor="Hand">
+        <Button Grid.Row="2" Content="확인했습니다" Click="BtnClose_Click" IsCancel="True" Height="40" Background="#2563EB" Foreground="White" FontWeight="Bold" FontSize="13" BorderThickness="0" Cursor="Hand">
             <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
         </Button>
     </Grid>

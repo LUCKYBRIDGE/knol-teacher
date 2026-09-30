@@ -182,7 +182,13 @@ public partial class MainWindow : FluentWindow
         };
 
         Loaded += MainWindow_Loaded;
-        Closing += (s, e) => App.BootLog($"MainWindow Closing: Cancel={e.Cancel}");
+        Closing += (s, e) =>
+        {
+            // Hide-to-tray and app exit both pass here: never lose the last notice edit.
+            FlushPendingNoticeSave();
+            App.BootLog($"MainWindow Closing: Cancel={e.Cancel}");
+        };
+        Deactivated += (s, e) => FlushPendingNoticeSave();
         Closed += (s, e) => App.BootLog("MainWindow Closed");
     }
 
@@ -389,26 +395,37 @@ public partial class MainWindow : FluentWindow
 
     private void UpdateTopActionPillStates()
     {
+        // This runs every second. Only inspect windows that already exist: resolving the lazy
+        // properties here would construct every tool window right after startup, defeating lazy
+        // loading. Windows opened by hotkeys (resolved directly from DI) are found the same way.
+        var boardWindow = FindCreatedWindow<StudentDisplayWindow>();
+        var drawingWindow = FindCreatedWindow<ScreenDrawingOverlayWindow>();
+        var timerWindow = FindCreatedWindow<ClassroomTimerWindow>();
+        var pickerWindow = FindCreatedWindow<StudentPickerWindow>();
+
         // 1. 놀보드 (StudentDisplayWindow)
-        bool isBoardActive = _studentDisplayWindow != null && _studentDisplayWindow.IsVisible;
+        bool isBoardActive = boardWindow?.IsVisible == true;
         ApplyPillButtonState(BtnPillBoard, TxtPillBoardLabel, DotPillBoard, BadgePillBoard, TxtPillBoardBadge, isBoardActive, isPrimaryTool: true);
 
-        // 2. 화면판서 (ScreenDrawingOverlayWindow - 화면 모드)
-        bool isDrawingActive = _screenDrawingOverlayWindow != null && _screenDrawingOverlayWindow.IsVisible && !_screenDrawingOverlayWindow.IsBoardMode;
+        // 2. 화면 판서 (ScreenDrawingOverlayWindow - 화면 모드)
+        bool isDrawingActive = drawingWindow != null && drawingWindow.IsVisible && !drawingWindow.IsBoardMode;
         ApplyPillButtonState(BtnPillDrawing, TxtPillDrawingLabel, DotPillDrawing, BadgePillDrawing, TxtPillDrawingBadge, isDrawingActive);
 
         // 3. 칠판보드 (ScreenDrawingOverlayWindow - 칠판 모드)
-        bool isBoardDrawingActive = _screenDrawingOverlayWindow != null && _screenDrawingOverlayWindow.IsVisible && _screenDrawingOverlayWindow.IsBoardMode;
+        bool isBoardDrawingActive = drawingWindow != null && drawingWindow.IsVisible && drawingWindow.IsBoardMode;
         ApplyPillButtonState(BtnPillBoardDrawing, TxtPillBoardDrawingLabel, DotPillBoardDrawing, BadgePillBoardDrawing, TxtPillBoardDrawingBadge, isBoardDrawingActive);
 
         // 4. 타이머 (ClassroomTimerWindow)
-        bool isTimerActive = _timerWindow != null && _timerWindow.IsVisible;
+        bool isTimerActive = timerWindow?.IsVisible == true;
         ApplyPillButtonState(BtnPillTimer, TxtPillTimerLabel, DotPillTimer, BadgePillTimer, TxtPillTimerBadge, isTimerActive);
 
-        // 5. 추첨 (StudentPickerWindow)
-        bool isPickerActive = _pickerWindow != null && _pickerWindow.IsVisible;
+        // 5. 뽑기 레이스 (StudentPickerWindow)
+        bool isPickerActive = pickerWindow?.IsVisible == true;
         ApplyPillButtonState(BtnPillPicker, TxtPillPickerLabel, DotPillPicker, BadgePillPicker, TxtPillPickerBadge, isPickerActive);
     }
+
+    private static T? FindCreatedWindow<T>() where T : System.Windows.Window
+        => System.Windows.Application.Current?.Windows.OfType<T>().FirstOrDefault();
 
     private void ApplyPillButtonState(Button? btn, System.Windows.Controls.TextBlock? label, System.Windows.Shapes.Ellipse? dot, Border? badge, System.Windows.Controls.TextBlock? badgeText, bool isActive, bool isPrimaryTool = false)
     {
@@ -821,21 +838,16 @@ public partial class MainWindow : FluentWindow
 
     private void BtnShowHotkeyGuide_Click(object sender, RoutedEventArgs e)
     {
+        // Built from the current hotkey settings (same source as the tray guide), so the guide never
+        // lists keys that were changed, disabled or are not implemented.
+        var guideLines = DefaultHotkeys.BuildGuideLines(_configService.Hotkeys);
         string guide =
             "✨ [놀티쳐 백그라운드 상주 & 전역 단축키 가이드]\n\n" +
             "놀티쳐 창 우측 상단의 닫기(X)를 누르면 앱이 종료되지 않고\n" +
             "작업표시줄 우측 '시스템 트레이(숨김 아이콘)'에 안전하게 들어갑니다.\n\n" +
             "어떤 프로그램(PPT, 한글, 브라우저, 나이스 등)을 사용 중이어도 언제든 즉시 실행:\n\n" +
-            "• F2: 놀보드 (전자 칠판 & 판서 화면 열기/숨기기)\n" +
-            "• Alt + 1: 메인 놀티쳐 창 보이기 / 숨기기\n" +
-            "• Alt + 2: 4K 화면 전체 판서 (0ms 실시간 화면 프리즈)\n" +
-            "• Alt + 3: 교실 집중 타이머 (카운트다운 & 차임벨)\n" +
-            "• Alt + 8: 동물 뽑기 레이스\n" +
-            "• Alt + 9: 화면 상단 도구바\n" +
-            "• Alt + S: 🔏 디지털 전자서명 & 공문서 직인 도장 생성기\n" +
-            "• Alt + N: 🚦 실시간 교실 소음 신호등\n" +
-            "• Alt + B: 🔔 원터치 교실 효과음 사운드보드\n" +
-            "• Alt + Q: 📱 빠른 웹페이지/텍스트 QR코드 생성기\n\n" +
+            string.Join("\n", guideLines) + "\n\n" +
+            "※ 단축키 설정에서 바꾼 내용이 이 안내에 그대로 반영됩니다.\n" +
             "※ 작업표시줄 트레이 아이콘을 우클릭하면 수업도구 바로가기 메뉴 및 완전 종료가 가능합니다.";
         System.Windows.MessageBox.Show(guide, "놀티쳐 전역 단축키 & 트레이 모드 안내", MessageBoxButton.OK, MessageBoxImage.Information);
     }
@@ -1502,9 +1514,7 @@ public partial class MainWindow : FluentWindow
         if (_pickerWindow.IsVisible) _pickerWindow.Hide();
         else
         {
-            _displayManager.MoveToStudentMonitor(_pickerWindow, maximize: false);
-            _pickerWindow.Show();
-            _pickerWindow.Activate();
+            _pickerWindow.ShowOnStudentMonitor();
         }
     }
 
@@ -2345,9 +2355,10 @@ public partial class MainWindow : FluentWindow
         // 학급 알림장 초기 로드 및 놀보드와 실시간 양방향 동기화
         try
         {
-            if (TbMiniNotice != null && File.Exists(_noticeFile))
+            // Same local store as the notice editor and the 알림장 widget (.bak fallback).
+            if (TbMiniNotice != null && SafeLocalFileStore.TryReadAllTextWithBackup(_noticeFile, out string savedNotice))
             {
-                TbMiniNotice.Text = File.ReadAllText(_noticeFile);
+                TbMiniNotice.Text = savedNotice;
             }
         }
         catch { }
@@ -2488,7 +2499,8 @@ public partial class MainWindow : FluentWindow
         {
             if (TbMiniNotice != null)
             {
-                File.WriteAllText(_noticeFile, TbMiniNotice.Text);
+                SafeLocalFileStore.WriteAllTextAtomic(_noticeFile, TbMiniNotice.Text);
+                _lastSavedNoticeText = TbMiniNotice.Text;
                 if (TbMainNotice != null && TbMainNotice.Text != TbMiniNotice.Text)
                 {
                     TbMainNotice.Text = TbMiniNotice.Text;
@@ -2527,24 +2539,21 @@ public partial class MainWindow : FluentWindow
 
     #region Todo List Handlers (오늘의 할 일)
 
+    private static readonly JsonSerializerOptions TodoJsonOptions = new() { WriteIndented = true };
+
+    private string TodoFilePath => Path.Combine(_configService.ConfigDir, "todos.json");
+
     private void LoadTodos()
     {
-        try
+        // Local atomic store with .bak fallback (same as the other classroom data).
+        // A saved list is used even when it is empty: sample todos are only for the very first run,
+        // otherwise deleting every todo brought the samples back on the next start.
+        if (SafeLocalJsonStore.TryLoad<List<TodoItem>>(TodoFilePath, TodoJsonOptions, out var list) && list != null)
         {
-            string file = Path.Combine(_configService.ConfigDir, "todos.json");
-            if (File.Exists(file))
-            {
-                string json = File.ReadAllText(file);
-                var list = JsonSerializer.Deserialize<List<TodoItem>>(json);
-                if (list != null && list.Count > 0)
-                {
-                    _todoItems = new ObservableCollection<TodoItem>(list);
-                    if (ListTodoItems != null) ListTodoItems.ItemsSource = _todoItems;
-                    return;
-                }
-            }
+            _todoItems = new ObservableCollection<TodoItem>(list);
+            if (ListTodoItems != null) ListTodoItems.ItemsSource = _todoItems;
+            return;
         }
-        catch { }
 
         _todoItems = new ObservableCollection<TodoItem>
         {
@@ -2558,13 +2567,8 @@ public partial class MainWindow : FluentWindow
 
     private void SaveTodos()
     {
-        try
-        {
-            string file = Path.Combine(_configService.ConfigDir, "todos.json");
-            string json = JsonSerializer.Serialize(_todoItems.ToList(), new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(file, json);
-        }
-        catch { }
+        // TrySave never throws; failures are traced without file contents.
+        SafeLocalJsonStore.TrySave(TodoFilePath, _todoItems.ToList(), TodoJsonOptions);
     }
 
     private void BtnAddTodo_Click(object sender, RoutedEventArgs e)
@@ -2630,13 +2634,19 @@ public partial class MainWindow : FluentWindow
 
     private string _noticeFile => Path.Combine(_configService.ConfigDir, "board_memo.txt");
 
+    // The class notice shares board_memo.txt with the 알림장 widget. Both now use the same
+    // local atomic store (.bak fallback) and a short save debounce instead of a raw write per keystroke.
+    private DispatcherTimer? _noticeSaveTimer;
+    private string? _pendingNoticeText;
+    private string? _lastSavedNoticeText;
+
     private void LoadMainNotice()
     {
         try
         {
-            if (File.Exists(_noticeFile))
+            if (SafeLocalFileStore.TryReadAllTextWithBackup(_noticeFile, out string text))
             {
-                string text = File.ReadAllText(_noticeFile);
+                _lastSavedNoticeText = text;
                 if (TbMainNotice != null) TbMainNotice.Text = text;
                 if (TbMiniNotice != null) TbMiniNotice.Text = text;
             }
@@ -2645,7 +2655,7 @@ public partial class MainWindow : FluentWindow
                 string def = "• [알림] 오늘 5교시는 음악실에서 수업합니다.\n• [준비물] 수학익힘책 42쪽 풀어오기\n• [과제] 주말 독서록 작성하기";
                 if (TbMainNotice != null) TbMainNotice.Text = def;
                 if (TbMiniNotice != null) TbMiniNotice.Text = def;
-                File.WriteAllText(_noticeFile, def);
+                SaveNoticeText(def);
             }
         }
         catch { }
@@ -2688,16 +2698,56 @@ public partial class MainWindow : FluentWindow
     private void TbMainNotice_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (TbMainNotice == null) return;
+        if (TbMiniNotice != null && TbMiniNotice.Text != TbMainNotice.Text)
+        {
+            TbMiniNotice.Text = TbMainNotice.Text;
+        }
+        ScheduleNoticeSave(TbMainNotice.Text);
+        MemoWidgetView.NotifyNoticeChanged(TbMainNotice.Text, this);
+    }
+
+    private void ScheduleNoticeSave(string text)
+    {
+        if (text == _lastSavedNoticeText)
+        {
+            // Already on disk (e.g. text set while loading or after an explicit save).
+            _pendingNoticeText = null;
+            _noticeSaveTimer?.Stop();
+            return;
+        }
+
+        _pendingNoticeText = text;
+        if (_noticeSaveTimer == null)
+        {
+            _noticeSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(350) };
+            _noticeSaveTimer.Tick += (s, e) => FlushPendingNoticeSave();
+        }
+        _noticeSaveTimer.Stop();
+        _noticeSaveTimer.Start();
+    }
+
+    private void FlushPendingNoticeSave()
+    {
+        _noticeSaveTimer?.Stop();
+        string? text = _pendingNoticeText;
+        if (text == null) return;
+
+        _pendingNoticeText = null;
+        SaveNoticeText(text);
+    }
+
+    private void SaveNoticeText(string text)
+    {
         try
         {
-            File.WriteAllText(_noticeFile, TbMainNotice.Text);
-            if (TbMiniNotice != null && TbMiniNotice.Text != TbMainNotice.Text)
-            {
-                TbMiniNotice.Text = TbMainNotice.Text;
-            }
+            SafeLocalFileStore.WriteAllTextAtomic(_noticeFile, text);
+            _lastSavedNoticeText = text;
         }
-        catch { }
-        MemoWidgetView.NotifyNoticeChanged(TbMainNotice.Text, this);
+        catch (Exception ex)
+        {
+            // Never log the notice content or a user-specific path.
+            Debug.WriteLine($"[MainWindow.Notice] Local notice save failed: {ex.GetType().Name}");
+        }
     }
 
     private void BtnInsertNoticeTag_Click(object sender, RoutedEventArgs e)

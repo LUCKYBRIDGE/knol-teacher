@@ -74,6 +74,7 @@ public partial class WheelWidgetView : UserControl, IWidgetLifecycle
 
     private void CancelSpin()
     {
+        bool wasSpinning = _isSpinning;
         var cts = _spinCts;
         _spinCts = null;
         if (cts != null)
@@ -88,11 +89,44 @@ public partial class WheelWidgetView : UserControl, IWidgetLifecycle
         }
 
         _isSpinning = false;
-        _soundService?.StopAll();
-        if (!_disposed && BtnSpin != null)
+
+        // The sound service is shared by the whole app (period chimes, timers, race...).
+        // Only interrupt it when this wheel's own drumroll may still be playing.
+        if (wasSpinning)
         {
-            BtnSpin.IsEnabled = true;
+            _soundService?.StopAll();
         }
+
+        if (!_disposed)
+        {
+            if (BtnSpin != null)
+            {
+                BtnSpin.IsEnabled = true;
+            }
+
+            SetEditingLocked(false);
+
+            if (wasSpinning && TxtResult != null)
+            {
+                TxtResult.Text = "돌림판을 돌려보세요!";
+                TxtResult.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38BDF8"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// The winner and stop angle are computed when the spin starts, so the items must not change
+    /// until the wheel stops. Otherwise the pointer and the announced winner can disagree.
+    /// </summary>
+    private void SetEditingLocked(bool locked)
+    {
+        bool enabled = !locked;
+        if (CbPresets != null) CbPresets.IsEnabled = enabled;
+        if (BtnResetRatio != null) BtnResetRatio.IsEnabled = enabled;
+        if (BtnToggleEdit != null) BtnToggleEdit.IsEnabled = enabled;
+        if (PanelCustomInput != null) PanelCustomInput.IsEnabled = enabled;
+        if (PanelItemList != null) PanelItemList.IsEnabled = enabled;
+        if (BtnAddItem != null) BtnAddItem.IsEnabled = enabled;
     }
 
     private void LoadPreset(int index)
@@ -506,9 +540,11 @@ public partial class WheelWidgetView : UserControl, IWidgetLifecycle
 
         CancelSpin();
         _spinCts = new CancellationTokenSource();
+        var spinCts = _spinCts;
 
         _isSpinning = true;
         BtnSpin.IsEnabled = false;
+        SetEditingLocked(true);
         TxtResult.Text = "빙글빙글 회전 중...";
         TxtResult.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38BDF8"));
 
@@ -568,7 +604,8 @@ public partial class WheelWidgetView : UserControl, IWidgetLifecycle
 
         animation.Completed += (s, args) =>
         {
-            if (_disposed || !_isActive) return;
+            // Ignore a spin that was cancelled or replaced by a newer one.
+            if (_disposed || !_isActive || !ReferenceEquals(spinCts, _spinCts)) return;
 
             WheelRotateTransform.Angle = targetStopAngle;
             TxtResult.Text = $"🎉 {winner.Name} 당첨!";
@@ -580,6 +617,7 @@ public partial class WheelWidgetView : UserControl, IWidgetLifecycle
             {
                 BtnSpin.IsEnabled = true;
             }
+            SetEditingLocked(false);
         };
 
         WheelRotateTransform.BeginAnimation(RotateTransform.AngleProperty, animation);

@@ -5,19 +5,25 @@ using System.Threading.Tasks;
 
 namespace KnolTeacher.Desktop.Services;
 
+/// <summary>
+/// App-wide sound service shared by every window and widget.
+/// <see cref="MasterVolume"/> and <see cref="IsMuted"/> are global state: individual tools must not
+/// change them to control their own sounds. A tool that needs its own volume passes
+/// <c>volumeScale</c> (0..1), which is applied on top of the master volume for that call only.
+/// </summary>
 public interface ISoundService
 {
     double MasterVolume { get; set; }
     bool IsMuted { get; set; }
-    void PlayChime();
-    void PlayBeep();
-    void PlayDingDongDang();
-    void PlayBuzzer();
-    void PlayFanfare();
-    void PlayAttentionChime();
-    void PlayWhistle();
-    void PlayDrumroll();
-    void PlayApplause();
+    void PlayChime(double volumeScale = 1.0);
+    void PlayBeep(double volumeScale = 1.0);
+    void PlayDingDongDang(double volumeScale = 1.0);
+    void PlayBuzzer(double volumeScale = 1.0);
+    void PlayFanfare(double volumeScale = 1.0);
+    void PlayAttentionChime(double volumeScale = 1.0);
+    void PlayWhistle(double volumeScale = 1.0);
+    void PlayDrumroll(double volumeScale = 1.0);
+    void PlayApplause(double volumeScale = 1.0);
     void StopAll();
 }
 
@@ -74,9 +80,12 @@ public class SoundService : ISoundService
         }
     }
 
-    private void PlaySoundSafe(Func<double, byte[]> wavGenerator)
+    private void PlaySoundSafe(Func<double, byte[]> wavGenerator, double volumeScale = 1.0)
     {
-        double vol = EffectiveVolume;
+        // Per-call scale lets a tool (e.g. the race window) use its own volume
+        // without touching the shared master volume or mute state.
+        double scale = double.IsFinite(volumeScale) ? Math.Clamp(volumeScale, 0.0, 1.0) : 1.0;
+        double vol = EffectiveVolume * scale;
         if (vol <= 0.001) return;
 
         lock (_playbackLock)
@@ -130,34 +139,34 @@ public class SoundService : ISoundService
         }
     }
 
-    public void PlayChime() => PlayAttentionChime();
+    public void PlayChime(double volumeScale = 1.0) => PlayAttentionChime(volumeScale);
 
-    public void PlayBeep() => PlaySoundSafe(v => GenerateToneWav(new[] { (880.0, 0.15, 0.5) }, masterVol: v));
+    public void PlayBeep(double volumeScale = 1.0) => PlaySoundSafe(v => GenerateToneWav(new[] { (880.0, 0.15, 0.5) }, masterVol: v), volumeScale);
 
-    public void PlayDingDongDang() => PlaySoundSafe(v => GenerateToneWav(new[]
+    public void PlayDingDongDang(double volumeScale = 1.0) => PlaySoundSafe(v => GenerateToneWav(new[]
     {
         (523.25, 0.35, 0.6),
         (659.25, 0.35, 0.6),
         (783.99, 0.60, 0.6)
-    }, masterVol: v));
+    }, masterVol: v), volumeScale);
 
-    public void PlayBuzzer() => PlaySoundSafe(v => GenerateBuzzerWav(140.0, 0.6, masterVol: v));
+    public void PlayBuzzer(double volumeScale = 1.0) => PlaySoundSafe(v => GenerateBuzzerWav(140.0, 0.6, masterVol: v), volumeScale);
 
-    public void PlayFanfare() => PlaySoundSafe(v => GenerateToneWav(new[]
+    public void PlayFanfare(double volumeScale = 1.0) => PlaySoundSafe(v => GenerateToneWav(new[]
     {
         (523.25, 0.18, 0.5),
         (659.25, 0.18, 0.5),
         (783.99, 0.18, 0.5),
         (1046.5, 0.70, 0.6)
-    }, masterVol: v));
+    }, masterVol: v), volumeScale);
 
-    public void PlayAttentionChime() => PlaySoundSafe(v => GenerateBellWav(1046.5, 1.8, masterVol: v));
+    public void PlayAttentionChime(double volumeScale = 1.0) => PlaySoundSafe(v => GenerateBellWav(1046.5, 1.8, masterVol: v), volumeScale);
 
-    public void PlayWhistle() => PlaySoundSafe(v => GenerateWhistleWav(2800.0, 0.55, masterVol: v));
+    public void PlayWhistle(double volumeScale = 1.0) => PlaySoundSafe(v => GenerateWhistleWav(2800.0, 0.55, masterVol: v), volumeScale);
 
-    public void PlayDrumroll() => PlaySoundSafe(v => GenerateDrumrollWav(2.0, masterVol: v));
+    public void PlayDrumroll(double volumeScale = 1.0) => PlaySoundSafe(v => GenerateDrumrollWav(2.0, masterVol: v), volumeScale);
 
-    public void PlayApplause() => PlaySoundSafe(v => GenerateApplauseWav(2.5, masterVol: v));
+    public void PlayApplause(double volumeScale = 1.0) => PlaySoundSafe(v => GenerateApplauseWav(2.5, masterVol: v), volumeScale);
 
     #region Procedural Audio Synthesizer Helpers
 

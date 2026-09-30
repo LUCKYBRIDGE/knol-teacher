@@ -441,7 +441,7 @@
                                                     <MenuItem Header="🍱 학교 점심 &amp; 날씨" Click="MenuItemAddWidget_Click" Tag="meal"/>
                                                     <Separator/>
                                                     <MenuItem Header="⏱️ 교실 집중 타이머" Click="MenuItemAddWidget_Click" Tag="timer"/>
-                                                    <MenuItem Header="🎲 발표자 뽑기" Click="MenuItemAddWidget_Click" Tag="picker"/>
+                                                    <MenuItem Header="🙋 발표자 추첨" Click="MenuItemAddWidget_Click" Tag="picker"/>
                                                     <MenuItem Header="📢 학급 공지 배너" Click="MenuItemAddWidget_Click" Tag="notice"/>
                                                     <MenuItem Header="🎯 D-Day 카운트다운" Click="MenuItemAddWidget_Click" Tag="dday"/>
                                                     <MenuItem Header="☀️ 오늘의 날씨 &amp; 미세먼지" Click="MenuItemAddWidget_Click" Tag="weather"/>
@@ -1258,7 +1258,7 @@
                                     </controls:MainWidgetCard>
 
                                     <!-- 위젯 카드 6 (선택): 발표자 추첨 -->
-                                    <controls:MainWidgetCard x:Name="CardPicker" WidgetId="picker" Title="발표자 추첨" Icon="🎲" MinWidth="300" MinHeight="240" Visibility="Collapsed">
+                                    <controls:MainWidgetCard x:Name="CardPicker" WidgetId="picker" Title="발표자 추첨" Icon="🙋" MinWidth="300" MinHeight="240" Visibility="Collapsed">
                                         <Grid Margin="12,10">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="*"/>
@@ -1282,7 +1282,7 @@
                                                     </StackPanel>
                                                 </Button>
                                                 <Button Click="BtnOpenFullPicker_Click" Height="26" Margin="0,6,0,0" Background="Transparent" Foreground="{DynamicResource BeigeAccent}" BorderThickness="0" FontSize="11" FontWeight="SemiBold" Cursor="Hand" ToolTip="32종 동물 아바타 뽑기 레이스 창 열기">
-                                                    <TextBlock Text="🌱 3D 뽑기 레이스 열기 (Alt+8) →" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="🌱 뽑기 레이스 열기 (Alt+8) →" HorizontalAlignment="Center"/>
                                                 </Button>
                                             </StackPanel>
                                         </Grid>
@@ -1438,13 +1438,13 @@
                                             </Border>
 
                                             <!-- Tool 5: Picker Race [Alt+8] -->
-                                            <Border Margin="4" Background="{DynamicResource BeigeDualMonitorBtnBg}" BorderBrush="{DynamicResource BeigeDualMonitorBtnBorder}" BorderThickness="1" CornerRadius="12" Padding="14,12" Cursor="Hand" MouseLeftButtonUp="BtnLaunchPicker_Click" ToolTip="🎰 뽑기 레이스 / 추첨 (Alt+8)&#x0a;• 좌클릭: 모니터 1 (선생님 화면)&#x0a;• 우클릭: 모니터 2 (학생 전자칠판)">
+                                            <Border Margin="4" Background="{DynamicResource BeigeDualMonitorBtnBg}" BorderBrush="{DynamicResource BeigeDualMonitorBtnBorder}" BorderThickness="1" CornerRadius="12" Padding="14,12" Cursor="Hand" MouseLeftButtonUp="BtnLaunchPicker_Click" ToolTip="🌱 뽑기 레이스 (Alt+8)&#x0a;• 좌클릭: 모니터 1 (선생님 화면)&#x0a;• 우클릭: 모니터 2 (학생 전자칠판)">
                                                 <Grid>
                                                     <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="{DynamicResource BeigeAccentSoft}" CornerRadius="4" Padding="6,2">
                                                         <TextBlock Text="Alt+8" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource BeigeAccent}"/>
                                                     </Border>
                                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,4,0,0">
-                                                        <TextBlock Text="🎰" FontSize="34" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                                                        <TextBlock Text="🌱" FontSize="34" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                                                         <TextBlock Text="뽑기 레이스" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource BeigeTextMain}" HorizontalAlignment="Center"/>
                                                         <TextBlock Text="32종 동물 아바타 레이싱 추첨" FontSize="11" Foreground="{DynamicResource BeigeTextMuted}" HorizontalAlignment="Center" Margin="0,3,0,0"/>
                                                     </StackPanel>

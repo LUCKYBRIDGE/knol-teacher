@@ -15,7 +15,8 @@ public static class WidgetRegistry
             // Defaults intentionally target classroom displays. StudentDisplayWindow clamps
             // them to the available board surface on smaller screens.
             ["timer"] = new("timer", "⏱️ 수업 타이머", 680, 480, 300, 220),
-            ["picker"] = new("picker", "🎯 발표자 추첨", 720, 560, 320, 240),
+            // 🙋 = 발표자 추첨 everywhere (🎯 is D-Day, 🎲 is the dice, 🌱 is the race window).
+            ["picker"] = new("picker", "🙋 발표자 추첨", 720, 560, 320, 240),
             ["dice"] = new("dice", "🎲 스마트 주사위 & 통계", 960, 580, 360, 240),
             ["wheel"] = new("wheel", "🎡 회전 돌림판", 680, 540, 300, 230),
             ["score"] = new("score", "🏆 모둠 점수판", 720, 540, 320, 240),

@@ -595,7 +595,8 @@ public partial class StudentDisplayWindow : Window
         if (!_isReady) return;
 
         UpdateBtnState(BtnToolTimer, "timer");
-        UpdateBtnState(BtnToolPinball, "pinball");
+        // BtnToolPinball opens the separate race window, not a widget, so its highlight is owned by
+        // RefreshV309LauncherVisuals (window visibility). Updating it here always painted it idle.
         UpdateBtnState(BtnToolPicker, "picker");
         UpdateBtnState(BtnToolDice, "dice");
         UpdateBtnState(BtnToolWheel, "wheel");
@@ -838,6 +839,25 @@ public partial class StudentDisplayWindow : Window
     {
         if (e.Key == Key.Escape)
         {
+            // 0. ESC belongs to the focused control first. This handler tunnels before the control sees
+            //    the key, so without this check ESC closed the widget the teacher was typing in
+            //    (wheel items, memo, checklist) or the widget that owns an open drop-down.
+            if (Keyboard.FocusedElement is DependencyObject focused)
+            {
+                if (IsInsideOpenDropDown(focused))
+                {
+                    return; // let the ComboBox close its list
+                }
+
+                if (focused is System.Windows.Controls.Primitives.TextBoxBase || focused is PasswordBox)
+                {
+                    // First ESC only leaves the text box; the next ESC closes the widget as before.
+                    Keyboard.Focus(this);
+                    e.Handled = true;
+                    return;
+                }
+            }
+
             // 1. 보드 필기 모드가 켜져 있다면 해제
             if (ToggleInkMode != null && ToggleInkMode.IsChecked == true)
             {
@@ -870,6 +890,13 @@ public partial class StudentDisplayWindow : Window
                 return;
             }
         }
+    }
+
+    private static bool IsInsideOpenDropDown(DependencyObject element)
+    {
+        if (element is ComboBox { IsDropDownOpen: true }) return true;
+        return element is ComboBoxItem item
+            && ItemsControl.ItemsControlFromItemContainer(item) is ComboBox { IsDropDownOpen: true };
     }
 
     private bool CloseActiveMathTool()
@@ -1034,7 +1061,8 @@ public partial class StudentDisplayWindow : Window
 
     private void BtnClear_Click(object sender, RoutedEventArgs e)
     {
-        _eraserHelper?.ClearAll();
+        // A mis-tap on a touch board must be recoverable: clearing is one undo step.
+        _eraserHelper?.ClearAll(undoable: true);
     }
 
     #endregion

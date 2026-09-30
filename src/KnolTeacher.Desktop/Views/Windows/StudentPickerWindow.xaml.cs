@@ -35,7 +35,11 @@ public partial class StudentPickerWindow : Window
 
     private DispatcherTimer? _gameTimer;
     private bool _isPlaying = false;
+    // Race audio is controlled locally. The shared ISoundService mute/volume state also drives
+    // period chimes, timers and the soundboard, so this window must never change it.
     private bool _soundEnabled = false;
+    private double _raceVolume = 0.8;
+    private bool _placementRequested = false;
     private double _speedMultiplier = 1.0;
     private double _raceElapsedSeconds = 0;
     private DateTime _lastFrameTime = DateTime.UtcNow;
@@ -44,6 +48,7 @@ public partial class StudentPickerWindow : Window
     private const double TrackWidth = 680.0;
     private const double TrackHeight = 3500.0;
     private const double FinishY = 3360.0;
+    private const double StartLineY = 135.0;
     private bool _isPaused = false;
     private int _targetCameraRank = 1; // 1 = 1등(선두/기본), 2 = 2등, ..., 14 = 14등 등
     private int? _targetCameraStudentNumber = null;
@@ -178,15 +183,20 @@ public partial class StudentPickerWindow : Window
         _displayManager = displayManager ?? (Application.Current as App)?.Services?.GetService(typeof(IDisplayManager)) as IDisplayManager;
         InitializeComponent();
 
+        // Race sound starts OFF locally (see _soundEnabled). Do not mute the shared sound service here:
+        // this window is created early by other windows, and a global mute silences the whole app.
         _soundEnabled = false;
-        _soundService.IsMuted = true;
         InitBgmPlayer();
 
         Loaded += (s, e) =>
         {
             SetupCourseScenery();
             ResetToStartLine();
-            PositionToDefaultMonitor();
+            // Keep the monitor chosen by ShowOnMonitor on the first show instead of overriding it.
+            if (!_placementRequested)
+            {
+                PositionToDefaultMonitor();
+            }
             UpdateCameraViewport(0, force: true);
             if (SliderSoundVolume != null)
             {
@@ -203,14 +213,7 @@ public partial class StudentPickerWindow : Window
             }
         };
 
-        Closing += (s, e) =>
-        {
-            StopBgm();
-            _soundService.StopAll();
-            e.Cancel = true;
-            Hide();
-        };
-
+        // Closing is handled in OnClosing (hide instead of close for this DI singleton window).
         KeyDown += Window_KeyDown;
     }
 
@@ -275,6 +278,7 @@ public partial class StudentPickerWindow : Window
 
     public void ShowOnMonitor(int monitorIndex)
     {
+        _placementRequested = true;
         if (_displayManager != null)
         {
             int target = (_displayManager.ScreenCount > monitorIndex && monitorIndex >= 0) ? monitorIndex : 0;
@@ -284,6 +288,15 @@ public partial class StudentPickerWindow : Window
         }
         Show();
         Activate();
+    }
+
+    /// <summary>
+    /// Opens the race on the recommended student monitor and keeps the monitor toggle label in sync.
+    /// All launchers (hotkey, main window, tray) should use this instead of moving the window directly.
+    /// </summary>
+    public void ShowOnStudentMonitor()
+    {
+        ShowOnMonitor(_displayManager?.RecommendedStudentMonitorIndex ?? 0);
     }
 
     private void UpdateMonitorButtonText()
@@ -304,6 +317,18 @@ public partial class StudentPickerWindow : Window
 
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
+        // While the teacher edits the race title, keys belong to the text box:
+        // Space must type a space (not start/pause the race) and ESC only leaves the text box.
+        if (Keyboard.FocusedElement is TextBox)
+        {
+            if (e.Key == Key.Escape)
+            {
+                Keyboard.Focus(this);
+                e.Handled = true;
+            }
+            return;
+        }
+
         if (e.Key == Key.Space)
         {
             if (GridCelebration.Visibility == Visibility.Visible)
@@ -526,8 +551,7 @@ public partial class StudentPickerWindow : Window
 
     private void ResetToStartLine()
     {
-        StopBgm();
-        _soundService.StopAll();
+        StopRaceAudio();
         _isPlaying = false;
         _isPaused = false;
         _gameTimer?.Stop();
@@ -587,9 +611,9 @@ public partial class StudentPickerWindow : Window
         {
             var student = eligible[i];
             double x = (count == 1) ? 340 : (startX + i * spacing);
-            double y = 135;
+            double y = StartLineY;
 
-            var racer = new RaceRacer(student, x, y, 13);
+            var racer = new RaceRacer(student, x, y, 13, ShouldShowStudentNames);
             int studentNum = student.Number;
             racer.Visual.MouseLeftButtonDown += (s, e) =>
             {
@@ -642,8 +666,7 @@ public partial class StudentPickerWindow : Window
     {
         if (!_isPlaying || _isPaused) return;
         _isPaused = true;
-        StopBgm();
-        _soundService.StopAll();
+        StopRaceAudio();
         if (TxtPauseIcon != null) TxtPauseIcon.Text = "▶ ";
         if (TxtPauseLabel != null) TxtPauseLabel.Text = "이어하기";
         if (BorderPausedBanner != null) BorderPausedBanner.Visibility = Visibility.Visible;
@@ -663,6 +686,14 @@ public partial class StudentPickerWindow : Window
     private void StartRaceSimulation()
     {
         if (_isPlaying) return;
+
+        // After a race, racers stay parked past the finish line. Starting again from there would
+        // make everyone "finish" on the first frame in roster order (the lowest number always wins),
+        // so every new race restarts from the start line with the current exclusion list applied.
+        if (_racers.Count == 0 || _racers.Any(r => r.IsFinished || r.Y > StartLineY + 5.0))
+        {
+            ResetToStartLine();
+        }
 
         // Target count
         _targetWinnerCount = CbWinnerCount.SelectedIndex + 1;
@@ -1280,16 +1311,24 @@ public partial class StudentPickerWindow : Window
             {
                 r.IsFinished = true;
                 r.FinishRank = ++_finishedCount;
-                _winners.Add(r.Student);
 
                 TriggerWaterSplash(r.X, r.Y);
 
-                if (_soundEnabled && _isPlaying && !_isPaused && IsVisible) _soundService.PlayChime();
+                if (_soundEnabled && _isPlaying && !_isPaused && IsVisible) _soundService.PlayChime(_raceVolume);
 
-                if (_finishedCount == _targetWinnerCount)
+                // Every finisher inside the selected winner count is a winner (1명~5명),
+                // not only the N-th one. With fewer racers than slots, all racers win.
+                int winnerSlots = Math.Min(_targetWinnerCount, _racers.Count);
+                if (r.FinishRank <= winnerSlots)
                 {
-                    // Winner(s) decided!
-                    TriggerWinnerCelebration(r.Student);
+                    _winners.Add(r.Student);
+                    _studentService.PickedStudentNumbers.Add(r.Student.Number);
+
+                    if (r.FinishRank == winnerSlots)
+                    {
+                        // All winner slots are decided.
+                        ShowWinnerCelebration(playFanfare: true, autoDismissAfter: TimeSpan.FromSeconds(1));
+                    }
                 }
             }
             else if (r.Y > 3480)
@@ -1627,7 +1666,7 @@ public partial class StudentPickerWindow : Window
                     : Brushes.Transparent,
                 BorderThickness = new Thickness(isTracked ? 1.5 : 0),
                 Cursor = Cursors.Hand,
-                ToolTip = $"{rank}등 {racer.Student.Name} (클릭하여 시점 전환)"
+                ToolTip = $"{rank}등 {GetStudentLabel(racer.Student)} (클릭하여 시점 전환)"
             };
 
             int studentNum = racer.Student.Number;
@@ -1685,10 +1724,10 @@ public partial class StudentPickerWindow : Window
             Grid.SetColumn(avatarImg, 1);
             grid.Children.Add(avatarImg);
 
-            // Student Name
+            // Student label: number-only unless the teacher opted in to names
             var nameText = new TextBlock
             {
-                Text = racer.Student.Name,
+                Text = GetStudentLabel(racer.Student),
                 FontSize = 12,
                 FontWeight = (rank <= 3 || isTracked) ? FontWeights.Bold : FontWeights.Normal,
                 Foreground = isTracked
@@ -1861,33 +1900,58 @@ public partial class StudentPickerWindow : Window
 
     #endregion
 
-    private void TriggerWinnerCelebration(StudentItem winner)
+    /// <summary>
+    /// Number-only is the privacy-first default. Names are shown only when the teacher chose to keep
+    /// personal details and enabled names for the picker (same rule as the 발표자 추첨 widget).
+    /// </summary>
+    private bool ShouldShowStudentNames =>
+        _studentService.PersistPersonalDetails && _studentService.UseNamesInPicker;
+
+    private string GetStudentLabel(StudentItem student) =>
+        ShouldShowStudentNames && student.HasName ? student.DisplayText : $"{student.Number}번";
+
+    /// <summary>
+    /// Shows the confirmed winners. Winners are recorded (picked list) only when they cross the
+    /// finish line inside the selected winner count, never from this method.
+    /// </summary>
+    private void ShowWinnerCelebration(bool playFanfare, TimeSpan autoDismissAfter)
     {
-        StopBgm();
-        if (_soundEnabled)
+        if (_winners.Count == 0) return;
+
+        if (playFanfare)
         {
-            _soundService.PlayFanfare();
+            StopBgm();
+            if (_soundEnabled)
+            {
+                _soundService.PlayFanfare(_raceVolume);
+            }
         }
 
-        _studentService.PickedStudentNumbers.Add(winner.Number);
-
-        TxtWinnerTitle.Text = $"{winner.Number}번 {winner.Name} ({winner.AvatarName})";
-        ImgWinnerAvatar.Source = AnimalAvatarCatalog.GetAvatarBitmap(winner.EffectiveAvatarId);
+        var first = _winners[0];
+        if (_winners.Count == 1)
+        {
+            TxtWinnerHeader.Text = "🥇 1등 골인! 당첨을 축하합니다!";
+            TxtWinnerTitle.Text = $"{GetStudentLabel(first)} ({first.AvatarName})";
+        }
+        else
+        {
+            TxtWinnerHeader.Text = $"🏆 당첨 {_winners.Count}명 확정! 축하합니다!";
+            TxtWinnerTitle.Text = string.Join(" · ", _winners.Select(GetStudentLabel));
+        }
+        ImgWinnerAvatar.Source = AnimalAvatarCatalog.GetAvatarBitmap(first.EffectiveAvatarId);
 
         GridCelebration.Visibility = Visibility.Visible;
 
-        // 1초 뒤 자동 팝업창 종료 (진행 중인 레이스를 가리지 않도록 1.0초 후 자동 닫힘)
+        // Auto-dismiss so the toast never covers a race that is still running.
         _celebrationAutoDismissTimer?.Stop();
-        _celebrationAutoDismissTimer = new DispatcherTimer
+        var dismissTimer = new DispatcherTimer { Interval = autoDismissAfter };
+        dismissTimer.Tick += (s, e) =>
         {
-            Interval = TimeSpan.FromMilliseconds(1000)
-        };
-        _celebrationAutoDismissTimer.Tick += (s, e) =>
-        {
-            _celebrationAutoDismissTimer.Stop();
+            dismissTimer.Stop();
             DismissCelebration();
         };
-        _celebrationAutoDismissTimer.Start();
+        _celebrationAutoDismissTimer = dismissTimer;
+        dismissTimer.Start();
     }
 
     private void DismissCelebration()
@@ -1938,11 +2002,10 @@ public partial class StudentPickerWindow : Window
 
     private void BtnInitAll_Click(object sender, RoutedEventArgs e)
     {
-        StopBgm();
-        _soundService.StopAll();
+        StopRaceAudio();
         _studentService.ResetPicked();
         ResetToStartLine();
-        MessageBox.Show("추첨 기록 및 제외 명단이 초기화되었습니다.", "초기화", MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show(this, "뽑힌 학생 기록을 초기화했습니다.\n이제 모든 학생이 다시 레이스에 참가합니다.", "뽑기 레이스", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void BtnSpeedToggle_Click(object sender, RoutedEventArgs e)
@@ -1966,15 +2029,15 @@ public partial class StudentPickerWindow : Window
 
     private void BtnSoundToggle_Click(object sender, RoutedEventArgs e)
     {
-        _soundEnabled = !_soundEnabled;
-        _soundService.IsMuted = !_soundEnabled;
-        if (!_soundEnabled)
+        if (_soundEnabled)
         {
-            StopBgm();
-            _soundService.StopAll();
+            // Stop the race's own sound while it is still marked as enabled, then switch race sound off.
+            StopRaceAudio();
+            _soundEnabled = false;
         }
         else
         {
+            _soundEnabled = true;
             if (_isPlaying && !_isPaused)
             {
                 PlayBgm();
@@ -1988,49 +2051,60 @@ public partial class StudentPickerWindow : Window
         if (TxtSoundVolume == null || _soundService == null) return;
         int vol = (int)Math.Round(SliderSoundVolume.Value);
         TxtSoundVolume.Text = vol == 0 ? "OFF" : $"{vol}%";
-        _soundService.MasterVolume = vol / 100.0;
+        // Race-local volume only. The shared master volume is used by every other sound in the app.
+        _raceVolume = vol / 100.0;
         if (vol == 0)
         {
+            StopRaceAudio();
             _soundEnabled = false;
-            _soundService.IsMuted = true;
-            StopBgm();
-            _soundService.StopAll();
             BtnSoundToggle.Content = "🔇";
             BtnSoundToggle.Foreground = new SolidColorBrush(Color.FromRgb(239, 68, 68));
-            BtnSoundToggle.ToolTip = "레이스 배경음악 켜기 (기본: 음소거)";
+            BtnSoundToggle.ToolTip = "레이스 효과음 켜기 (기본: 꺼짐)";
         }
         else
         {
             _soundEnabled = true;
-            _soundService.IsMuted = false;
             if (_isPlaying && !_isPaused)
             {
                 PlayBgm();
             }
             BtnSoundToggle.Content = "🔊";
             BtnSoundToggle.Foreground = new SolidColorBrush(Color.FromRgb(56, 189, 248));
-            BtnSoundToggle.ToolTip = "배경음악 음소거하기";
+            BtnSoundToggle.ToolTip = "레이스 효과음 끄기";
         }
     }
 
     private void UpdateSoundUi()
     {
         if (BtnSoundToggle == null || SliderSoundVolume == null || TxtSoundVolume == null) return;
-        if (_soundEnabled && !_soundService.IsMuted)
+        if (_soundEnabled)
         {
             BtnSoundToggle.Content = "🔊";
             BtnSoundToggle.Foreground = new SolidColorBrush(Color.FromRgb(56, 189, 248));
-            BtnSoundToggle.ToolTip = "배경음악 음소거하기";
+            BtnSoundToggle.ToolTip = "레이스 효과음 끄기";
             if (SliderSoundVolume.Value <= 0) SliderSoundVolume.Value = 80;
             TxtSoundVolume.Text = $"{(int)Math.Round(SliderSoundVolume.Value)}%";
-            _soundService.MasterVolume = SliderSoundVolume.Value / 100.0;
+            _raceVolume = SliderSoundVolume.Value / 100.0;
         }
         else
         {
             BtnSoundToggle.Content = "🔇";
             BtnSoundToggle.Foreground = new SolidColorBrush(Color.FromRgb(239, 68, 68));
-            BtnSoundToggle.ToolTip = "레이스 배경음악 켜기 (기본: 음소거)";
+            BtnSoundToggle.ToolTip = "레이스 효과음 켜기 (기본: 꺼짐)";
             TxtSoundVolume.Text = "OFF";
+        }
+    }
+
+    /// <summary>
+    /// Stops audio that this race window may have started. The shared sound service plays one sound
+    /// at a time for the whole app, so it is only interrupted while race sound is enabled.
+    /// </summary>
+    private void StopRaceAudio()
+    {
+        StopBgm();
+        if (_soundEnabled)
+        {
+            _soundService.StopAll();
         }
     }
 
@@ -2050,18 +2124,18 @@ public partial class StudentPickerWindow : Window
 
     private void BtnViewResult_Click(object sender, RoutedEventArgs e)
     {
+        // Shows only winners who actually crossed the finish line. This button never decides or
+        // records a winner by itself: the current leader (or roster order) has not won anything yet.
         if (_winners.Count > 0)
         {
-            TriggerWinnerCelebration(_winners.First());
+            ShowWinnerCelebration(playFanfare: false, autoDismissAfter: TimeSpan.FromSeconds(4));
+            return;
         }
-        else
-        {
-            var first = _racers.OrderBy(r => r.IsFinished ? r.FinishRank : 999).ThenByDescending(r => r.Y).FirstOrDefault();
-            if (first != null)
-            {
-                TriggerWinnerCelebration(first.Student);
-            }
-        }
+
+        string message = _isPlaying
+            ? "아직 결승선을 통과한 학생이 없습니다.\n당첨자가 결승선을 통과하면 결과를 볼 수 있습니다."
+            : "아직 레이스 결과가 없습니다.\n[시작하기]를 눌러 레이스를 먼저 진행해 주세요.";
+        MessageBox.Show(this, message, "뽑기 레이스", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void BtnManageRoster_Click(object sender, RoutedEventArgs e)
@@ -2089,8 +2163,7 @@ public partial class StudentPickerWindow : Window
 
     public void StopAndReset()
     {
-        StopBgm();
-        _soundService.StopAll();
+        StopRaceAudio();
         _isPlaying = false;
         _isPaused = false;
         _gameTimer?.Stop();
@@ -2100,6 +2173,7 @@ public partial class StudentPickerWindow : Window
         if (BtnPauseResume != null) BtnPauseResume.IsEnabled = false;
         if (TxtPauseIcon != null) TxtPauseIcon.Text = "⏸ ";
         if (TxtPauseLabel != null) TxtPauseLabel.Text = "일시정지";
+        _celebrationAutoDismissTimer?.Stop();
         if (GridCelebration != null)
         {
             GridCelebration.Visibility = Visibility.Collapsed;
@@ -2109,6 +2183,8 @@ public partial class StudentPickerWindow : Window
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
+        // This window is a DI singleton: hide instead of closing so it can be reopened.
+        // (Hide raises IsVisibleChanged, which also calls StopAndReset.)
         StopAndReset();
         e.Cancel = true;
         Hide();
@@ -2150,19 +2226,24 @@ public class RaceRacer
     private readonly Border _dizzyBadge;
     private readonly Border _focusRing;
 
-    public RaceRacer(StudentItem student, double x, double y, double radius)
+    public RaceRacer(StudentItem student, double x, double y, double radius, bool showName = false)
     {
         Student = student;
         X = x;
         Y = y;
         Radius = radius;
 
+        // Number-only by default; the name appears only when the teacher opted in.
+        bool useName = showName && student.HasName;
+        string badgeText = useName ? student.Name.Trim() : $"{student.Number}번";
+        string label = useName ? student.DisplayText : $"{student.Number}번";
+
         Visual = new Grid
         {
             Width = 56,
             Height = 58,
             Cursor = Cursors.Hand,
-            ToolTip = $"{student.Number}번 {student.Name} (클릭하여 시점 전환)"
+            ToolTip = $"{label} (클릭하여 시점 전환)"
         };
 
         _rot = new RotateTransform(0);
@@ -2216,7 +2297,7 @@ public class RaceRacer
         };
         badge.Child = new TextBlock
         {
-            Text = student.Name,
+            Text = badgeText,
             FontSize = 10,
             FontWeight = FontWeights.Bold,
             Foreground = Brushes.White,

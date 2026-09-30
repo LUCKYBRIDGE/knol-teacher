@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -10,7 +10,10 @@ namespace KnolTeacher.Desktop.Views.Controls.Widgets;
 
 public partial class DrawingWidgetView : UserControl
 {
-    private readonly Stack<Stroke> _undoStack = new();
+    // Same undo rules as the screen overlay and the board ink layer: undo reverts the last
+    // stroke or eraser gesture (including partial-eraser splits) instead of deleting the top stroke.
+    private readonly DrawingUndoManager _undoManager = new();
+    private bool _suppressUndoRecording;
     private bool _isReady = false;
 
     public DrawingWidgetView()
@@ -24,10 +27,44 @@ public partial class DrawingWidgetView : UserControl
             FitToCurve = true
         };
 
+        // Same touch behaviour as the other ink surfaces: no press-and-hold ring, no flick gestures.
+        Stylus.SetIsPressAndHoldEnabled(MiniInkCanvas, false);
+        Stylus.SetIsFlicksEnabled(MiniInkCanvas, false);
+        MiniInkCanvas.EraserShape = new EllipseStylusShape(DrawingEraserHelper.PointEraserDiameter, DrawingEraserHelper.PointEraserDiameter);
+
         MiniInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
         MiniInkCanvas.Cursor = Cursors.Pen;
-        MiniInkCanvas.StrokeCollected += (s, e) => _undoStack.Clear();
+        MiniInkCanvas.StrokeCollected += MiniInkCanvas_StrokeCollected;
+        MiniInkCanvas.Strokes.StrokesChanged += MiniInkStrokes_StrokesChanged;
+        MiniInkCanvas.PreviewStylusDown += (s, e) => BeginEraseGestureIfNeeded();
+        MiniInkCanvas.PreviewMouseDown += (s, e) =>
+        {
+            // Pen/touch input is promoted to mouse events as well; the stylus handler already ran.
+            if (e.StylusDevice == null) BeginEraseGestureIfNeeded();
+        };
         _isReady = true;
+    }
+
+    private void MiniInkCanvas_StrokeCollected(object sender, InkCanvasStrokeCollectedEventArgs e)
+    {
+        if (_suppressUndoRecording) return;
+        _undoManager.PushAdded(e.Stroke);
+    }
+
+    private void MiniInkStrokes_StrokesChanged(object? sender, StrokeCollectionChangedEventArgs e)
+    {
+        // New pen strokes are recorded via StrokeCollected; erasing reports Removed (+ fragments).
+        if (_suppressUndoRecording || e.Removed.Count == 0) return;
+        _undoManager.PushReplaced(e.Removed, e.Added);
+    }
+
+    private void BeginEraseGestureIfNeeded()
+    {
+        if (MiniInkCanvas.EditingMode is InkCanvasEditingMode.EraseByPoint or InkCanvasEditingMode.EraseByStroke)
+        {
+            // One eraser swipe becomes one undo step.
+            _undoManager.BeginGroup();
+        }
     }
 
     private void BtnModeGreen_Click(object sender, RoutedEventArgs e)
@@ -45,6 +82,7 @@ public partial class DrawingWidgetView : UserControl
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
         if (!_isReady) return;
+        _undoManager.EndGroup();
         MiniInkCanvas.EditingMode = InkCanvasEditingMode.Ink;
         MiniInkCanvas.Cursor = Cursors.Pen;
     }
@@ -52,6 +90,7 @@ public partial class DrawingWidgetView : UserControl
     private void RbEraser_Checked(object sender, RoutedEventArgs e)
     {
         if (!_isReady) return;
+        _undoManager.EndGroup();
         MiniInkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
         MiniInkCanvas.Cursor = Cursors.Cross;
     }
@@ -71,20 +110,33 @@ public partial class DrawingWidgetView : UserControl
 
     private void BtnUndo_Click(object sender, RoutedEventArgs e)
     {
-        if (MiniInkCanvas.Strokes.Count > 0)
+        _suppressUndoRecording = true;
+        try
         {
-            var last = MiniInkCanvas.Strokes[^1];
-            _undoStack.Push(last);
-            MiniInkCanvas.Strokes.Remove(last);
+            _undoManager.Undo(MiniInkCanvas);
+        }
+        finally
+        {
+            _suppressUndoRecording = false;
         }
     }
 
     private void BtnClear_Click(object sender, RoutedEventArgs e)
     {
-        if (MiniInkCanvas.Strokes.Count > 0)
+        if (MiniInkCanvas.Strokes.Count == 0) return;
+
+        // Clearing is one undo step so a mis-tap on the board can be recovered.
+        _undoManager.EndGroup();
+        var snapshot = MiniInkCanvas.Strokes.ToList();
+        _suppressUndoRecording = true;
+        try
         {
             MiniInkCanvas.Strokes.Clear();
-            _undoStack.Clear();
         }
+        finally
+        {
+            _suppressUndoRecording = false;
+        }
+        _undoManager.PushRemoved(snapshot);
     }
 }

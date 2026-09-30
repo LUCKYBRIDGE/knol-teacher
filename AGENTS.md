@@ -19,6 +19,10 @@
 - Build, 자동 테스트, single-file package 검증을 통과한 변경만 병합한다.
 - 대규모 재작성보다 점진적 개선을 우선한다.
 - 저장 형식 변경에는 기존 데이터 보존과 복구 경로를 둔다.
+- 사용자 데이터 파일은 `SafeLocalJsonStore`/`SafeLocalFileStore`로만 저장한다. 다른 서비스가 메모리에 들고 있는 파일(예: 시간표)은 파일을 직접 쓰지 말고 그 서비스 API로 갱신한다.
+- 공유 서비스의 전역 상태(예: `ISoundService.IsMuted`/`MasterVolume`)를 개별 창·위젯이 바꾸지 않는다. 도구별 음량은 `volumeScale` 인자로 전달하고, 자신이 재생한 소리만 멈춘다.
+- 전역 단축키는 `App`에 처리기가 있는 동작(`DefaultHotkeys.SupportedActions`)만 등록하고, 단축키 안내 문구는 현재 설정에서 생성한다.
+- 정적 필드 초기화로 클래스 핸들러를 등록하는 partial 클래스에는 명시적 static 생성자를 둔다(beforefieldinit 지연 초기화 방지).
 
 ## 버전과 Release
 - `Directory.Build.props`의 `KnolTeacherVersion`이 현재 개발 소스 버전의 SSOT이다.

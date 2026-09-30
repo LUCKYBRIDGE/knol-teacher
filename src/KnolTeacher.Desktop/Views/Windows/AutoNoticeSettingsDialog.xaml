@@ -110,7 +110,7 @@
                 <Button Content="저장 &amp; 닫기" Click="BtnSaveAndClose_Click" Background="#0284C7" Foreground="White" FontWeight="Bold" Padding="20,8" Margin="0,0,8,0" BorderThickness="0" Cursor="Hand">
                     <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                 </Button>
-                <Button Content="취소" Click="BtnCancel_Click" Background="#334155" Foreground="#CBD5E1" FontWeight="Bold" Padding="16,8" BorderThickness="0" Cursor="Hand">
+                <Button Content="취소" Click="BtnCancel_Click" IsCancel="True" Background="#334155" Foreground="#CBD5E1" FontWeight="Bold" Padding="16,8" BorderThickness="0" Cursor="Hand">
                     <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                 </Button>
             </StackPanel>

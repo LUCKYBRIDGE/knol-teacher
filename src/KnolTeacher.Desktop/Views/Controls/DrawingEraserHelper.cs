@@ -29,13 +29,19 @@ public enum EraserToolMode
 /// </summary>
 public class DrawingEraserHelper
 {
+    /// <summary>
+    /// 부분 지우개 지름(DIP). WPF 기본값(8×8)은 전자칠판·터치 화면에서 너무 작습니다.
+    /// </summary>
+    public const double PointEraserDiameter = 40;
+
     private readonly InkCanvas _inkCanvas;
     private readonly Canvas _previewCanvas;
     private readonly DrawingUndoManager _undoManager;
 
     private EraserToolMode _currentMode = EraserToolMode.Pen;
     private bool _isInteracting;
-    private bool _isExecutingUndo;
+    private bool _suppressRecording;
+    private int? _activeStylusId;
     private Point _startPoint;
     private readonly List<Point> _lassoPoints = new();
 
@@ -59,7 +65,7 @@ public class DrawingEraserHelper
         // 잉크 수집 이벤트 등록 (펜/형광펜 Undo 기록)
         _inkCanvas.StrokeCollected += OnStrokeCollected;
 
-        // 일반 획 지우개 / 부분 지우개에 의한 삭제 감지 및 Undo 기록
+        // 일반 획 지우개 / 부분 지우개에 의한 삭제·분할 감지 및 Undo 기록
         _inkCanvas.Strokes.StrokesChanged += OnStrokesChanged;
 
         // 마우스 및 터치/스타일러스 입력 이벤트 등록
@@ -70,7 +76,32 @@ public class DrawingEraserHelper
         _inkCanvas.PreviewStylusDown += OnPreviewStylusDown;
         _inkCanvas.PreviewStylusMove += OnPreviewStylusMove;
         _inkCanvas.PreviewStylusUp += OnPreviewStylusUp;
+
+        // A region drag that loses its capture (Alt+Tab, another window, touch cancel) would otherwise
+        // stay "active" and apply a stale erase on some later release.
+        _inkCanvas.LostMouseCapture += OnLostMouseCapture;
+        _inkCanvas.LostStylusCapture += OnLostStylusCapture;
     }
+
+    private void OnLostMouseCapture(object sender, MouseEventArgs e) => CancelDragAfterUnexpectedCaptureLoss();
+
+    private void OnLostStylusCapture(object sender, StylusEventArgs e) => CancelDragAfterUnexpectedCaptureLoss();
+
+    private void CancelDragAfterUnexpectedCaptureLoss()
+    {
+        // EndDrag/CancelInteraction clear _isInteracting before releasing capture, and StartDrag sets it
+        // only after capturing, so reaching this with an active drag means the capture was lost unexpectedly.
+        if (_isInteracting)
+        {
+            CancelInteraction();
+        }
+    }
+
+    /// <summary>구역/영역 지우개: 자체 드래그 인터랙션으로 처리하는 모드.</summary>
+    private bool IsRegionEraserMode => _currentMode is EraserToolMode.Box or EraserToolMode.Lasso;
+
+    /// <summary>부분/획 지우개: InkCanvas 기본 지우개 엔진을 쓰는 모드.</summary>
+    private bool IsNativeEraserMode => _currentMode is EraserToolMode.Point or EraserToolMode.Stroke;
 
     /// <summary>
     /// 지우개 및 펜 도구 모드를 설정합니다.
@@ -79,6 +110,11 @@ public class DrawingEraserHelper
     {
         _currentMode = mode;
         CancelInteraction();
+        _undoManager.EndGroup();
+
+        // Region erasers draw their own preview and need the cross cursor. In the native modes
+        // InkCanvas renders its own pen/eraser cursor.
+        _inkCanvas.UseCustomCursor = mode is EraserToolMode.Box or EraserToolMode.Lasso;
 
         switch (mode)
         {
@@ -101,6 +137,8 @@ public class DrawingEraserHelper
                 break;
 
             case EraserToolMode.Point:
+                // EraserShape is applied when EditingMode changes, so set it first.
+                _inkCanvas.EraserShape = new EllipseStylusShape(PointEraserDiameter, PointEraserDiameter);
                 _inkCanvas.EditingMode = InkCanvasEditingMode.EraseByPoint;
                 _inkCanvas.Cursor = Cursors.Cross;
                 break;
@@ -123,23 +161,25 @@ public class DrawingEraserHelper
 
     private void OnStrokeCollected(object sender, InkCanvasStrokeCollectedEventArgs e)
     {
-        if (_isExecutingUndo) return;
+        if (_suppressRecording) return;
         _undoManager.PushAdded(e.Stroke);
         StrokesModified?.Invoke();
     }
 
     private void OnStrokesChanged(object? sender, StrokeCollectionChangedEventArgs e)
     {
-        if (_isExecutingUndo) return;
+        if (_suppressRecording) return;
 
-        // 구역/영역 지우개 모드에서 직접 삭제한 것은 Up 시점에 PushRemoved하므로 여기서 중복 방지
-        if (_currentMode != EraserToolMode.Box && _currentMode != EraserToolMode.Lasso)
+        // 구역/영역 지우개는 적용 시점에 직접 PushRemoved하므로 여기서 중복 기록하지 않습니다.
+        if (IsRegionEraserMode) return;
+
+        // Pen strokes are recorded via StrokeCollected (Added only). Erasing always reports Removed;
+        // the partial eraser also reports the Added fragments that replace the original stroke.
+        // Recording both lets undo restore the original and drop the fragments.
+        if (e.Removed.Count > 0)
         {
-            if (e.Removed.Count > 0)
-            {
-                _undoManager.PushRemoved(e.Removed);
-                StrokesModified?.Invoke();
-            }
+            _undoManager.PushReplaced(e.Removed, e.Added);
+            StrokesModified?.Invoke();
         }
     }
 
@@ -147,32 +187,51 @@ public class DrawingEraserHelper
 
     private void OnPreviewStylusDown(object sender, StylusDownEventArgs e)
     {
-        if (_currentMode == EraserToolMode.Box || _currentMode == EraserToolMode.Lasso)
+        if (IsNativeEraserMode)
         {
-            var pt = e.GetPosition(_inkCanvas);
-            StartDrag(pt);
-            e.Handled = true;
+            // One eraser gesture (down → up) becomes one undo step.
+            _undoManager.BeginGroup();
+            return;
         }
+
+        if (!IsRegionEraserMode) return;
+
+        if (_isInteracting)
+        {
+            // A second finger or pen must not restart the region being drawn or merge into it.
+            e.Handled = true;
+            return;
+        }
+
+        _activeStylusId = e.StylusDevice?.Id;
+        StartDrag(e.GetPosition(_inkCanvas), captureStylus: true);
+        e.Handled = true;
     }
 
     private void OnPreviewStylusMove(object sender, StylusEventArgs e)
     {
-        if (_isInteracting && (_currentMode == EraserToolMode.Box || _currentMode == EraserToolMode.Lasso))
+        if (!_isInteracting || !IsRegionEraserMode) return;
+
+        if (IsActiveStylus(e))
         {
-            var pt = e.GetPosition(_inkCanvas);
-            UpdateDrag(pt);
-            e.Handled = true;
+            UpdateDrag(e.GetPosition(_inkCanvas));
         }
+        e.Handled = true;
     }
 
     private void OnPreviewStylusUp(object sender, StylusEventArgs e)
     {
-        if (_isInteracting && (_currentMode == EraserToolMode.Box || _currentMode == EraserToolMode.Lasso))
+        if (!_isInteracting || !IsRegionEraserMode) return;
+
+        if (IsActiveStylus(e))
         {
             EndDrag();
-            e.Handled = true;
         }
+        e.Handled = true;
     }
+
+    private bool IsActiveStylus(StylusEventArgs e)
+        => !_activeStylusId.HasValue || e.StylusDevice?.Id == _activeStylusId;
 
     #endregion
 
@@ -180,43 +239,77 @@ public class DrawingEraserHelper
 
     private void OnPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.LeftButton == MouseButtonState.Pressed &&
-            (_currentMode == EraserToolMode.Box || _currentMode == EraserToolMode.Lasso))
+        // Pen and touch are handled by the stylus events above. WPF also promotes that input to
+        // mouse events; those must not start a second, duplicate interaction.
+        bool isPromoted = e.StylusDevice != null;
+
+        if (IsNativeEraserMode)
         {
-            var pt = e.GetPosition(_inkCanvas);
-            StartDrag(pt);
-            e.Handled = true;
+            if (!isPromoted)
+            {
+                _undoManager.BeginGroup();
+            }
+            return;
         }
+
+        if (!IsRegionEraserMode) return;
+
+        if (isPromoted)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (e.LeftButton != MouseButtonState.Pressed) return;
+
+        if (_isInteracting)
+        {
+            // A mouse-up was missed: discard the old region and start over (never apply it late).
+            CancelInteraction();
+        }
+
+        _activeStylusId = null;
+        StartDrag(e.GetPosition(_inkCanvas), captureStylus: false);
+        e.Handled = true;
     }
 
     private void OnPreviewMouseMove(object sender, MouseEventArgs e)
     {
-        if (_isInteracting && (_currentMode == EraserToolMode.Box || _currentMode == EraserToolMode.Lasso))
+        if (!_isInteracting || !IsRegionEraserMode) return;
+
+        // Promoted moves duplicate the stylus moves that already drive the drag.
+        if (e.StylusDevice == null)
         {
-            var pt = e.GetPosition(_inkCanvas);
-            UpdateDrag(pt);
-            e.Handled = true;
+            UpdateDrag(e.GetPosition(_inkCanvas));
         }
+        e.Handled = true;
     }
 
     private void OnPreviewMouseUp(object sender, MouseButtonEventArgs e)
     {
-        if (_isInteracting && (_currentMode == EraserToolMode.Box || _currentMode == EraserToolMode.Lasso))
-        {
-            EndDrag();
-            e.Handled = true;
-        }
+        if (!_isInteracting || !IsRegionEraserMode) return;
+
+        // EndDrag is idempotent: a promoted mouse-up only matters if the stylus-up never arrived.
+        EndDrag();
+        e.Handled = true;
     }
 
     #endregion
 
     #region Drag Interaction & HitTest Erasure
 
-    private void StartDrag(Point pt)
+    private void StartDrag(Point pt, bool captureStylus)
     {
-        _isInteracting = true;
         _startPoint = pt;
         _inkCanvas.CaptureMouse();
+        if (captureStylus)
+        {
+            // Keep receiving the pen/finger even if it leaves the canvas while dragging.
+            _inkCanvas.CaptureStylus();
+        }
+
+        // Set after capturing, so capture changes made here are not mistaken for a lost capture.
+        _isInteracting = true;
 
         if (_currentMode == EraserToolMode.Box)
         {
@@ -224,9 +317,11 @@ public class DrawingEraserHelper
         }
         else if (_currentMode == EraserToolMode.Lasso)
         {
+            // CreateLassoPreview clears the previous preview (including its points),
+            // so the start point is added afterwards. Otherwise it is lost from the hit-test polygon.
+            CreateLassoPreview(pt);
             _lassoPoints.Clear();
             _lassoPoints.Add(pt);
-            CreateLassoPreview(pt);
         }
     }
 
@@ -253,10 +348,8 @@ public class DrawingEraserHelper
     {
         if (!_isInteracting) return;
         _isInteracting = false;
-        if (_inkCanvas.IsMouseCaptured)
-        {
-            _inkCanvas.ReleaseMouseCapture();
-        }
+        _activeStylusId = null;
+        ReleaseCaptures();
 
         try
         {
@@ -280,12 +373,23 @@ public class DrawingEraserHelper
         if (_isInteracting)
         {
             _isInteracting = false;
-            if (_inkCanvas.IsMouseCaptured)
-            {
-                _inkCanvas.ReleaseMouseCapture();
-            }
+            _activeStylusId = null;
+            ReleaseCaptures();
         }
         ClearPreview();
+    }
+
+    private void ReleaseCaptures()
+    {
+        if (_inkCanvas.IsMouseCaptured)
+        {
+            _inkCanvas.ReleaseMouseCapture();
+        }
+
+        if (_inkCanvas.IsStylusCaptured)
+        {
+            _inkCanvas.ReleaseStylusCapture();
+        }
     }
 
     private void CreateBoxPreview(Point start)
@@ -379,6 +483,7 @@ public class DrawingEraserHelper
         if (_lassoFigure == null || _lassoPoints.Count < 2) return;
 
         _lassoFigure.Segments.Clear();
+        // The figure's StartPoint is _lassoPoints[0]; the remaining points form the outline.
         var polySegment = new PolyLineSegment(_lassoPoints.Skip(1), true);
         _lassoFigure.Segments.Add(polySegment);
     }
@@ -424,7 +529,8 @@ public class DrawingEraserHelper
     /// </summary>
     public bool Undo()
     {
-        _isExecutingUndo = true;
+        CancelInteraction();
+        _suppressRecording = true;
         try
         {
             bool success = _undoManager.Undo(_inkCanvas);
@@ -436,18 +542,40 @@ public class DrawingEraserHelper
         }
         finally
         {
-            _isExecutingUndo = false;
+            _suppressRecording = false;
         }
     }
 
     /// <summary>
-    /// 모든 판서를 지우고 Undo 스택을 비웁니다.
+    /// 모든 판서를 지웁니다.
+    /// <paramref name="undoable"/>이 true(툴바의 전체 지우기)면 한 번의 실행 취소로 되돌릴 수 있고,
+    /// false(판서 창 닫기, 새 판서 시작)면 실행 취소 이력도 함께 비웁니다.
     /// </summary>
-    public void ClearAll()
+    public void ClearAll(bool undoable = false)
     {
         CancelInteraction();
-        _inkCanvas.Strokes.Clear();
-        _undoManager.Clear();
+        _undoManager.EndGroup();
+
+        var snapshot = _inkCanvas.Strokes.ToList();
+        _suppressRecording = true;
+        try
+        {
+            _inkCanvas.Strokes.Clear();
+        }
+        finally
+        {
+            _suppressRecording = false;
+        }
+
+        if (undoable)
+        {
+            _undoManager.PushRemoved(snapshot);
+        }
+        else
+        {
+            _undoManager.Clear();
+        }
+
         StrokesModified?.Invoke();
     }
 }

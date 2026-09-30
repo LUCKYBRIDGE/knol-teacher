@@ -175,4 +175,148 @@ public class DrawingEraserHelperTests
             Assert.False(undoMgr.CanUndo);
         });
     }
+
+    [Fact]
+    public void DrawingUndoManager_UndoPartialErase_RestoresOriginalInPlaceAndDropsFragments()
+    {
+        RunInSta(() =>
+        {
+            var canvas = new InkCanvas();
+            var undoMgr = new DrawingUndoManager();
+            var before = CreateSampleStroke(10, 10);
+            var original = CreateSampleStroke(40, 40);
+            var after = CreateSampleStroke(80, 80);
+            canvas.Strokes.Add(before);
+            canvas.Strokes.Add(original);
+            canvas.Strokes.Add(after);
+
+            // What EraseByPoint does: replace the stroke with its remaining fragments at the same index.
+            var fragmentA = CreateSampleStroke(40, 40);
+            var fragmentB = CreateSampleStroke(55, 55);
+            var fragments = new StrokeCollection { fragmentA, fragmentB };
+            canvas.Strokes.Replace(original, fragments);
+            undoMgr.PushReplaced(new[] { original }, fragments);
+
+            Assert.True(undoMgr.Undo(canvas));
+
+            Assert.Equal(3, canvas.Strokes.Count);
+            Assert.Same(before, canvas.Strokes[0]);
+            Assert.Same(original, canvas.Strokes[1]);
+            Assert.Same(after, canvas.Strokes[2]);
+            Assert.DoesNotContain(fragmentA, canvas.Strokes);
+            Assert.DoesNotContain(fragmentB, canvas.Strokes);
+        });
+    }
+
+    [Fact]
+    public void DrawingUndoManager_StaleAddedAction_DoesNotDeleteAnUnrelatedStroke()
+    {
+        RunInSta(() =>
+        {
+            var canvas = new InkCanvas();
+            var undoMgr = new DrawingUndoManager();
+            var drawn = CreateSampleStroke(10, 10);
+            var other = CreateSampleStroke(60, 60);
+
+            canvas.Strokes.Add(drawn);
+            undoMgr.PushAdded(drawn);
+
+            // The recorded stroke disappears outside the undo history, then another stroke appears.
+            canvas.Strokes.Remove(drawn);
+            canvas.Strokes.Add(other);
+
+            Assert.True(undoMgr.Undo(canvas));
+            Assert.Single(canvas.Strokes);
+            Assert.Same(other, canvas.Strokes[0]);
+        });
+    }
+
+    [Fact]
+    public void DrawingUndoManager_Group_UndoesTheWholeEraserGestureInOneStep()
+    {
+        RunInSta(() =>
+        {
+            var canvas = new InkCanvas();
+            var undoMgr = new DrawingUndoManager();
+            var s1 = CreateSampleStroke(10, 10);
+            var s2 = CreateSampleStroke(30, 30);
+            var s3 = CreateSampleStroke(60, 60);
+            canvas.Strokes.Add(s1);
+            canvas.Strokes.Add(s2);
+            canvas.Strokes.Add(s3);
+
+            undoMgr.BeginGroup();
+            canvas.Strokes.Remove(s1);
+            undoMgr.PushRemoved(new[] { s1 });
+            canvas.Strokes.Remove(s2);
+            undoMgr.PushRemoved(new[] { s2 });
+            undoMgr.EndGroup();
+
+            Assert.Equal(1, undoMgr.Count);
+            Assert.True(undoMgr.Undo(canvas));
+            Assert.Equal(3, canvas.Strokes.Count);
+            Assert.False(undoMgr.CanUndo);
+        });
+    }
+
+    [Fact]
+    public void DrawingUndoManager_History_IsCapped()
+    {
+        var undoMgr = new DrawingUndoManager(maxHistory: 3);
+        for (int i = 0; i < 5; i++)
+        {
+            undoMgr.PushAdded(CreateSampleStroke(i * 10, i * 10));
+        }
+
+        Assert.Equal(3, undoMgr.Count);
+    }
+
+    [Fact]
+    public void DrawingEraserHelper_PointEraseSplit_IsRecordedAndUndoable()
+    {
+        RunInSta(() =>
+        {
+            var canvas = new InkCanvas();
+            var previewCanvas = new Canvas();
+            var undoMgr = new DrawingUndoManager();
+            var helper = new DrawingEraserHelper(canvas, previewCanvas, undoMgr);
+
+            var original = CreateSampleStroke(40, 40);
+            canvas.Strokes.Add(original);
+            helper.SetToolMode(EraserToolMode.Point);
+
+            var fragments = new StrokeCollection { CreateSampleStroke(40, 40), CreateSampleStroke(60, 60) };
+            canvas.Strokes.Replace(original, fragments);
+
+            Assert.True(helper.Undo());
+            Assert.Single(canvas.Strokes);
+            Assert.Same(original, canvas.Strokes[0]);
+        });
+    }
+
+    [Fact]
+    public void DrawingEraserHelper_UndoableClearAll_RestoresEveryStrokeInOrder()
+    {
+        RunInSta(() =>
+        {
+            var canvas = new InkCanvas();
+            var previewCanvas = new Canvas();
+            var undoMgr = new DrawingUndoManager();
+            var helper = new DrawingEraserHelper(canvas, previewCanvas, undoMgr);
+
+            var s1 = CreateSampleStroke(10, 10);
+            var s2 = CreateSampleStroke(40, 40);
+            canvas.Strokes.Add(s1);
+            canvas.Strokes.Add(s2);
+
+            helper.ClearAll(undoable: true);
+            Assert.Empty(canvas.Strokes);
+            Assert.True(undoMgr.CanUndo);
+
+            Assert.True(helper.Undo());
+            Assert.Equal(2, canvas.Strokes.Count);
+            Assert.Same(s1, canvas.Strokes[0]);
+            Assert.Same(s2, canvas.Strokes[1]);
+        });
+    }
 }

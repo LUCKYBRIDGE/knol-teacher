@@ -62,6 +62,10 @@ public class GlobalHotkeyService : IGlobalHotkeyService
         {
             if (!item.Enabled) continue;
 
+            // Never reserve a system-wide key combination for an action KnolTeacher does not handle
+            // (older settings files still contain enabled Alt+1/5/6 placeholders).
+            if (!DefaultHotkeys.IsSupportedAction(item.Action)) continue;
+
             uint mod = ParseModifier(item.Modifier);
             uint vk = ParseVirtualKey(item.Key);
 
