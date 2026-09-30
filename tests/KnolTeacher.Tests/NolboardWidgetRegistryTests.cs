@@ -67,15 +67,9 @@ public class NolboardWidgetRegistryTests
     [Fact]
     public void BoardWidgetHost_ResizeLayer_OmitsTopCornersAndRetainsRequiredHandles()
     {
-        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        string[] candidates = new[]
-        {
-            System.IO.Path.Combine(baseDir, "..", "..", "..", "..", "src", "KnolTeacher.Desktop", "Views", "Controls", "BoardWidgetHost.xaml"),
-            System.IO.Path.Combine(baseDir, "Views", "Controls", "BoardWidgetHost.xaml")
-        };
-        string? xamlPath = candidates.FirstOrDefault(System.IO.File.Exists);
-        if (xamlPath == null) return;
-
+        // Resolved from the repository root: the previous fixed "..\..\..\.." path pointed inside
+        // tests\ and made this test return early without asserting anything.
+        string xamlPath = RepositoryPaths.GetFile("src", "KnolTeacher.Desktop", "Views", "Controls", "BoardWidgetHost.xaml");
         string content = System.IO.File.ReadAllText(xamlPath);
 
         // Top corners must NOT exist to prevent blocking close buttons and drag grips
@@ -94,20 +88,34 @@ public class NolboardWidgetRegistryTests
     [Fact]
     public void StudentDisplayWindow_PopupUx_DoesNotHijackPinballToPicker()
     {
-        string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        string[] candidates = new[]
-        {
-            System.IO.Path.Combine(baseDir, "..", "..", "..", "..", "src", "KnolTeacher.Desktop", "Views", "Windows", "StudentDisplayWindow.PopupUx.cs"),
-            System.IO.Path.Combine(baseDir, "Views", "Windows", "StudentDisplayWindow.PopupUx.cs")
-        };
-        string? csPath = candidates.FirstOrDefault(System.IO.File.Exists);
-        if (csPath == null) return;
-
+        string csPath = RepositoryPaths.GetFile("src", "KnolTeacher.Desktop", "Views", "Windows", "StudentDisplayWindow.PopupUx.cs");
         string content = System.IO.File.ReadAllText(csPath);
 
         // BtnToolPinball must NOT be hijacked to toggle the "picker" widget
         Assert.DoesNotContain("BtnToolPinball.Click += (s, e) => ToggleWidget(\"picker\");", content);
         Assert.Contains("BtnPinballWindow_Click", content);
+    }
+
+    [Theory]
+    [InlineData("MainWindow.PopupUx.cs", "static MainWindow()")]
+    [InlineData("Views/Windows/StudentDisplayWindow.PopupUx.cs", "static StudentDisplayWindow()")]
+    public void ClassHandlerRegistrations_AreGuaranteedByAnExplicitStaticConstructor(string relativePath, string staticConstructor)
+    {
+        // These partials register class handlers from a static field initializer. Without an explicit
+        // static constructor the type is 'beforefieldinit' and the initializer may run too late (or never).
+        string[] parts = new[] { "src", "KnolTeacher.Desktop" }.Concat(relativePath.Split('/')).ToArray();
+        string content = System.IO.File.ReadAllText(RepositoryPaths.GetFile(parts));
+
+        Assert.Contains(staticConstructor, content);
+    }
+
+    [Fact]
+    public void PickerWidget_UsesItsOwnIcon_NotTheDDayIcon()
+    {
+        // 🎯 is D-Day. The 발표자 추첨 widget previously shared it, so the dock showed two 🎯 buttons.
+        Assert.True(WidgetRegistry.TryGet("picker", out var picker));
+        Assert.True(WidgetRegistry.TryGet("dday", out var dday));
+        Assert.NotEqual(picker.Title.Split(' ')[0], dday.Title.Split(' ')[0]);
     }
 
     [Fact]

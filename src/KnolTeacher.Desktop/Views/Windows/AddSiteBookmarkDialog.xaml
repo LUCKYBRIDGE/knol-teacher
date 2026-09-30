@@ -52,7 +52,7 @@
 
             <!-- Bottom Buttons -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                <Button Content="취소" Click="BtnCancel_Click" Padding="16,8" Margin="0,0,8,0" Background="{DynamicResource BeigeCardInner}" Foreground="{DynamicResource BeigeTextSub}" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" Cursor="Hand">
+                <Button Content="취소" Click="BtnCancel_Click" IsCancel="True" Padding="16,8" Margin="0,0,8,0" Background="{DynamicResource BeigeCardInner}" Foreground="{DynamicResource BeigeTextSub}" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" Cursor="Hand">
                     <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
                 </Button>
                 <Button Content="등록하기" Click="BtnAdd_Click" Padding="20,8" Background="{DynamicResource BeigeAccent}" Foreground="White" BorderThickness="0" FontWeight="Bold" Cursor="Hand">

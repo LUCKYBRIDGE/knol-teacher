@@ -73,7 +73,7 @@
 
         <!-- Footer -->
         <Grid Grid.Row="2">
-            <Button Content="닫기" Click="BtnClose_Click" HorizontalAlignment="Right" Width="90" Height="36" Background="#334155" Foreground="White" FontWeight="Bold" FontSize="13" BorderThickness="0" Cursor="Hand">
+            <Button Content="닫기" Click="BtnClose_Click" IsCancel="True" HorizontalAlignment="Right" Width="90" Height="36" Background="#334155" Foreground="White" FontWeight="Bold" FontSize="13" BorderThickness="0" Cursor="Hand">
                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
             </Button>
         </Grid>

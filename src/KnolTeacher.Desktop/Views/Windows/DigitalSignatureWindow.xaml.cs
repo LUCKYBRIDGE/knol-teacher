@@ -309,7 +309,8 @@ public partial class DigitalSignatureWindow : Window
     {
         _isEraserMode = !_isEraserMode;
         SignatureCanvas.EditingMode = _isEraserMode ? InkCanvasEditingMode.EraseByStroke : InkCanvasEditingMode.Ink;
-        BtnToggleEraser.Content = _isEraserMode ? "✏️ 펜 모드로 전환" : "🧹 부분 지우개";
+        // The signature eraser removes whole strokes (EraseByStroke), i.e. the "획 지우개" of the drawing tools.
+        BtnToggleEraser.Content = _isEraserMode ? "✏️ 펜 모드로 전환" : "🧹 획 지우개";
         BtnToggleEraser.Background = _isEraserMode ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FEF3C7")) : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F1F5F9"));
     }
 

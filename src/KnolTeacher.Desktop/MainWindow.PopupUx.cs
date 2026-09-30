@@ -14,6 +14,15 @@ public partial class MainWindow
     private static readonly bool V309UxClassHandlersRegistered = RegisterV309UxClassHandlers();
     private static int? _pendingPopupMonitorIndex;
 
+    // Explicit static constructor on purpose. Without one the type is 'beforefieldinit' and the
+    // runtime only runs static field initializers on the first static-field access, so the class
+    // handlers registered here and in MainWindow.CalendarUx.cs could be installed only after the
+    // first MainWindow had already loaded (their Loaded logic would then never run). With it, all
+    // static initializers are guaranteed to run before the first MainWindow instance is created.
+    static MainWindow()
+    {
+    }
+
     private PopupLaunchPreferences? _popupLaunchPreferences;
     private bool _v309UxInitialized;
 

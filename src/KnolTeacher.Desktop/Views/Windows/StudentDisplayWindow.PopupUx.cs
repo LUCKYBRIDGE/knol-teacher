@@ -12,6 +12,13 @@ public partial class StudentDisplayWindow
 {
     private static readonly bool V309WidgetUxRegistered = RegisterV309WidgetUx();
     private bool _v309WidgetUxApplied;
+
+    // Explicit static constructor on purpose (same reason as MainWindow.PopupUx.cs): it removes
+    // 'beforefieldinit', so the class handlers above are guaranteed to be registered before the first
+    // board window is created. Otherwise the dock race button could keep its plain XAML handler.
+    static StudentDisplayWindow()
+    {
+    }
     private PopupLaunchPreferences? _v309PopupLaunchPreferences;
 
     private static bool RegisterV309WidgetUx()
@@ -89,6 +96,7 @@ public partial class StudentDisplayWindow
             BtnToolWheel,
             BtnToolScore,
             BtnToolDrawing,
+            BtnToolBlackboard,
             BtnToolTimetable,
             BtnToolMeal,
             BtnToolMemo,

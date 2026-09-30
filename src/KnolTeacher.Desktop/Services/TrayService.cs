@@ -83,13 +83,13 @@ public class TrayService : ITrayService
         menu.Items.Add(new ToolStripSeparator());
 
         // 2. Direct tool shortcuts
-        menu.Items.Add(new ToolStripMenuItem("🌱 동물 뽑기 레이스 (Alt+8)", null, (s, e) =>
+        menu.Items.Add(new ToolStripMenuItem("🌱 뽑기 레이스 (Alt+8)", null, (s, e) =>
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
                 var pickerWin = (Application.Current as App)?.Services?.GetService(typeof(Views.Windows.StudentPickerWindow)) as Views.Windows.StudentPickerWindow;
-                pickerWin?.Show();
-                pickerWin?.Activate();
+                // Same placement as Alt+8 and the main window launcher (student monitor).
+                pickerWin?.ShowOnStudentMonitor();
             });
         }));
 
@@ -160,17 +160,14 @@ public class TrayService : ITrayService
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
+                // Built from the current hotkey settings so the guide always matches what the keys do.
+                var configService = (Application.Current as App)?.Services?.GetService(typeof(IConfigService)) as IConfigService;
+                var guideLines = Models.DefaultHotkeys.BuildGuideLines(configService?.Hotkeys);
+
                 System.Windows.MessageBox.Show(
                     "⚡ 놀티쳐 전역 단축키 안내\n\n" +
                     "놀티쳐 창을 띄워놓지 않아도 언제 어디서든 즉시 동작합니다:\n\n" +
-                    "• [Alt + 1] 또는 [F2] : 📺 학생용 놀보드 (전자칠판 전송)\n" +
-                    "• [Alt + 2] : ✏️ 화면 판서 그리기 오버레이\n" +
-                    "• [Alt + 3] : ⏱️ 교실 집중 타이머 (원형/숫자)\n" +
-                    "• [Alt + 4] 또는 [Alt + 8] : 🎲 발표자 추첨기\n" +
-                    "• [Alt + 5] : 🚦 교실 소음 신호등\n" +
-                    "• [Alt + 6] : 🔔 교실 원터치 효과음 보드\n" +
-                    "• [Alt + 9] : 🏝️ 화면 상단 도구바\n" +
-                    "• [Alt + S] : 🔏 전자서명 및 도장 생성기\n\n" +
+                    string.Join("\n", guideLines) + "\n\n" +
                     "창을 닫아도 시스템 트레이에 상주하므로 수업 중 언제든 편리하게 활용하세요!",
                     "놀티쳐 전역 단축키 가이드",
                     MessageBoxButton.OK,
@@ -206,7 +203,7 @@ public class TrayService : ITrayService
             if (!_hasShownFirstMinimizeNotice)
             {
                 _hasShownFirstMinimizeNotice = true;
-                ShowBalloon("놀티쳐가 트레이에 상주합니다", "창을 띄워놓지 않아도 Alt+1~9 단축키는 언제나 즉시 동작합니다!\n작업표시줄 트레이 아이콘을 더블클릭하면 다시 열립니다.");
+                ShowBalloon("놀티쳐가 트레이에 상주합니다", "창을 띄워놓지 않아도 F2·Alt 단축키는 언제나 즉시 동작합니다!\n작업표시줄 트레이 아이콘을 더블클릭하면 다시 열립니다.");
             }
         }
     }

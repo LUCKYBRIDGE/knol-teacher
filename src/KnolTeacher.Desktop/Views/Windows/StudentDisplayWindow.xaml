@@ -210,7 +210,7 @@
                             <ComboBoxItem Content="위젯 추가..." IsSelected="True"/>
                             <ComboBoxItem Content="⏱️ 수업 타이머" Tag="timer"/>
                             <ComboBoxItem Content="🌱 뽑기 레이스" Tag="pinball"/>
-                            <ComboBoxItem Content="🎯 발표자 추첨" Tag="picker"/>
+                            <ComboBoxItem Content="🙋 발표자 추첨" Tag="picker"/>
                             <ComboBoxItem Content="🎲 스마트 주사위" Tag="dice"/>
                             <ComboBoxItem Content="🎡 회전 돌림판" Tag="wheel"/>
                             <ComboBoxItem Content="🏆 모둠 점수판" Tag="score"/>
@@ -391,7 +391,7 @@
                         <WrapPanel Grid.Column="0" VerticalAlignment="Center">
                             <Button x:Name="BtnToolTimer" Content="⏱️ 수업 타이머" Click="DockToolBtn_Click" Tag="timer" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolPinball" Content="🌱 뽑기 레이스" Click="DockToolBtn_Click" Tag="pinball" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}" ToolTip="별도 레이스 창에서 32종 동물 아바타로 발표자를 뽑습니다"/>
-                            <Button x:Name="BtnToolPicker" Content="🎯 발표자 추첨" Click="DockToolBtn_Click" Tag="picker" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
+                            <Button x:Name="BtnToolPicker" Content="🙋 발표자 추첨" Click="DockToolBtn_Click" Tag="picker" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolDice" Content="🎲 주사위·통계" Click="DockToolBtn_Click" Tag="dice" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolWheel" Content="🎡 돌림판" Click="DockToolBtn_Click" Tag="wheel" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>
                             <Button x:Name="BtnToolScore" Content="🏆 모둠 점수판" Click="DockToolBtn_Click" Tag="score" Height="34" Padding="10,0" Margin="0,2,6,2" Style="{StaticResource BoardNavButtonStyle}"/>

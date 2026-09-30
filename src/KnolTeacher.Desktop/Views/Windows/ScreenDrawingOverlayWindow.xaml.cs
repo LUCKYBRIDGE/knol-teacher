@@ -39,8 +39,9 @@ public partial class ScreenDrawingOverlayWindow : Window
         _eraserHelper = new DrawingEraserHelper(OverlayInkCanvas, EraserPreviewCanvas, _undoManager);
         _eraserHelper.SetToolMode(EraserToolMode.Pen, _lastPenWidth);
 
-        // Windows Touch Stylus Press-and-Hold 원형 랙 비활성화
+        // Windows Touch Stylus Press-and-Hold 원형 랙 및 플릭 제스처 비활성화 (놀보드 판서와 동일)
         Stylus.SetIsPressAndHoldEnabled(OverlayInkCanvas, false);
+        Stylus.SetIsFlicksEnabled(OverlayInkCanvas, false);
 
         // ESC key to close
         PreviewKeyDown += (s, e) =>
@@ -82,7 +83,9 @@ public partial class ScreenDrawingOverlayWindow : Window
                 height = rect.Bottom - rect.Top;
             }
 
-            OverlayInkCanvas.Strokes.Clear();
+            // A new session starts clean: clear strokes AND undo history, otherwise Undo could
+            // bring back ink from the previous (board/screen) session.
+            _eraserHelper?.ClearAll();
             if (RbBgScreen != null) RbBgScreen.IsChecked = true;
             if (BoardBackground != null) BoardBackground.Visibility = Visibility.Collapsed;
 
@@ -165,7 +168,8 @@ public partial class ScreenDrawingOverlayWindow : Window
                 }
             }
 
-            OverlayInkCanvas.Strokes.Clear();
+            // Same as FreezeAndShow: clear strokes together with the undo history.
+            _eraserHelper?.ClearAll();
 
             Show();
             var helper = new System.Windows.Interop.WindowInteropHelper(this);
@@ -478,7 +482,8 @@ public partial class ScreenDrawingOverlayWindow : Window
 
     private void BtnClear_Click(object sender, RoutedEventArgs e)
     {
-        _eraserHelper?.ClearAll();
+        // A mis-tap on a touch board must be recoverable: clearing is one undo step.
+        _eraserHelper?.ClearAll(undoable: true);
     }
 
     private void BtnClose_Click(object sender, RoutedEventArgs e)
@@ -565,12 +570,16 @@ public partial class ScreenDrawingOverlayWindow : Window
     {
         if (sender is Button btn && double.TryParse(btn.Tag?.ToString(), out double width))
         {
+            // Width presets belong to the pen. Applying them directly also squashed the 18×28
+            // highlighter into a w×w tip, so they now always (re)select the pen with that width.
             _lastPenWidth = width;
-            if (OverlayInkCanvas != null)
+            if (RbPen?.IsChecked == true)
             {
-                OverlayInkCanvas.DefaultDrawingAttributes.Width = width;
-                OverlayInkCanvas.DefaultDrawingAttributes.Height = width;
-                if (IsAnyEraserSelected()) RbPen.IsChecked = true;
+                _eraserHelper?.SetToolMode(EraserToolMode.Pen, _lastPenWidth);
+            }
+            else if (RbPen != null)
+            {
+                RbPen.IsChecked = true; // RbPen_Checked applies _lastPenWidth
             }
         }
     }

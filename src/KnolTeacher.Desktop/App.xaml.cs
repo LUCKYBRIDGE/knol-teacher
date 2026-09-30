@@ -241,9 +241,8 @@ public partial class App : Application
                                 }
                                 else
                                 {
-                                    displayManager.MoveToStudentMonitor(pickerWindow, maximize: false);
-                                    pickerWindow.Show();
-                                    pickerWindow.Activate();
+                                    // Same placement path as the board dock, so the race's monitor toggle stays in sync.
+                                    pickerWindow.ShowOnStudentMonitor();
                                     HudNotificationWindow.Instance.ShowToast("🌱", "뽑기 레이스 (Alt+8)");
                                 }
                                 break;
@@ -360,7 +359,12 @@ public partial class App : Application
         catch (Exception ex)
         {
             BootLog($"FATAL OnStartup error: {ex}");
+            // Close the topmost splash first so the error is visible, then exit. Otherwise the
+            // splash stayed on screen and the process kept running (holding the single-instance
+            // lease), so the next launch only tried to activate this broken instance.
+            CloseSplash();
             MessageBox.Show($"시작 오류 발생:\n{ex.Message}\n\n{ex.StackTrace}", "시작 오류", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
         }
     }
 

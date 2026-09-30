@@ -160,7 +160,7 @@
                 <!-- Center: Configurable Race Topic Banner -->
                 <StackPanel x:Name="PanelTitle" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="440">
                     <Border Background="#26000000" CornerRadius="8" Padding="10,3" BorderBrush="#334155" BorderThickness="1">
-                        <TextBox x:Name="TbRaceTitle" Text="이번엔 1등, 꼴등이 받아요"
+                        <TextBox x:Name="TbRaceTitle" Text="누가 먼저 골인할까요?"
                                  FontSize="17" FontWeight="Bold" Foreground="#FDE047"
                                  Background="Transparent" BorderThickness="0"
                                  TextAlignment="Center" VerticalAlignment="Center"
@@ -178,7 +178,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Target Winner Count Picker -->
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
-                        <TextBlock Text="⭐ 순위" FontSize="11.5" FontWeight="Bold" Foreground="#E4E4E7" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="🏆 당첨 인원" FontSize="11.5" FontWeight="Bold" Foreground="#E4E4E7" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <ComboBox x:Name="CbWinnerCount" Width="72" Height="28" FontSize="11.5" FontWeight="Bold"
                                   Style="{StaticResource DarkRaceComboBox}"
                                   VerticalContentAlignment="Center">
@@ -415,7 +415,7 @@
 
                         <!-- Title & Student Info -->
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
-                            <TextBlock Text="🥇 1등 골인! 당첨을 축하합니다!" FontSize="12" FontWeight="Bold" Foreground="#FDE047"/>
+                            <TextBlock x:Name="TxtWinnerHeader" Text="🥇 1등 골인! 당첨을 축하합니다!" FontSize="12" FontWeight="Bold" Foreground="#FDE047"/>
                             <TextBlock x:Name="TxtWinnerTitle" Text="7번 김민준 (판다)" FontSize="18" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
 
@@ -552,7 +552,7 @@
                             <!-- Sound Mute/Unmute Toggle -->
                             <Button x:Name="BtnSoundToggle" Content="🔇" Click="BtnSoundToggle_Click"
                                     Width="24" Height="24" Background="Transparent" Foreground="#EF4444" BorderThickness="0"
-                                    FontWeight="Bold" FontSize="12" Cursor="Hand" ToolTip="레이스 배경음악 켜기 (기본: 음소거)" Padding="0"/>
+                                    FontWeight="Bold" FontSize="12" Cursor="Hand" ToolTip="레이스 효과음 켜기 (기본: 꺼짐)" Padding="0"/>
                             <!-- Volume Slider -->
                             <Slider x:Name="SliderSoundVolume" Width="58" Minimum="0" Maximum="100" Value="0"
                                     SmallChange="5" LargeChange="10" VerticalAlignment="Center" Margin="3,0,3,0"

@@ -304,9 +304,11 @@ public class DataShareService : IDataShareService
                 return new TemplateImportResult { Success = false, Message = "가져올 수 있는 시간표 행이 없습니다." };
             }
 
-            string timetableFile = Path.Combine(_configService.ConfigDir, "custom_timetable.json");
-            string json = JsonSerializer.Serialize(table, JsonOpts);
-            File.WriteAllText(timetableFile, json, Utf8Bom);
+            // Save through TimetableService instead of writing custom_timetable.json directly.
+            // The service keeps the weekly timetable in memory: a direct file write was not shown
+            // until restart and was overwritten by the next timetable edit. The service also saves
+            // atomically with a local backup and raises OnTimetableChanged so screens refresh.
+            _timetableService.SaveWeeklyTimetable(table);
 
             return new TemplateImportResult
             {

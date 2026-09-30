@@ -7,8 +7,10 @@
              MinWidth="240" MinHeight="180">
     <UserControl.Resources>
         <!--
-            Large transparent hit targets are intentional for classroom touch displays.
-            The visible marker is small, but each Thumb is at least 32 DIP thick.
+            Transparent hit targets around a small visible marker.
+            Current sizes: edges 10-12 DIP (N is 72 DIP wide, centered), bottom corners 24×24 DIP.
+            Edges are kept thin so they stay inside the 9 DIP content margin and do not cover
+            scroll bars or buttons at the widget edge. Top corners are omitted (title bar / ✕).
         -->
         <Style x:Key="ResizeHandleStyle" TargetType="Thumb">
             <Setter Property="Background" Value="Transparent"/>

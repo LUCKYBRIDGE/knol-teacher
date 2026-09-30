@@ -12,13 +12,19 @@ public partial class HotkeySettingsDialog : Window
     private readonly IGlobalHotkeyService _hotkeyService;
     private List<HotkeyItem> _editingList;
 
+    // Entries for tools that are not available yet are kept in the settings file unchanged but not
+    // shown, so the list only offers shortcuts that actually do something.
+    private List<HotkeyItem> _reservedItems;
+
     public HotkeySettingsDialog(IConfigService configService, IGlobalHotkeyService hotkeyService)
     {
         _configService = configService;
         _hotkeyService = hotkeyService;
         InitializeComponent();
 
-        _editingList = CloneList(_configService.Hotkeys);
+        var all = CloneList(_configService.Hotkeys);
+        _editingList = all.Where(item => DefaultHotkeys.IsSupportedAction(item.Action)).ToList();
+        _reservedItems = all.Where(item => !DefaultHotkeys.IsSupportedAction(item.Action)).ToList();
         ListHotkeys.ItemsSource = _editingList;
     }
 
@@ -43,9 +49,11 @@ public partial class HotkeySettingsDialog : Window
 
     private void BtnResetDefaults_Click(object sender, RoutedEventArgs e)
     {
-        if (MessageBox.Show("단축키를 초기 기본값(Alt+1~9, F2 등)으로 복원하시겠습니까?", "초기화 확인", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+        if (MessageBox.Show(this, "단축키를 초기 기본값(Alt+숫자, F2 등)으로 복원하시겠습니까?", "초기화 확인", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
         {
-            _editingList = DefaultHotkeys.GetDefaults();
+            var defaults = DefaultHotkeys.GetDefaults();
+            _editingList = defaults.Where(item => DefaultHotkeys.IsSupportedAction(item.Action)).ToList();
+            _reservedItems = defaults.Where(item => !DefaultHotkeys.IsSupportedAction(item.Action)).ToList();
             ListHotkeys.ItemsSource = null;
             ListHotkeys.ItemsSource = _editingList;
         }
@@ -59,7 +67,7 @@ public partial class HotkeySettingsDialog : Window
 
     private void BtnSave_Click(object sender, RoutedEventArgs e)
     {
-        _configService.Hotkeys = _editingList;
+        _configService.Hotkeys = _editingList.Concat(_reservedItems).OrderBy(item => item.Id).ToList();
         _configService.SaveHotkeys();
         _hotkeyService.ReloadHotkeys();
 
