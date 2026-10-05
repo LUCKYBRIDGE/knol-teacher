@@ -167,7 +167,7 @@
 
                 <!-- Left: Title & Clock -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="📋 놀보드" FontWeight="Bold" FontSize="16" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="TxtBoardTitle" Text="🏫 학생 화면" FontWeight="Bold" FontSize="16" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <Border Background="#1E293B" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="10,4" Margin="0,0,14,0">
                         <TextBlock x:Name="TxtClock" Text="09:00:00" FontFamily="Consolas, Malgun Gothic" FontSize="13.5" FontWeight="Bold" Foreground="#38BDF8"/>
                     </Border>
@@ -565,7 +565,7 @@
                                         </ItemsControl>
 
                                         <!-- Empty State -->
-                                        <TextBlock x:Name="TxtDashboardTodayEmpty" Text="🎉 오늘 제출하거나 할 일이 모두 끝났습니다!" FontSize="14" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                        <TextBlock x:Name="TxtDashboardTodayEmpty" Text="📌 오늘 등록된 제출 과제나 할 일이 없습니다.&#x0a;(메인화면의 [오늘 제출·할일]에서 추가하면 실시간으로 여기에 뜹니다)" FontSize="12.5" TextAlignment="Center" LineHeight="18" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                                     </Grid>
                                 </ScrollViewer>
                             </Grid>
@@ -653,7 +653,7 @@
                                         </ItemsControl>
 
                                         <!-- Empty State -->
-                                        <TextBlock x:Name="TxtDashboardWeeklyEmpty" Text="이번 주 예정된 제출 과제가 없습니다." FontSize="14" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                        <TextBlock x:Name="TxtDashboardWeeklyEmpty" Text="🗓️ 이번 주 예정된 제출 과제가 없습니다.&#x0a;(메인화면의 [이번주 제출·할일]에서 추가하면 실시간으로 여기에 뜹니다)" FontSize="12.5" TextAlignment="Center" LineHeight="18" Foreground="#64748B" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                                     </Grid>
                                 </ScrollViewer>
                             </Grid>

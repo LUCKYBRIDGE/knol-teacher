@@ -110,7 +110,7 @@ public partial class StudentDisplayWindow : Window
         {
             PositionToDefaultMonitor();
             RestoreWidgetsLayout();
-            UpdateEmptyHint();
+            SetDisplayMode(true);
         };
     }
 
@@ -387,6 +387,36 @@ public partial class StudentDisplayWindow : Window
     }
 
     public int CurrentMonitorIndex => _currentMonitorIndex;
+
+    public void ShowStudentDashboard(int? monitorIndex = null)
+    {
+        SetDisplayMode(true);
+        if (monitorIndex.HasValue)
+        {
+            ShowOnMonitor(monitorIndex.Value);
+        }
+        else
+        {
+            if (!IsVisible) PositionToDefaultMonitor();
+            Show();
+            Activate();
+        }
+    }
+
+    public void ShowWidgetsBoard(int? monitorIndex = null)
+    {
+        SetDisplayMode(false);
+        if (monitorIndex.HasValue)
+        {
+            ShowOnMonitor(monitorIndex.Value);
+        }
+        else
+        {
+            if (!IsVisible) PositionToDefaultMonitor();
+            Show();
+            Activate();
+        }
+    }
 
     public void ShowOnMonitor(int monitorIndex)
     {
@@ -1392,12 +1422,17 @@ public partial class StudentDisplayWindow : Window
         catch { }
     }
 
-    private void RbBoardMode_Checked(object sender, RoutedEventArgs e)
+    public void SetDisplayMode(bool isDashboard)
     {
         if (PanelStudentDashboard == null || WidgetCanvas == null) return;
 
-        if (RbBoardModeDashboard?.IsChecked == true)
+        if (isDashboard)
         {
+            if (RbBoardModeDashboard != null && RbBoardModeDashboard.IsChecked != true)
+            {
+                RbBoardModeDashboard.IsChecked = true;
+            }
+            if (TxtBoardTitle != null) TxtBoardTitle.Text = "🏫 학생 화면";
             PanelStudentDashboard.Visibility = Visibility.Visible;
             WidgetCanvas.Visibility = Visibility.Collapsed;
             EmptyBoardHint.Visibility = Visibility.Collapsed;
@@ -1406,11 +1441,21 @@ public partial class StudentDisplayWindow : Window
         }
         else
         {
+            if (RbBoardModeWidgets != null && RbBoardModeWidgets.IsChecked != true)
+            {
+                RbBoardModeWidgets.IsChecked = true;
+            }
+            if (TxtBoardTitle != null) TxtBoardTitle.Text = "🧩 놀보드";
             PanelStudentDashboard.Visibility = Visibility.Collapsed;
             WidgetCanvas.Visibility = Visibility.Visible;
             if (DockBody != null) DockBody.Visibility = Visibility.Visible;
             UpdateEmptyHint();
         }
+    }
+
+    private void RbBoardMode_Checked(object sender, RoutedEventArgs e)
+    {
+        SetDisplayMode(RbBoardModeDashboard?.IsChecked == true);
     }
 
     private void StudentTaskCheckbox_Click(object sender, RoutedEventArgs e)

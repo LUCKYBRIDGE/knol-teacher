@@ -244,16 +244,28 @@
                     </Grid.RowDefinitions>
 
                     <!-- Brand Header -->
-                    <Border Grid.Row="0" Margin="14,14,14,10" Cursor="Hand" MouseLeftButtonUp="BtnReturnDashboard_Click" ToolTip="메인 대시보드로 이동">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Border Background="White" CornerRadius="8" Padding="5" Margin="0,0,10,0" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1">
-                                <Image Source="/assets/app_icon_mono.png" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality"/>
-                            </Border>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="KnolTeacher" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource BeigeTextMain}" FontFamily="Segoe UI Variable Display, Malgun Gothic, Segoe UI"/>
-                                <TextBlock Text="교실 스튜디오" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource BeigeTextMuted}" Margin="0,1,0,0"/>
+                    <Border Grid.Row="0" Margin="14,14,14,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Logo and Title -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Cursor="Hand" MouseLeftButtonUp="BtnReturnDashboard_Click" ToolTip="메인 대시보드로 이동">
+                                <Border Background="White" CornerRadius="8" Padding="5" Margin="0,0,10,0" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1">
+                                    <Image Source="/assets/app_icon_mono.png" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="KnolTeacher" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource BeigeTextMain}" FontFamily="Segoe UI Variable Display, Malgun Gothic, Segoe UI"/>
+                                    <TextBlock Text="교실 스튜디오" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource BeigeTextMuted}" Margin="0,1,0,0"/>
+                                </StackPanel>
                             </StackPanel>
-                        </StackPanel>
+                            <!-- Sidebar Collapse Button -->
+                            <Button Grid.Column="1" Click="BtnToggleDrawer_Click" Width="30" Height="30" Padding="0" Background="White" Foreground="{DynamicResource BeigeTextMuted}" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" Cursor="Hand" ToolTip="좌측 사이드바 접기" VerticalAlignment="Center">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></Button.Resources>
+                                <TextBlock Text="◀" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                        </Grid>
                     </Border>
 
                     <Separator Grid.Row="0" VerticalAlignment="Bottom" Margin="12,0,12,0" Background="{DynamicResource BeigeCardBorder}"/>
@@ -261,6 +273,25 @@
                     <!-- Navigation Items -->
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,8,0,8">
                         <StackPanel Margin="10,0,10,0">
+                            <!-- Quick Student Screen Launcher -->
+                            <Border Background="{DynamicResource BeigeCardBg}" BorderBrush="{DynamicResource BeigeAccent}" BorderThickness="1.5" CornerRadius="10" Padding="10,8" Margin="0,0,0,10" Cursor="Hand" MouseLeftButtonUp="BtnLaunchBoard_Click" ToolTip="학생용 모니터 2에 학급 대시보드(시간표, 오늘/이번주 할일, 급식, D-Day) 열기 (F2)">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="🏫" FontSize="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="학생 화면 열기" FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource BeigeAccent}"/>
+                                        <TextBlock Text="학급 대시보드 (시간표·과제)" FontSize="10" Foreground="{DynamicResource BeigeTextMuted}" Margin="0,1,0,0"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="2" Background="{DynamicResource BeigeAccent}" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                        <TextBlock Text="F2" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
                             <TextBlock Text="교실 메뉴" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource BeigeTextMuted}" Margin="8,4,8,8"/>
 
                             <!-- Tab 0: 일과 & 급식 -->
@@ -374,8 +405,14 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Left: Live Period & Monitor Status -->
+                        <!-- Left: Sidebar Toggle, Live Period & Monitor Status -->
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Sidebar Toggle Button (좌측 배치) -->
+                            <Button x:Name="BtnToggleDrawer" Click="BtnToggleDrawer_Click" Width="34" Height="34" Padding="0" Margin="0,0,8,0" Background="White" Foreground="{DynamicResource BeigeTextMain}" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" Cursor="Hand" ToolTip="좌측 사이드바 접기 / 펼치기">
+                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                                <TextBlock Text="☰" FontSize="14" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+
                             <!-- Live Period Status Capsule -->
                             <Border x:Name="PillLivePeriodStatus"
                                     Background="#F8FAFC"
@@ -422,16 +459,25 @@
                                 <DropShadowEffect BlurRadius="14" Opacity="0.06" ShadowDepth="2" Color="#64748B"/>
                             </Border.Effect>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <!-- 놀보드 F2 -->
-                                <Button x:Name="BtnPillBoard" Click="BtnLaunchBoard_Click" Background="{DynamicResource BeigeDualMonitorBtnBg}" BorderBrush="{DynamicResource BeigeDualMonitorBtnBorder}" BorderThickness="1.5" Foreground="{DynamicResource BeigeTextMain}" Padding="10,5" Margin="2,0" Cursor="Hand" ToolTip="📺 놀보드 (F2)&#x0a;• 좌클릭: 모니터 1 (선생님 화면)&#x0a;• 우클릭: 모니터 2 (학생 전자칠판)">
+                                <!-- 🏫 학생 화면 (대시보드) F2 -->
+                                <Button x:Name="BtnPillBoard" Click="BtnLaunchBoard_Click" Background="{DynamicResource BeigeDualMonitorBtnBg}" BorderBrush="{DynamicResource BeigeDualMonitorBtnBorder}" BorderThickness="1.5" Foreground="{DynamicResource BeigeTextMain}" Padding="11,5" Margin="2,0" Cursor="Hand" ToolTip="🏫 학생 화면 (스마트 학급 대시보드) (F2)&#x0a;• 시간표, 오늘/이번주 제출&amp;할일, 급식, D-Day&#x0a;• 좌클릭: 모니터 1 (선생님 화면)&#x0a;• 우클릭: 모니터 2 (학생 전자칠판)">
                                     <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="📺" FontSize="13" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="TxtPillBoardLabel" Text="놀보드" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                        <TextBlock Text="🏫" FontSize="13" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="TxtPillBoardLabel" Text="학생 화면" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
                                         <Ellipse x:Name="DotPillBoard" Width="6" Height="6" Fill="#4ADE80" Margin="4,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                         <Border x:Name="BadgePillBoard" Background="#F1F5F9" CornerRadius="4" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center">
                                             <TextBlock x:Name="TxtPillBoardBadge" Text="F2" FontSize="9.5" FontWeight="Bold" Foreground="{DynamicResource BeigeAccent}"/>
                                         </Border>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- 🧩 자유 놀보드 (위젯 칠판) -->
+                                <Button x:Name="BtnPillWidgetsBoard" Click="BtnLaunchWidgetsBoard_Click" Background="{DynamicResource BeigeDualMonitorBtnBg}" BorderBrush="{DynamicResource BeigeDualMonitorBtnBorder}" BorderThickness="1.5" Foreground="{DynamicResource BeigeTextMain}" Padding="10,5" Margin="2,0" Cursor="Hand" ToolTip="🧩 자유 놀보드 (자유 위젯 배치 게시판)&#x0a;• 타이머, 뽑기, 주사위, 돌림판, 칠판 등 위젯 보드">
+                                    <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="🧩" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="자유 놀보드" FontWeight="SemiBold" FontSize="11.5" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
 
@@ -522,19 +568,11 @@
                             </Button>
 
                             <!-- Widget Customization Mode Switcher -->
-                            <Button x:Name="BtnToggleWidgetEdit" Click="BtnToggleWidgetEdit_Click" Height="34" Padding="11,0" Margin="0,0,6,0" Background="#F1F5F9" Foreground="#334155" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" Cursor="Hand" ToolTip="메인화면 위젯 커스텀 (배치, 크기조절, 추가, 숨김)">
+                            <Button x:Name="BtnToggleWidgetEdit" Click="BtnToggleWidgetEdit_Click" Height="34" Padding="11,0" Background="#F1F5F9" Foreground="#334155" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" Cursor="Hand" ToolTip="메인화면 위젯 커스텀 (배치, 크기조절, 추가, 숨김)">
                                 <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="17"/></Style></Button.Resources>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock x:Name="TxtWidgetEditIcon" Text="⚙️" FontSize="12.5" Margin="0,0,5,0" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="TxtWidgetEditLabel" Text="위젯 편집" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
-
-                            <!-- Sidebar Toggle Button -->
-                            <Button x:Name="BtnToggleDrawer" Click="BtnToggleDrawer_Click" Height="34" Padding="10,0" Background="White" Foreground="{DynamicResource BeigeTextMain}" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" Cursor="Hand" ToolTip="좌측 사이드바 접기 / 펼치기">
-                                <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="17"/></Style></Button.Resources>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="☰" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>

@@ -1488,7 +1488,22 @@ public partial class MainWindow : FluentWindow
         }
         else
         {
-            _studentDisplayWindow.ShowOnMonitor(targetMonitor);
+            _studentDisplayWindow.ShowStudentDashboard(targetMonitor);
+        }
+    }
+
+    private void BtnLaunchWidgetsBoard_Click(object sender, RoutedEventArgs e)
+    {
+        int targetMonitor = _pendingPopupMonitorIndex ?? (_displayManager.IsDualMonitor ? 1 : 0);
+
+        if (_studentDisplayWindow.IsVisible && !_pendingPopupMonitorIndex.HasValue)
+        {
+            // 위젯 보드로 모드 전환하며 표시 유지
+            _studentDisplayWindow.ShowWidgetsBoard(targetMonitor);
+        }
+        else
+        {
+            _studentDisplayWindow.ShowWidgetsBoard(targetMonitor);
         }
     }
 

@@ -178,14 +178,12 @@ public partial class App : Application
                                 if (studentBoard.IsVisible)
                                 {
                                     studentBoard.Hide();
-                                    HudNotificationWindow.Instance.ShowToast("📺", "놀보드 닫힘");
+                                    HudNotificationWindow.Instance.ShowToast("🏫", "학생 화면 닫힘");
                                 }
                                 else
                                 {
-                                    displayManager.MoveToStudentMonitor(studentBoard, maximize: true);
-                                    studentBoard.Show();
-                                    studentBoard.Activate();
-                                    HudNotificationWindow.Instance.ShowToast("📺", "놀보드 열림 (F2)");
+                                    studentBoard.ShowStudentDashboard();
+                                    HudNotificationWindow.Instance.ShowToast("🏫", "학생 화면 열림 (F2)");
                                 }
                                 break;
 
