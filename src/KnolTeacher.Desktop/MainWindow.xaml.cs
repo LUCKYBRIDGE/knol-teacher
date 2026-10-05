@@ -186,6 +186,17 @@ public partial class MainWindow : FluentWindow
             UpdateTopActionPillStates();
         };
 
+        PowerPointPresentationHelper.SlideShowStateChanged += running =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (PptRemoteControlPanel != null)
+                {
+                    PptRemoteControlPanel.Visibility = running ? Visibility.Visible : Visibility.Collapsed;
+                }
+            });
+        };
+
         Loaded += MainWindow_Loaded;
         Closing += (s, e) =>
         {
@@ -1734,6 +1745,21 @@ public partial class MainWindow : FluentWindow
         {
             MessageBox.Show($"파워포인트를 실행할 수 없습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void BtnPptPrevSlide_Click(object sender, RoutedEventArgs e)
+    {
+        PowerPointPresentationHelper.PreviousSlide();
+    }
+
+    private void BtnPptNextSlide_Click(object sender, RoutedEventArgs e)
+    {
+        PowerPointPresentationHelper.NextSlide();
+    }
+
+    private void BtnPptCloseSlide_Click(object sender, RoutedEventArgs e)
+    {
+        PowerPointPresentationHelper.CloseSlideShow();
     }
 
     private void BtnOpenHotkeySettings_Click(object sender, RoutedEventArgs e)

@@ -133,8 +133,12 @@
                     <Button Content="+" Click="BtnZoomIn_Click" Style="{StaticResource NavBtnStyle}" Width="28" Margin="0,0,8,0" ToolTip="화면 확대"/>
 
                     <!-- No-Activate Shield Toggle (교탁 마우스 보호 모드) -->
-                    <ToggleButton x:Name="ToggleShieldMode" Content="🛡️ 교탁 보호" Checked="ToggleShieldMode_Checked" Unchecked="ToggleShieldMode_Unchecked" IsChecked="True" Height="32" Padding="8,4" Margin="0,0,6,0" Background="#1E293B" Foreground="#38BDF8" BorderBrush="#0284C7" BorderThickness="1.5" FontSize="11" FontWeight="Bold" Cursor="Hand" ToolTip="학생이 화면을 터치해도 교탁 PC(모니터 1)의 마우스 커서와 타이핑 포커스가 유지됩니다">
-                        <ToggleButton.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="6"/></Style></ToggleButton.Resources>
+                    <ToggleButton x:Name="ToggleShieldMode" Content="🛡️ 마우스 보호 ON" Checked="ToggleShieldMode_Checked" Unchecked="ToggleShieldMode_Unchecked" IsChecked="True" Height="32" Padding="10,4" Margin="0,0,6,0" Background="#059669" Foreground="White" BorderBrush="#34D399" BorderThickness="1.5" FontSize="11" FontWeight="Bold" Cursor="Hand" ToolTip="[보호 켜짐] 학생이 화면을 터치해도 교탁 PC 마우스 커서와 작업이 안전하게 유지됩니다">
+                        <ToggleButton.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="6"/>
+                            </Style>
+                        </ToggleButton.Resources>
                     </ToggleButton>
 
                     <!-- Monitor Switch -->

@@ -60,4 +60,13 @@ public class PowerPointPresentationHelperTests
 
         Assert.Null(ex);
     }
+
+    [Fact]
+    public void RemoteSlideControls_WhenNoSlideShow_ReturnsFalseWithoutThrowing()
+    {
+        Assert.False(PowerPointPresentationHelper.IsSlideShowRunning);
+        Assert.False(PowerPointPresentationHelper.NextSlide());
+        Assert.False(PowerPointPresentationHelper.PreviousSlide());
+        Assert.False(PowerPointPresentationHelper.CloseSlideShow());
+    }
 }

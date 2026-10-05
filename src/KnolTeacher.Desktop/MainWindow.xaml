@@ -211,6 +211,15 @@
                             <TextBlock Text="무간섭 PPT" FontWeight="SemiBold" FontSize="11" Foreground="#C2410C" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
+                    <!-- PPT 원격 슬라이드 리모컨 (교탁 PC 마우스 커서 이동 없이 원클릭 슬라이드 넘김) -->
+                    <Border x:Name="PptRemoteControlPanel" Visibility="Collapsed" Background="#FFF7ED" BorderBrush="#FDBA74" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="📊 PPT:" FontSize="10.5" FontWeight="Bold" Foreground="#EA580C" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <Button Content="◀ 이전" Click="BtnPptPrevSlide_Click" Height="22" Padding="6,0" Margin="0,0,3,0" Background="#FFFFFF" Foreground="#EA580C" BorderBrush="#FDBA74" BorderThickness="1" FontSize="10" FontWeight="Bold" Cursor="Hand" ToolTip="교탁 마우스 포커스 이동 없이 파워포인트 이전 슬라이드로 이동"/>
+                            <Button Content="다음 ▶" Click="BtnPptNextSlide_Click" Height="22" Padding="6,0" Margin="0,0,4,0" Background="#EA580C" Foreground="#FFFFFF" BorderThickness="0" FontSize="10" FontWeight="Bold" Cursor="Hand" ToolTip="교탁 마우스 포커스 이동 없이 파워포인트 다음 슬라이드로 이동"/>
+                            <Button Content="✕ 종료" Click="BtnPptCloseSlide_Click" Height="22" Padding="5,0" Background="Transparent" Foreground="#9A3412" BorderThickness="0" FontSize="10" FontWeight="Bold" Cursor="Hand" ToolTip="슬라이드 쇼 종료"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ui:TitleBar.Header>
         </ui:TitleBar>

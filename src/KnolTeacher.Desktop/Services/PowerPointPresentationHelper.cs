@@ -29,6 +29,98 @@ public static class PowerPointPresentationHelper
         }
     }
 
+    private static dynamic? _currentSlideShowWindow = null;
+
+    /// <summary>
+    /// 슬라이드 쇼 실행/종료 상태가 변경될 때 발생하는 이벤트.
+    /// </summary>
+    public static event Action<bool>? SlideShowStateChanged;
+
+    /// <summary>
+    /// 현재 무간섭 슬라이드 쇼가 활성화되어 있는지 여부.
+    /// </summary>
+    public static bool IsSlideShowRunning
+    {
+        get
+        {
+            if (_currentSlideShowWindow == null) return false;
+            try
+            {
+                // COM 객체 생존 여부 확인
+                var view = _currentSlideShowWindow.View;
+                return view != null;
+            }
+            catch
+            {
+                _currentSlideShowWindow = null;
+                SlideShowStateChanged?.Invoke(false);
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 교탁 PC에서 마우스 커서를 모니터 2로 옮기지 않고도 다음 슬라이드(또는 애니메이션)로 넘깁니다.
+    /// </summary>
+    public static bool NextSlide()
+    {
+        if (_currentSlideShowWindow == null) return false;
+        try
+        {
+            _currentSlideShowWindow.View.Next();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PowerPointPresentationHelper] NextSlide 실패: {ex.Message}");
+            _currentSlideShowWindow = null;
+            SlideShowStateChanged?.Invoke(false);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 교탁 PC에서 마우스 커서를 모니터 2로 옮기지 않고도 이전 슬라이드로 되돌립니다.
+    /// </summary>
+    public static bool PreviousSlide()
+    {
+        if (_currentSlideShowWindow == null) return false;
+        try
+        {
+            _currentSlideShowWindow.View.Previous();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PowerPointPresentationHelper] PreviousSlide 실패: {ex.Message}");
+            _currentSlideShowWindow = null;
+            SlideShowStateChanged?.Invoke(false);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 실행 중인 파워포인트 슬라이드 쇼를 종료합니다.
+    /// </summary>
+    public static bool CloseSlideShow()
+    {
+        if (_currentSlideShowWindow == null) return false;
+        try
+        {
+            _currentSlideShowWindow.View.Exit();
+            _currentSlideShowWindow = null;
+            SlideShowStateChanged?.Invoke(false);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PowerPointPresentationHelper] CloseSlideShow 실패: {ex.Message}");
+            _currentSlideShowWindow = null;
+            SlideShowStateChanged?.Invoke(false);
+            return false;
+        }
+    }
+
     /// <summary>
     /// 모니터 2(전자칠판)에 맞추어 사운드/영상 일시정지가 없는 창 모드 슬라이드 쇼를 실행합니다.
     /// </summary>
@@ -94,6 +186,7 @@ public static class PowerPointPresentationHelper
             slideShowSettings.ShowType = PpShowTypeWindow;
 
             dynamic? slideShowWindow = slideShowSettings.Run();
+            _currentSlideShowWindow = slideShowWindow;
 
             if (targetBounds is { } rect && slideShowWindow is not null)
             {
@@ -110,7 +203,8 @@ public static class PowerPointPresentationHelper
                 }
             }
 
-            return (true, "무간섭 파워포인트 슬라이드 쇼가 실행되었습니다.\n교탁 PC에서 다른 작업을 해도 소리와 영상이 계속 재생됩니다.");
+            SlideShowStateChanged?.Invoke(true);
+            return (true, "무간섭 파워포인트 슬라이드 쇼가 실행되었습니다.\n교탁 PC에서 작업하면서도 놀티쳐 화면의 [◀ 이전] [다음 ▶] 버튼으로 슬라이드를 원격 제어할 수 있습니다!");
         }
         catch (Exception ex)
         {

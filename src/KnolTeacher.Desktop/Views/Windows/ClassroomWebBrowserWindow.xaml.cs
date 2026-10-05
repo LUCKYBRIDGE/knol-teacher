@@ -317,6 +317,13 @@ public partial class ClassroomWebBrowserWindow : Window
     {
         _isShieldActive = true;
         ApplyShieldMode(true);
+        if (ToggleShieldMode != null)
+        {
+            ToggleShieldMode.Content = "🛡️ 마우스 보호 ON";
+            ToggleShieldMode.Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#059669"));
+            ToggleShieldMode.Foreground = System.Windows.Media.Brushes.White;
+            ToggleShieldMode.BorderBrush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#34D399"));
+        }
         if (TxtShieldStatus != null)
         {
             TxtShieldStatus.Text = "🛡️ 교탁 PC 마우스 보호 중 (비간섭 모드)";
@@ -328,9 +335,16 @@ public partial class ClassroomWebBrowserWindow : Window
     {
         _isShieldActive = false;
         ApplyShieldMode(false);
+        if (ToggleShieldMode != null)
+        {
+            ToggleShieldMode.Content = "⚠️ 보호 OFF (일반)";
+            ToggleShieldMode.Background = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#334155"));
+            ToggleShieldMode.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#94A3B8"));
+            ToggleShieldMode.BorderBrush = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#64748B"));
+        }
         if (TxtShieldStatus != null)
         {
-            TxtShieldStatus.Text = "⚠️ 보호 모드 해제됨 (일반 입력)";
+            TxtShieldStatus.Text = "⚠️ 보호 모드 해제됨 (일반 터치 입력 시 포커스 이동)";
             TxtShieldStatus.Foreground = System.Windows.Media.Brushes.LightGray;
         }
     }

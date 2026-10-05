@@ -39,71 +39,56 @@
             </StackPanel>
         </Grid>
 
-        <!-- Center Split: Left Dice & Right Stats -->
+        <!-- Center: Big Dominant Dice Display & Compact Stats Below -->
         <Grid Grid.Row="1" Margin="0,0,0,6">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="110" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <!-- Dominant Large Dice Area -->
+                <RowDefinition Height="*" />
+                <!-- Compact Math Stats Row -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <!-- Left: Big Dice Display in Responsive Viewbox -->
-            <Border Grid.Column="0" Background="#0F172A" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Margin="0,0,6,0" Padding="6">
+            <!-- 1. Big Dominant Dice Display (Viewbox scaled) -->
+            <Border Grid.Row="0" Background="#FFFFFF" CornerRadius="10" BorderBrush="#CBD5E1" BorderThickness="1.5" Margin="0,0,0,6" Padding="8">
                 <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <Viewbox Grid.Row="0" Stretch="Uniform" VerticalAlignment="Center">
-                        <TextBlock x:Name="TxtDiceSymbol" Text="⚅" FontFamily="Segoe UI Symbol" FontSize="48" Foreground="#38BDF8" HorizontalAlignment="Center"/>
+
+                    <Viewbox Grid.Row="0" MaxHeight="140" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,4">
+                        <Border Background="#F0F9FF" BorderBrush="#0284C7" BorderThickness="2" CornerRadius="16" Padding="16,10" MinWidth="100">
+                            <TextBlock x:Name="TxtDiceSymbol" Text="⚅" FontFamily="Segoe UI Symbol" FontSize="80" Foreground="#0284C7" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
                     </Viewbox>
-                    <TextBlock Grid.Row="1" x:Name="TxtDiceValue" Text="결과: 6" FontSize="12" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+
+                    <TextBlock Grid.Row="1" x:Name="TxtDiceValue" Text="결과: 6" FontSize="18" FontWeight="ExtraBold" Foreground="#0F172A" HorizontalAlignment="Center" Margin="0,6,0,2"/>
                 </Grid>
             </Border>
 
-            <!-- Right: Real-time Math Statistics Table -->
-            <Border Grid.Column="1" Background="#0F172A" CornerRadius="8" BorderBrush="#334155" BorderThickness="1" Padding="4">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <!-- Header -->
-                    <Border Grid.Row="0" Background="#1E293B" CornerRadius="4" Padding="4,2" Margin="0,0,0,2">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="28" />
-                                <ColumnDefinition Width="38" />
-                                <ColumnDefinition Width="46" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="눈" Foreground="#38BDF8" FontSize="10" FontWeight="Bold"/>
-                            <TextBlock Grid.Column="1" Text="빈도" Foreground="White" FontSize="10" FontWeight="Bold"/>
-                            <TextBlock Grid.Column="2" Text="비율" Foreground="#94A3B8" FontSize="10" FontWeight="Bold"/>
-                            <TextBlock Grid.Column="3" Text="백분율(%)" Foreground="#10B981" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right"/>
-                        </Grid>
-                    </Border>
-                    <!-- Scrollable Table Body -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl x:Name="ListStats">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="4,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="28" />
-                                            <ColumnDefinition Width="38" />
-                                            <ColumnDefinition Width="46" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="{Binding Face}" FontFamily="Consolas" FontWeight="Bold" Foreground="White" FontSize="10"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding CountStr}" Foreground="#94A3B8" FontSize="10"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding RatioStr}" FontFamily="Consolas" Foreground="#CBD5E1" FontSize="10"/>
-                                        <TextBlock Grid.Column="3" Text="{Binding PercentStr}" FontFamily="Consolas" FontWeight="Bold" Foreground="#10B981" FontSize="10" HorizontalAlignment="Right"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </Grid>
+            <!-- 2. Compact Statistics Summary Bar -->
+            <Border Grid.Row="1" Background="#F8FAFC" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="6,4" MaxHeight="68">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="ListStats">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#FFFFFF" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="0,0,4,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Face}" FontWeight="Bold" Foreground="#0284C7" FontSize="11" Margin="0,0,3,0"/>
+                                        <TextBlock Text=":" Foreground="#94A3B8" FontSize="11" Margin="0,0,3,0"/>
+                                        <TextBlock Text="{Binding CountStr}" FontWeight="SemiBold" Foreground="#0F172A" FontSize="11" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding PercentStr}" FontWeight="Bold" Foreground="#10B981" FontSize="10"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Border>
         </Grid>
 

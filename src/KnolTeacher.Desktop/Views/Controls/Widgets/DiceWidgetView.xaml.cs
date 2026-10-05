@@ -179,16 +179,16 @@ public partial class DiceWidgetView : UserControl, IWidgetLifecycle
         if (_maxFace == 6 && DiceChars.ContainsKey(v1) && (!v2.HasValue || DiceChars.ContainsKey(v2.Value)))
         {
             TxtDiceSymbol.FontFamily = new System.Windows.Media.FontFamily("Segoe UI Symbol");
-            TxtDiceSymbol.FontSize = v2.HasValue ? 34 : 44;
-            TxtDiceSymbol.Text = v2.HasValue ? $"{DiceChars[v1]} {DiceChars[v2.Value]}" : DiceChars[v1];
-            TxtDiceValue.Text = v2.HasValue ? $"A={v1}, B={v2.Value} (합={v1 + v2.Value})" : $"결과: {v1}";
+            TxtDiceSymbol.FontSize = v2.HasValue ? 56 : 80;
+            TxtDiceSymbol.Text = v2.HasValue ? $"{DiceChars[v1]}  {DiceChars[v2.Value]}" : DiceChars[v1];
+            TxtDiceValue.Text = v2.HasValue ? $"🎲 {v1} + {v2.Value} = {v1 + v2.Value}" : $"🎲 결과: {v1}";
         }
         else
         {
             TxtDiceSymbol.FontFamily = new System.Windows.Media.FontFamily("Consolas");
-            TxtDiceSymbol.FontSize = 32;
-            TxtDiceSymbol.Text = v2.HasValue ? $"{v1}+{v2.Value}" : $"{v1}";
-            TxtDiceValue.Text = v2.HasValue ? $"합계: {v1 + v2.Value}" : $"D{_maxFace}: {v1}";
+            TxtDiceSymbol.FontSize = v2.HasValue ? 48 : 64;
+            TxtDiceSymbol.Text = v2.HasValue ? $"{v1} + {v2.Value}" : $"{v1}";
+            TxtDiceValue.Text = v2.HasValue ? $"🎲 합계: {v1 + v2.Value}" : $"🎲 D{_maxFace}: {v1}";
         }
     }
 

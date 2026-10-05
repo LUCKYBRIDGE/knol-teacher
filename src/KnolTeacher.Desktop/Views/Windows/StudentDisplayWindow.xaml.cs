@@ -73,7 +73,7 @@ public partial class StudentDisplayWindow : Window
 
         BoardInkCanvas.DefaultDrawingAttributes = new DrawingAttributes
         {
-            Color = Colors.White,
+            Color = (Color)ColorConverter.ConvertFromString("#0F172A"),
             Width = 4,
             Height = 4,
             FitToCurve = true,
@@ -100,6 +100,17 @@ public partial class StudentDisplayWindow : Window
         _clockTimer.Tick += (s, e) => TxtClock.Text = DateTime.Now.ToString("HH:mm:ss");
         _clockTimer.Start();
         TxtClock.Text = DateTime.Now.ToString("HH:mm:ss");
+
+        PowerPointPresentationHelper.SlideShowStateChanged += running =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (PptRemoteControlPanel != null)
+                {
+                    PptRemoteControlPanel.Visibility = running ? Visibility.Visible : Visibility.Collapsed;
+                }
+            });
+        };
 
         WidgetCanvas.SizeChanged += OnWidgetCanvasSizeChanged;
 
@@ -1571,6 +1582,21 @@ public partial class StudentDisplayWindow : Window
         {
             MessageBox.Show($"파워포인트를 실행할 수 없습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void BtnPptPrevSlide_Click(object sender, RoutedEventArgs e)
+    {
+        PowerPointPresentationHelper.PreviousSlide();
+    }
+
+    private void BtnPptNextSlide_Click(object sender, RoutedEventArgs e)
+    {
+        PowerPointPresentationHelper.NextSlide();
+    }
+
+    private void BtnPptCloseSlide_Click(object sender, RoutedEventArgs e)
+    {
+        PowerPointPresentationHelper.CloseSlideShow();
     }
 
     #endregion
