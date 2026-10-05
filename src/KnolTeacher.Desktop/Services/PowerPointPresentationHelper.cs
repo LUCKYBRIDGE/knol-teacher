@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 
 namespace KnolTeacher.Desktop.Services;
@@ -28,6 +29,13 @@ public static class PowerPointPresentationHelper
             return false;
         }
     }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+    private const uint SWP_NOACTIVATE = 0x0010;
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_SHOWWINDOW = 0x0040;
 
     private static dynamic? _currentSlideShowWindow = null;
 
@@ -296,6 +304,7 @@ public static class PowerPointPresentationHelper
             {
                 try
                 {
+                    // 1. COM 레벨 기본 크기 지정
                     slideShowWindow.Left = (float)rect.Left;
                     slideShowWindow.Top = (float)rect.Top;
                     slideShowWindow.Width = (float)rect.Width;
@@ -303,7 +312,22 @@ public static class PowerPointPresentationHelper
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[PowerPointPresentationHelper] 창 위치 조정 실패: {ex.Message}");
+                    Debug.WriteLine($"[PowerPointPresentationHelper] COM 창 위치 조정 실패: {ex.Message}");
+                }
+
+                try
+                {
+                    // 2. Win32 HWND 정밀 픽셀 밀착 (DPI 배율 오차 방지)
+                    int hwndVal = (int)slideShowWindow.HWND;
+                    if (hwndVal != 0)
+                    {
+                        IntPtr hwnd = new IntPtr(hwndVal);
+                        SetWindowPos(hwnd, IntPtr.Zero, (int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height, SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[PowerPointPresentationHelper] Win32 SetWindowPos 밀착 실패: {ex.Message}");
                 }
             }
 

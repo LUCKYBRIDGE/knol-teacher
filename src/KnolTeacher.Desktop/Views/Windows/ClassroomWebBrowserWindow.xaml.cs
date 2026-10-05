@@ -313,6 +313,33 @@ public partial class ClassroomWebBrowserWindow : Window
         }
     }
 
+    private void BtnToggleMute_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isInitialized && BrowserWebView.CoreWebView2 != null)
+        {
+            bool isMuted = BrowserWebView.CoreWebView2.IsMuted;
+            BrowserWebView.CoreWebView2.IsMuted = !isMuted;
+            UpdateMuteButtonUi(!isMuted);
+        }
+    }
+
+    private void UpdateMuteButtonUi(bool isMuted)
+    {
+        if (BtnToggleMute == null) return;
+        if (isMuted)
+        {
+            BtnToggleMute.Content = "🔇 음소거 됨";
+            BtnToggleMute.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#EF4444"));
+            BtnToggleMute.ToolTip = "브라우저 소리가 음소거되었습니다 (클릭하여 소리 켜기)";
+        }
+        else
+        {
+            BtnToggleMute.Content = "🔊 소리 켬";
+            BtnToggleMute.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#E2E8F0"));
+            BtnToggleMute.ToolTip = "브라우저 탭 소리 즉시 음소거/해제 (PPT 동영상 및 음악과 소리 충돌 방지)";
+        }
+    }
+
     private void ToggleShieldMode_Checked(object sender, RoutedEventArgs e)
     {
         _isShieldActive = true;

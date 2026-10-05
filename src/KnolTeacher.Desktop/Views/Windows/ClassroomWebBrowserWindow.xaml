@@ -132,6 +132,9 @@
                     <TextBlock x:Name="TxtZoomLevel" Text="100%" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="2,0,4,0"/>
                     <Button Content="+" Click="BtnZoomIn_Click" Style="{StaticResource NavBtnStyle}" Width="28" Margin="0,0,8,0" ToolTip="화면 확대"/>
 
+                    <!-- Audio Mute Control (PPT 사운드 충돌 방지) -->
+                    <Button x:Name="BtnToggleMute" Content="🔊 소리 켬" Click="BtnToggleMute_Click" Style="{StaticResource NavBtnStyle}" Margin="0,0,6,0" ToolTip="브라우저 탭 소리 즉시 음소거/해제 (PPT 동영상 및 음악과 소리 충돌 방지)"/>
+
                     <!-- No-Activate Shield Toggle (교탁 마우스 보호 모드) -->
                     <ToggleButton x:Name="ToggleShieldMode" Content="🛡️ 마우스 보호 ON" Checked="ToggleShieldMode_Checked" Unchecked="ToggleShieldMode_Unchecked" IsChecked="True" Height="32" Padding="10,4" Margin="0,0,6,0" Background="#059669" Foreground="White" BorderBrush="#34D399" BorderThickness="1.5" FontSize="11" FontWeight="Bold" Cursor="Hand" ToolTip="[보호 켜짐] 학생이 화면을 터치해도 교탁 PC 마우스 커서와 작업이 안전하게 유지됩니다">
                         <ToggleButton.Resources>

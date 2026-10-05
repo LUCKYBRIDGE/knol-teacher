@@ -29,6 +29,49 @@ public partial class PptRemoteControllerWindow : Window
         _pollTimer.Tick += PollTimer_Tick;
 
         Loaded += PptRemoteControllerWindow_Loaded;
+        Closing += (s, e) =>
+        {
+            e.Cancel = true;
+            CloseRemote();
+        };
+        PreviewKeyDown += PptRemoteControllerWindow_PreviewKeyDown;
+    }
+
+    private void PptRemoteControllerWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Right:
+            case Key.Down:
+            case Key.PageDown:
+            case Key.Space:
+                PowerPointPresentationHelper.NextSlide();
+                UpdateSlideStatus();
+                e.Handled = true;
+                break;
+            case Key.Left:
+            case Key.Up:
+            case Key.PageUp:
+                PowerPointPresentationHelper.PreviousSlide();
+                UpdateSlideStatus();
+                e.Handled = true;
+                break;
+            case Key.B:
+                PowerPointPresentationHelper.ToggleBlackScreen();
+                UpdateBlackoutStatus();
+                e.Handled = true;
+                break;
+            case Key.Home:
+                PowerPointPresentationHelper.FirstSlide();
+                UpdateSlideStatus();
+                e.Handled = true;
+                break;
+            case Key.End:
+                PowerPointPresentationHelper.LastSlide();
+                UpdateSlideStatus();
+                e.Handled = true;
+                break;
+        }
     }
 
     private void PptRemoteControllerWindow_Loaded(object sender, RoutedEventArgs e)
@@ -143,11 +186,21 @@ public partial class PptRemoteControllerWindow : Window
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ButtonState == MouseButtonState.Pressed)
+        if (e.ButtonState == MouseButtonState.Pressed && !IsInsideClickable(e.OriginalSource as DependencyObject))
         {
             _hasCustomPosition = true;
             DragMove();
         }
+    }
+
+    private static bool IsInsideClickable(DependencyObject? element)
+    {
+        while (element != null)
+        {
+            if (element is System.Windows.Controls.Primitives.ButtonBase) return true;
+            element = VisualTreeHelper.GetParent(element);
+        }
+        return false;
     }
 
     private void BtnPrevSlide_Click(object sender, RoutedEventArgs e)
