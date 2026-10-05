@@ -329,6 +329,7 @@
                             <TextBlock Text="📊 PPT:" FontSize="10.5" FontWeight="Bold" Foreground="#EA580C" VerticalAlignment="Center" Margin="0,0,4,0"/>
                             <Button Content="◀ 이전" Click="BtnPptPrevSlide_Click" Height="22" Padding="5,0" Margin="0,0,3,0" Background="#FFFFFF" Foreground="#EA580C" BorderBrush="#FDBA74" BorderThickness="1" FontSize="10" FontWeight="Bold" Cursor="Hand" ToolTip="파워포인트 이전 슬라이드로 이동"/>
                             <Button Content="다음 ▶" Click="BtnPptNextSlide_Click" Height="22" Padding="5,0" Margin="0,0,3,0" Background="#EA580C" Foreground="#FFFFFF" BorderThickness="0" FontSize="10" FontWeight="Bold" Cursor="Hand" ToolTip="파워포인트 다음 슬라이드로 이동"/>
+                            <Button Content="📱 리모컨" Click="BtnPptShowRemoteWindow_Click" Height="22" Padding="5,0" Margin="0,0,3,0" Background="#FFFFFF" Foreground="#0284C7" BorderBrush="#BAE6FD" BorderThickness="1" FontSize="10" FontWeight="Bold" Cursor="Hand" ToolTip="교탁(모니터 1) 플로팅 리모컨 창 다시 띄우기"/>
                             <Button Content="✕" Click="BtnPptCloseSlide_Click" Height="22" Padding="4,0" Background="Transparent" Foreground="#9A3412" BorderThickness="0" FontSize="10" FontWeight="Bold" Cursor="Hand" ToolTip="슬라이드 쇼 종료"/>
                         </StackPanel>
                     </Border>

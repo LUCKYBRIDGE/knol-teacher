@@ -1,0 +1,202 @@
+<Window x:Class="KnolTeacher.Desktop.Views.Windows.PptRemoteControllerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="무간섭 PPT 스마트 리모컨"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="Manual"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <!-- Standard Button Style -->
+        <Style x:Key="RemoteBtnStyle" TargetType="Button">
+            <Setter Property="Background" Value="#F8FAFC" />
+            <Setter Property="Foreground" Value="#1E293B" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Margin" Value="2,0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#E2E8F0" />
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#94A3B8" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#CBD5E1" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Primary Highlight Button Style (Next Slide) -->
+        <Style x:Key="RemotePrimaryBtnStyle" TargetType="Button" BasedOn="{StaticResource RemoteBtnStyle}">
+            <Setter Property="Background" Value="#EA580C" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#C2410C" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#C2410C" />
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#9A3412" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#9A3412" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- Outer Shadow & Background Container -->
+    <Border Margin="12"
+            Background="#FFFFFF"
+            BorderBrush="#E2E8F0"
+            BorderThickness="1.5"
+            CornerRadius="16">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="22" Opacity="0.22" ShadowDepth="6" Direction="270" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <!-- 1. Expanded Normal Mode Panel -->
+            <Border x:Name="PanelExpanded" Width="360" Padding="14,12">
+                <StackPanel Orientation="Vertical">
+                <!-- Top Header & Drag Handle -->
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Title & Slide Status -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="0,0,6,0">
+                            <TextBlock Text="📊 PPT 리모컨" FontSize="11" FontWeight="Bold" Foreground="#EA580C" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock x:Name="TxtPresentationTitle" Text="프레젠테이션" FontSize="11.5" FontWeight="SemiBold" Foreground="#475569" TextTrimming="CharacterEllipsis" MaxWidth="150" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Right Window Controls -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnCompact" Content="—" Click="BtnCompact_Click" Width="24" Height="24" Background="Transparent" Foreground="#64748B" BorderThickness="0" FontSize="12" FontWeight="Bold" Cursor="Hand" ToolTip="컴팩트 모드로 접기" Focusable="False"/>
+                        <Button x:Name="BtnCloseRemote" Content="✕" Click="BtnCloseRemote_Click" Width="24" Height="24" Background="Transparent" Foreground="#EF4444" BorderThickness="0" FontSize="12" FontWeight="Bold" Cursor="Hand" ToolTip="슬라이드 쇼 종료 및 리모컨 닫기" Focusable="False"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Information Bar: Slide Count + Stopwatch -->
+                <Border Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="10" Padding="10,6" Margin="0,0,0,10">
+                    <Grid>
+                        <!-- Slide Counter -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <TextBlock Text="슬라이드:" FontSize="11" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <Border Background="#0284C7" CornerRadius="5" Padding="7,2" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtSlideCounter" Text="1 / 1" FontSize="11.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Stopwatch Timer -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock Text="수업 경과:" FontSize="11" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="5" Padding="6,2" Cursor="Hand" MouseLeftButtonUp="BdTimerReset_Click" ToolTip="클릭하여 경과 시간 00:00으로 리셋">
+                                <TextBlock x:Name="TxtStopwatch" Text="⏱️ 00:00" FontFamily="Consolas, Malgun Gothic" FontSize="11" FontWeight="Bold" Foreground="#1D4ED8"/>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Main Navigation Controller Buttons -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="1.5*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- First Slide -->
+                    <Button Grid.Column="0" Content="⏮" Click="BtnFirstSlide_Click" Style="{StaticResource RemoteBtnStyle}" Width="34" Height="42" Padding="0" ToolTip="첫 슬라이드로 이동"/>
+
+                    <!-- Previous Slide -->
+                    <Button Grid.Column="1" Content="◀ 이전" Click="BtnPrevSlide_Click" Style="{StaticResource RemoteBtnStyle}" Height="42" FontSize="13" Margin="4,0" ToolTip="이전 슬라이드로 이동 (교탁 포커스 유지)"/>
+
+                    <!-- Next Slide (Primary Giant Button) -->
+                    <Button Grid.Column="2" Content="다음 ▶" Click="BtnNextSlide_Click" Style="{StaticResource RemotePrimaryBtnStyle}" Height="42" Margin="4,0" ToolTip="다음 슬라이드로 이동 (교탁 포커스 유지)"/>
+
+                    <!-- Last Slide -->
+                    <Button Grid.Column="3" Content="⏭" Click="BtnLastSlide_Click" Style="{StaticResource RemoteBtnStyle}" Width="34" Height="42" Padding="0" ToolTip="마지막 슬라이드로 이동"/>
+                </Grid>
+
+                <!-- Sub Features: Blackout (화면 가리기) & Close Show -->
+                <Grid Margin="0,2,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Blackout Toggle Button (선생님 주목) -->
+                    <Button Grid.Column="0" x:Name="BtnToggleBlackout" Content="⬛ 화면 가리기 (선생님 주목)" Click="BtnToggleBlackout_Click" Height="32" Background="#F1F5F9" Foreground="#334155" BorderBrush="#CBD5E1" BorderThickness="1" FontSize="11.5" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,6,0" Focusable="False" ToolTip="학생용 모니터의 PPT를 일시적으로 검은 화면으로 전환하여 교사에게 주목시킵니다">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                    </Button>
+
+                    <!-- End Slide Show Button -->
+                    <Button Grid.Column="1" Content="✕ 쇼 닫기" Click="BtnEndSlideShow_Click" Height="32" Padding="10,0" Background="#FEF2F2" Foreground="#DC2626" BorderBrush="#FECACA" BorderThickness="1" FontSize="11.5" FontWeight="SemiBold" Cursor="Hand" Focusable="False" ToolTip="파워포인트 슬라이드 쇼를 안전하게 종료">
+                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style></Button.Resources>
+                    </Button>
+                </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 2. Compact Slim Capsule Mode Panel -->
+            <Border x:Name="PanelCompact" Visibility="Collapsed" Padding="8,6" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <Border Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="0,0,6,0">
+                        <TextBlock Text="📊 PPT" FontSize="11" FontWeight="Bold" Foreground="#EA580C" VerticalAlignment="Center"/>
+                    </Border>
+                    <Border Background="#0284C7" CornerRadius="5" Padding="6,2" Margin="0,0,6,0" VerticalAlignment="Center">
+                        <TextBlock x:Name="TxtCompactSlideCounter" Text="1/1" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF"/>
+                    </Border>
+                    <Button Content="◀" Click="BtnPrevSlide_Click" Style="{StaticResource RemoteBtnStyle}" Width="30" Height="28" Padding="0" Margin="0,0,4,0" ToolTip="이전 슬라이드"/>
+                    <Button Content="다음 ▶" Click="BtnNextSlide_Click" Style="{StaticResource RemotePrimaryBtnStyle}" Height="28" Padding="10,0" FontSize="11.5" Margin="0,0,6,0" ToolTip="다음 슬라이드"/>
+                    <Button Content="□" Click="BtnExpand_Click" Width="24" Height="24" Background="Transparent" Foreground="#64748B" BorderThickness="0" FontSize="11" FontWeight="Bold" Cursor="Hand" ToolTip="리모컨 창 펼치기" Focusable="False"/>
+                    <Button Content="✕" Click="BtnCloseRemote_Click" Width="24" Height="24" Background="Transparent" Foreground="#EF4444" BorderThickness="0" FontSize="11" FontWeight="Bold" Cursor="Hand" ToolTip="닫기" Focusable="False"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

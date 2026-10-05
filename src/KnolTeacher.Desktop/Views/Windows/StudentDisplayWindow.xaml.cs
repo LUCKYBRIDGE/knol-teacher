@@ -109,6 +109,15 @@ public partial class StudentDisplayWindow : Window
                 {
                     PptRemoteControlPanel.Visibility = running ? Visibility.Visible : Visibility.Collapsed;
                 }
+
+                if (running)
+                {
+                    PptRemoteControllerWindow.Instance.OpenForPresentation(PowerPointPresentationHelper.CurrentPresentationTitle);
+                }
+                else
+                {
+                    PptRemoteControllerWindow.Instance.CloseRemote();
+                }
             });
         };
 
@@ -1597,6 +1606,11 @@ public partial class StudentDisplayWindow : Window
     private void BtnPptCloseSlide_Click(object sender, RoutedEventArgs e)
     {
         PowerPointPresentationHelper.CloseSlideShow();
+    }
+
+    private void BtnPptShowRemoteWindow_Click(object sender, RoutedEventArgs e)
+    {
+        PptRemoteControllerWindow.Instance.OpenForPresentation(PowerPointPresentationHelper.CurrentPresentationTitle);
     }
 
     #endregion

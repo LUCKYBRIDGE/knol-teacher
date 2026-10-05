@@ -67,6 +67,12 @@ public class PowerPointPresentationHelperTests
         Assert.False(PowerPointPresentationHelper.IsSlideShowRunning);
         Assert.False(PowerPointPresentationHelper.NextSlide());
         Assert.False(PowerPointPresentationHelper.PreviousSlide());
+        Assert.False(PowerPointPresentationHelper.FirstSlide());
+        Assert.False(PowerPointPresentationHelper.LastSlide());
+        Assert.False(PowerPointPresentationHelper.ToggleBlackScreen());
+        Assert.False(PowerPointPresentationHelper.IsBlackScreen);
+        Assert.Null(PowerPointPresentationHelper.GetSlideInfo());
+        Assert.Null(PowerPointPresentationHelper.CurrentPresentationTitle);
         Assert.False(PowerPointPresentationHelper.CloseSlideShow());
     }
 }

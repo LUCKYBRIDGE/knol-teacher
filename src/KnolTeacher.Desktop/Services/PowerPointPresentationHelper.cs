@@ -32,6 +32,11 @@ public static class PowerPointPresentationHelper
     private static dynamic? _currentSlideShowWindow = null;
 
     /// <summary>
+    /// 현재 열려 있는 프레젠테이션 파일명 (예: 과학_수업자료.pptx)
+    /// </summary>
+    public static string? CurrentPresentationTitle { get; private set; }
+
+    /// <summary>
     /// 슬라이드 쇼 실행/종료 상태가 변경될 때 발생하는 이벤트.
     /// </summary>
     public static event Action<bool>? SlideShowStateChanged;
@@ -53,6 +58,7 @@ public static class PowerPointPresentationHelper
             catch
             {
                 _currentSlideShowWindow = null;
+                CurrentPresentationTitle = null;
                 SlideShowStateChanged?.Invoke(false);
                 return false;
             }
@@ -74,6 +80,7 @@ public static class PowerPointPresentationHelper
         {
             Debug.WriteLine($"[PowerPointPresentationHelper] NextSlide 실패: {ex.Message}");
             _currentSlideShowWindow = null;
+            CurrentPresentationTitle = null;
             SlideShowStateChanged?.Invoke(false);
             return false;
         }
@@ -94,8 +101,103 @@ public static class PowerPointPresentationHelper
         {
             Debug.WriteLine($"[PowerPointPresentationHelper] PreviousSlide 실패: {ex.Message}");
             _currentSlideShowWindow = null;
+            CurrentPresentationTitle = null;
             SlideShowStateChanged?.Invoke(false);
             return false;
+        }
+    }
+
+    /// <summary>
+    /// 첫 번째 슬라이드로 바로 이동합니다.
+    /// </summary>
+    public static bool FirstSlide()
+    {
+        if (_currentSlideShowWindow == null) return false;
+        try
+        {
+            _currentSlideShowWindow.View.First();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PowerPointPresentationHelper] FirstSlide 실패: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 마지막 슬라이드로 바로 이동합니다.
+    /// </summary>
+    public static bool LastSlide()
+    {
+        if (_currentSlideShowWindow == null) return false;
+        try
+        {
+            _currentSlideShowWindow.View.Last();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PowerPointPresentationHelper] LastSlide 실패: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 화면을 일시적으로 검게 가리거나(Blackout) 원래대로 복원합니다.
+    /// (선생님이 설명할 때 학생들의 시선을 교탁으로 집중시킴)
+    /// </summary>
+    public static bool ToggleBlackScreen()
+    {
+        if (_currentSlideShowWindow == null) return false;
+        try
+        {
+            // ppSlideShowRunning = 1, ppSlideShowBlackScreen = 3
+            int state = (int)_currentSlideShowWindow.View.State;
+            _currentSlideShowWindow.View.State = (state == 3) ? 1 : 3;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PowerPointPresentationHelper] ToggleBlackScreen 실패: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 현재 화면이 암전(Blackout) 상태인지 여부.
+    /// </summary>
+    public static bool IsBlackScreen
+    {
+        get
+        {
+            if (_currentSlideShowWindow == null) return false;
+            try
+            {
+                return (int)_currentSlideShowWindow.View.State == 3;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 현재 슬라이드 번호와 전체 슬라이드 수를 반환합니다. (실패 시 null)
+    /// </summary>
+    public static (int Current, int Total)? GetSlideInfo()
+    {
+        if (_currentSlideShowWindow == null) return null;
+        try
+        {
+            int current = (int)_currentSlideShowWindow.View.Slide.SlideIndex;
+            int total = (int)_currentSlideShowWindow.Presentation.Slides.Count;
+            return (current, total);
+        }
+        catch
+        {
+            return null;
         }
     }
 
@@ -109,6 +211,7 @@ public static class PowerPointPresentationHelper
         {
             _currentSlideShowWindow.View.Exit();
             _currentSlideShowWindow = null;
+            CurrentPresentationTitle = null;
             SlideShowStateChanged?.Invoke(false);
             return true;
         }
@@ -116,6 +219,7 @@ public static class PowerPointPresentationHelper
         {
             Debug.WriteLine($"[PowerPointPresentationHelper] CloseSlideShow 실패: {ex.Message}");
             _currentSlideShowWindow = null;
+            CurrentPresentationTitle = null;
             SlideShowStateChanged?.Invoke(false);
             return false;
         }
@@ -203,8 +307,9 @@ public static class PowerPointPresentationHelper
                 }
             }
 
+            CurrentPresentationTitle = Path.GetFileName(pptFilePath);
             SlideShowStateChanged?.Invoke(true);
-            return (true, "무간섭 파워포인트 슬라이드 쇼가 실행되었습니다.\n교탁 PC에서 작업하면서도 놀티쳐 화면의 [◀ 이전] [다음 ▶] 버튼으로 슬라이드를 원격 제어할 수 있습니다!");
+            return (true, "무간섭 파워포인트 슬라이드 쇼가 실행되었습니다.\n교탁 PC에 전용 PPT 원격 리모컨이 활성화되었습니다!");
         }
         catch (Exception ex)
         {
