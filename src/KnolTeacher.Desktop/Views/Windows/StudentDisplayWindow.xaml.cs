@@ -1050,10 +1050,14 @@ public partial class StudentDisplayWindow : Window
 
     private void ToggleInkMode_Checked(object sender, RoutedEventArgs e)
     {
-        PanelInkTools.Visibility = Visibility.Visible;
-        BoardInkCanvas.Visibility = Visibility.Visible;
-        BoardInkCanvas.IsHitTestVisible = true;
-        BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        if (!_isReady) return;
+        if (PanelInkTools != null) PanelInkTools.Visibility = Visibility.Visible;
+        if (BoardInkCanvas != null)
+        {
+            BoardInkCanvas.Visibility = Visibility.Visible;
+            BoardInkCanvas.IsHitTestVisible = true;
+            BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        }
         if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = true;
         _eraserHelper?.SetToolMode(EraserToolMode.Pen);
         if (RbPen != null) RbPen.IsChecked = true;
@@ -1061,40 +1065,49 @@ public partial class StudentDisplayWindow : Window
 
     private void ToggleInkMode_Unchecked(object sender, RoutedEventArgs e)
     {
-        PanelInkTools.Visibility = Visibility.Collapsed;
-        BoardInkCanvas.IsHitTestVisible = false;
-        BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        if (!_isReady) return;
+        if (PanelInkTools != null) PanelInkTools.Visibility = Visibility.Collapsed;
+        if (BoardInkCanvas != null)
+        {
+            BoardInkCanvas.IsHitTestVisible = false;
+            BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        }
         if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.CancelInteraction();
     }
 
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
+        if (!_isReady) return;
         if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = true;
-        BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        if (BoardInkCanvas != null) BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
         _eraserHelper?.SetToolMode(EraserToolMode.Pen);
     }
 
     private void RbEraserPoint_Checked(object sender, RoutedEventArgs e)
     {
+        if (!_isReady) return;
         if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.SetToolMode(EraserToolMode.Point);
     }
 
     private void RbEraserStroke_Checked(object sender, RoutedEventArgs e)
     {
+        if (!_isReady) return;
         if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.SetToolMode(EraserToolMode.Stroke);
     }
 
     private void RbEraserBox_Checked(object sender, RoutedEventArgs e)
     {
+        if (!_isReady) return;
         if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.SetToolMode(EraserToolMode.Box);
     }
 
     private void RbEraserLasso_Checked(object sender, RoutedEventArgs e)
     {
+        if (!_isReady) return;
         if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.SetToolMode(EraserToolMode.Lasso);
     }
@@ -1137,12 +1150,14 @@ public partial class StudentDisplayWindow : Window
 
     private void ToggleLockWidgets_Checked(object sender, RoutedEventArgs e)
     {
+        if (!_isReady) return;
         _isWidgetsLocked = true;
         ApplyLockState();
     }
 
     private void ToggleLockWidgets_Unchecked(object sender, RoutedEventArgs e)
     {
+        if (!_isReady) return;
         _isWidgetsLocked = false;
         ApplyLockState();
     }
@@ -1170,6 +1185,7 @@ public partial class StudentDisplayWindow : Window
 
     private void SliderCardOpacity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        if (!_isReady) return;
         _currentCardOpacity = e.NewValue;
         if (TxtOpacityValue != null)
         {
@@ -1424,7 +1440,7 @@ public partial class StudentDisplayWindow : Window
 
     public void SetDisplayMode(bool isDashboard)
     {
-        if (PanelStudentDashboard == null || WidgetCanvas == null) return;
+        if (!_isReady || PanelStudentDashboard == null || WidgetCanvas == null) return;
 
         if (isDashboard)
         {
@@ -1455,6 +1471,7 @@ public partial class StudentDisplayWindow : Window
 
     private void RbBoardMode_Checked(object sender, RoutedEventArgs e)
     {
+        if (!_isReady) return;
         SetDisplayMode(RbBoardModeDashboard?.IsChecked == true);
     }
 
