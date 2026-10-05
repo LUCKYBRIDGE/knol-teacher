@@ -31,7 +31,22 @@ public partial class PickerWidgetView : UserControl, IWidgetLifecycle
         _studentService = studentService;
         _soundService = soundService;
         InitializeComponent();
+        if (_studentService != null)
+        {
+            _studentService.RosterChanged += OnRosterChanged;
+        }
         _isReady = true;
+    }
+
+    private void OnRosterChanged()
+    {
+        if (_disposed) return;
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(ResetDisplay);
+            return;
+        }
+        ResetDisplay();
     }
 
     public void Activate()
@@ -50,6 +65,10 @@ public partial class PickerWidgetView : UserControl, IWidgetLifecycle
     public void Dispose()
     {
         if (_disposed) return;
+        if (_studentService != null)
+        {
+            _studentService.RosterChanged -= OnRosterChanged;
+        }
         _isActive = false;
         CancelPick();
         _disposed = true;

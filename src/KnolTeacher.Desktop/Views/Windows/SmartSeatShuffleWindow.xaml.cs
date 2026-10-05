@@ -41,6 +41,8 @@ public partial class SmartSeatShuffleWindow : Window
         _displayManager = displayManager;
         _soundService = soundService;
 
+        _studentManager.RosterChanged += OnRosterChanged;
+
         Closing += (s, e) =>
         {
             e.Cancel = true;
@@ -49,6 +51,18 @@ public partial class SmartSeatShuffleWindow : Window
         };
 
         Loaded += SmartSeatShuffleWindow_Loaded;
+    }
+
+    private void OnRosterChanged()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(OnRosterChanged);
+            return;
+        }
+
+        UpdateClassSize();
+        InitializeDesks();
     }
 
     private void SmartSeatShuffleWindow_Loaded(object sender, RoutedEventArgs e)

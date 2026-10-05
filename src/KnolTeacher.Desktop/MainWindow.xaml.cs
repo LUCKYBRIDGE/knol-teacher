@@ -119,6 +119,7 @@ public partial class MainWindow : FluentWindow
     private readonly IStartupService _startupService;
     private readonly IDataShareService _dataShareService;
     private readonly IStudentManagerService _studentManagerService;
+    private readonly IClassroomTaskService _classroomTaskService;
     private int _tutorialStep = 1;
 
     public MainWindow(
@@ -143,7 +144,8 @@ public partial class MainWindow : FluentWindow
         ISiteBookmarkService siteBookmarkService,
         IStartupService startupService,
         IDataShareService dataShareService,
-        IStudentManagerService studentManagerService)
+        IStudentManagerService studentManagerService,
+        IClassroomTaskService? classroomTaskService = null)
     {
         _services = services;
         DataContext = viewModel;
@@ -167,9 +169,12 @@ public partial class MainWindow : FluentWindow
         _startupService = startupService;
         _dataShareService = dataShareService;
         _studentManagerService = studentManagerService;
+        _classroomTaskService = classroomTaskService ?? (_services.GetService(typeof(IClassroomTaskService)) as IClassroomTaskService)!;
 
         InitializeComponent();
         UpdateWindowTitle(0);
+
+        InitClassroomTasks();
 
         _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
         _statusTimer.Tick += (s, e) => UpdatePeriodStatus();
@@ -1244,42 +1249,54 @@ public partial class MainWindow : FluentWindow
         if (sender is System.Windows.Controls.Button btn && btn.Tag is string tagStr && int.TryParse(tagStr, out int index))
         {
             MainTabs.SelectedIndex = index;
-            if (DrawerOverlay != null) DrawerOverlay.Visibility = Visibility.Collapsed;
+            UpdateNavigationSelection(index);
+        }
+    }
 
-            var accentBrush = (SolidColorBrush)FindResource("BeigeAccent");
-            var transparentBrush = Brushes.Transparent;
-            var textMainBrush = (SolidColorBrush)FindResource("BeigeTextMain");
+    private void UpdateNavigationSelection(int index)
+    {
+        if (NavBtnToday == null || NavBtnTools == null || NavBtnSchedule == null ||
+            NavBtnZen == null || NavBtnSites == null || NavBtnNeis == null) return;
 
-            NavBtnToday.Background = transparentBrush;
-            NavBtnToday.Foreground = textMainBrush;
-            NavBtnTools.Background = transparentBrush;
-            NavBtnTools.Foreground = textMainBrush;
-            NavBtnSchedule.Background = transparentBrush;
-            NavBtnSchedule.Foreground = textMainBrush;
-            NavBtnZen.Background = transparentBrush;
-            NavBtnZen.Foreground = textMainBrush;
-            NavBtnSites.Background = transparentBrush;
-            NavBtnSites.Foreground = textMainBrush;
-            NavBtnNeis.Background = transparentBrush;
-            NavBtnNeis.Foreground = textMainBrush;
+        var accentBrush = (SolidColorBrush)FindResource("BeigeAccent");
+        var transparentBrush = Brushes.Transparent;
+        var textSubBrush = (SolidColorBrush)FindResource("BeigeTextSub");
+        var accentSoftBrush = (Brush)FindResource("BeigeAccentSoft");
 
-            if (index == 0)
+        Button[] navButtons = { NavBtnToday, NavBtnTools, NavBtnSchedule, NavBtnZen, NavBtnSites, NavBtnNeis };
+        for (int i = 0; i < navButtons.Length; i++)
+        {
+            if (i == index)
             {
-                NavBtnToday.Background = (Brush)FindResource("BeigeAccentSoft");
-                NavBtnToday.Foreground = accentBrush;
-                if (BtnReturnDashboard != null) BtnReturnDashboard.Visibility = Visibility.Collapsed;
-                TxtViewTitle.Text = "📅 오늘의 일과 & 급식";
+                navButtons[i].Background = accentSoftBrush;
+                navButtons[i].Foreground = accentBrush;
+                navButtons[i].FontWeight = FontWeights.Bold;
             }
             else
             {
-                if (BtnReturnDashboard != null) BtnReturnDashboard.Visibility = Visibility.Visible;
-
-                if (index == 1) { NavBtnTools.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnTools.Foreground = accentBrush; TxtViewTitle.Text = "🧰 수업 & 교실 도구"; }
-                else if (index == 2) { NavBtnSchedule.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnSchedule.Foreground = accentBrush; TxtViewTitle.Text = "⏰ 예약 실행 & 알림"; }
-                else if (index == 3) { NavBtnZen.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnZen.Foreground = accentBrush; TxtViewTitle.Text = "🧹 바탕화면 & PC 정리"; }
-                else if (index == 4) { NavBtnSites.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnSites.Foreground = accentBrush; TxtViewTitle.Text = "🌐 유용한 교육 사이트"; }
-                else if (index == 5) { NavBtnNeis.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnNeis.Foreground = accentBrush; TxtViewTitle.Text = "📝 나이스 평어 일괄입력"; }
+                navButtons[i].Background = transparentBrush;
+                navButtons[i].Foreground = textSubBrush;
+                navButtons[i].FontWeight = FontWeights.SemiBold;
             }
+        }
+
+        if (BtnReturnDashboard != null)
+        {
+            BtnReturnDashboard.Visibility = index == 0 ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        if (TxtViewTitle != null)
+        {
+            TxtViewTitle.Text = index switch
+            {
+                0 => "📅 오늘의 일과 & 급식",
+                1 => "🧰 수업 & 교실 도구",
+                2 => "⏰ 시간표 & 알림",
+                3 => "🧹 바탕화면 & PC 정리",
+                4 => "🌐 유용한 교육 사이트",
+                5 => "📝 나이스 평어 일괄입력",
+                _ => "메인화면"
+            };
         }
     }
 
@@ -1288,6 +1305,7 @@ public partial class MainWindow : FluentWindow
         if (e.Source == MainTabs)
         {
             UpdateWindowTitle(MainTabs.SelectedIndex);
+            UpdateNavigationSelection(MainTabs.SelectedIndex);
             if (BtnToggleWidgetEdit != null)
             {
                 BtnToggleWidgetEdit.Visibility = MainTabs.SelectedIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -1470,7 +1488,22 @@ public partial class MainWindow : FluentWindow
         }
         else
         {
-            _studentDisplayWindow.ShowOnMonitor(targetMonitor);
+            _studentDisplayWindow.ShowStudentDashboard(targetMonitor);
+        }
+    }
+
+    private void BtnLaunchWidgetsBoard_Click(object sender, RoutedEventArgs e)
+    {
+        int targetMonitor = _pendingPopupMonitorIndex ?? (_displayManager.IsDualMonitor ? 1 : 0);
+
+        if (_studentDisplayWindow.IsVisible && !_pendingPopupMonitorIndex.HasValue)
+        {
+            // 위젯 보드로 모드 전환하며 표시 유지
+            _studentDisplayWindow.ShowWidgetsBoard(targetMonitor);
+        }
+        else
+        {
+            _studentDisplayWindow.ShowWidgetsBoard(targetMonitor);
         }
     }
 
@@ -1647,6 +1680,60 @@ public partial class MainWindow : FluentWindow
         };
         dlg.SelectTab(2);
         dlg.ShowDialog();
+    }
+
+    private ClassroomWebBrowserWindow? _classroomBrowserWindow;
+
+    private void BtnOpenClassroomWebBrowser_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_classroomBrowserWindow == null || !_classroomBrowserWindow.IsLoaded)
+            {
+                _classroomBrowserWindow = new ClassroomWebBrowserWindow(_configService, _displayManager);
+                _classroomBrowserWindow.Owner = this;
+                _classroomBrowserWindow.Closed += (s, ev) => _classroomBrowserWindow = null;
+                _classroomBrowserWindow.Show();
+            }
+            else
+            {
+                _classroomBrowserWindow.Activate();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"웹 브라우저를 열 수 없습니다: {ex.Message}", "스마트 웹 브라우저 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void BtnOpenPowerPointShield_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "무간섭 파워포인트 슬라이드 쇼 파일 선택",
+                Filter = "PowerPoint 파일 (*.pptx;*.ppt;*.ppsx;*.pps)|*.pptx;*.ppt;*.ppsx;*.pps|모든 파일 (*.*)|*.*"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                Rect? targetBounds = null;
+                var screens = System.Windows.Forms.Screen.AllScreens;
+                if (screens.Length > 1)
+                {
+                    var s2 = screens[1].Bounds;
+                    targetBounds = new Rect(s2.X, s2.Y, s2.Width, s2.Height);
+                }
+
+                var (success, msg) = PowerPointPresentationHelper.StartNonIntrusiveSlideShow(dlg.FileName, targetBounds);
+                MessageBox.Show(msg, success ? "무간섭 PPT 재생" : "PPT 실행 안내", MessageBoxButton.OK, success ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"파워포인트를 실행할 수 없습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void BtnOpenHotkeySettings_Click(object sender, RoutedEventArgs e)
@@ -2681,19 +2768,118 @@ public partial class MainWindow : FluentWindow
 
     private void RbMemoTab_Checked(object sender, RoutedEventArgs e)
     {
-        if (PanelTeacherTodo == null || PanelStudentNotice == null) return;
+        if (PanelTodayTasks == null || PanelWeeklyTasks == null || PanelTeacherTodo == null || PanelStudentNotice == null) return;
 
-        if (RbTabTeacherTodo?.IsChecked == true)
+        PanelTodayTasks.Visibility = (RbTabTodayTasks?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+        PanelWeeklyTasks.Visibility = (RbTabWeeklyTasks?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+        PanelStudentNotice.Visibility = (RbTabStudentNotice?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+        PanelTeacherTodo.Visibility = (RbTabTeacherTodo?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    #region Classroom Tasks Handlers (오늘 제출&할일 및 이번주 제출&할일)
+
+    private void InitClassroomTasks()
+    {
+        if (_classroomTaskService != null)
         {
-            PanelTeacherTodo.Visibility = Visibility.Visible;
-            PanelStudentNotice.Visibility = Visibility.Collapsed;
+            _classroomTaskService.TasksChanged += () =>
+            {
+                Dispatcher.Invoke(RefreshClassroomTasksUi);
+            };
         }
-        else
+        RefreshClassroomTasksUi();
+    }
+
+    private void RefreshClassroomTasksUi()
+    {
+        if (_classroomTaskService == null) return;
+        if (ListTodayTasks != null)
         {
-            PanelTeacherTodo.Visibility = Visibility.Collapsed;
-            PanelStudentNotice.Visibility = Visibility.Visible;
+            ListTodayTasks.ItemsSource = null;
+            ListTodayTasks.ItemsSource = _classroomTaskService.GetTodayTasks();
+        }
+        if (ListWeeklyTasks != null)
+        {
+            ListWeeklyTasks.ItemsSource = null;
+            ListWeeklyTasks.ItemsSource = _classroomTaskService.GetWeeklyTasks();
         }
     }
+
+    private void BtnAddTodayTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (TbNewTodayTask != null && !string.IsNullOrWhiteSpace(TbNewTodayTask.Text))
+        {
+            string text = TbNewTodayTask.Text.Trim();
+            string tag = (CbNewTodayTaskTag?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "과제";
+            string due = TbNewTodayDue?.Text?.Trim() ?? string.Empty;
+            _classroomTaskService.AddTask(text, "Today", tag, due);
+            TbNewTodayTask.Text = string.Empty;
+            if (TbNewTodayDue != null) TbNewTodayDue.Text = string.Empty;
+        }
+    }
+
+    private void TbNewTodayTask_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            BtnAddTodayTask_Click(sender, e);
+        }
+    }
+
+    private void BtnAddWeeklyTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (TbNewWeeklyTask != null && !string.IsNullOrWhiteSpace(TbNewWeeklyTask.Text))
+        {
+            string text = TbNewWeeklyTask.Text.Trim();
+            string tag = (CbNewWeeklyTaskTag?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "과제";
+            string due = TbNewWeeklyDue?.Text?.Trim() ?? string.Empty;
+            _classroomTaskService.AddTask(text, "Weekly", tag, due);
+            TbNewWeeklyTask.Text = string.Empty;
+            if (TbNewWeeklyDue != null) TbNewWeeklyDue.Text = string.Empty;
+        }
+    }
+
+    private void TbNewWeeklyTask_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            BtnAddWeeklyTask_Click(sender, e);
+        }
+    }
+
+    private void ClassroomTaskCheckbox_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is ClassroomTaskItem item)
+        {
+            _classroomTaskService.ToggleTaskCompletion(item.Id);
+        }
+    }
+
+    private void BtnDeleteClassroomTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is ClassroomTaskItem item)
+        {
+            _classroomTaskService.RemoveTask(item.Id);
+        }
+    }
+
+    private void MenuClearCompletedTasks_Click(object sender, RoutedEventArgs e)
+    {
+        string? category = null;
+        if (RbTabTodayTasks?.IsChecked == true) category = "Today";
+        else if (RbTabWeeklyTasks?.IsChecked == true) category = "Weekly";
+
+        int cleared = _classroomTaskService.ClearCompletedTasks(category);
+        HudNotificationWindow.Instance.ShowToast("🧹", cleared > 0 ? $"완료된 과제·할 일 {cleared}건을 정리했습니다." : "정리할 완료 항목이 없습니다.");
+    }
+
+    private void MenuResetSampleTasks_Click(object sender, RoutedEventArgs e)
+    {
+        _classroomTaskService.ResetSampleTasks();
+        HudNotificationWindow.Instance.ShowToast("🔄", "기본 교실 예시 과제·할 일을 불러왔습니다.");
+    }
+
+    #endregion
 
     private void TbMainNotice_TextChanged(object sender, TextChangedEventArgs e)
     {
@@ -2847,7 +3033,22 @@ public partial class MainWindow : FluentWindow
 
     private void BtnToggleDrawer_Click(object sender, RoutedEventArgs e)
     {
-        if (DrawerOverlay != null)
+        if (LeftSidebar != null && ColSidebar != null)
+        {
+            if (LeftSidebar.Visibility == Visibility.Visible)
+            {
+                LeftSidebar.Visibility = Visibility.Collapsed;
+                ColSidebar.Width = new GridLength(0);
+                ColSidebar.MinWidth = 0;
+            }
+            else
+            {
+                LeftSidebar.Visibility = Visibility.Visible;
+                ColSidebar.Width = new GridLength(230);
+                ColSidebar.MinWidth = 180;
+            }
+        }
+        else if (DrawerOverlay != null)
         {
             DrawerOverlay.Visibility = (DrawerOverlay.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible;
         }
@@ -2866,9 +3067,7 @@ public partial class MainWindow : FluentWindow
     private void BtnReturnDashboard_Click(object sender, RoutedEventArgs e)
     {
         MainTabs.SelectedIndex = 0;
-        if (BtnReturnDashboard != null) BtnReturnDashboard.Visibility = Visibility.Collapsed;
-        NavBtnToday.Background = (Brush)FindResource("BeigeAccentSoft");
-        NavBtnToday.Foreground = (Brush)FindResource("BeigeAccent");
+        UpdateNavigationSelection(0);
     }
 
     private void BtnOpenWeeklyTimetable_Click(object sender, RoutedEventArgs e)

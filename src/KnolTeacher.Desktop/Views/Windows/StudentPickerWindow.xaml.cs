@@ -213,6 +213,19 @@ public partial class StudentPickerWindow : Window
             }
         };
 
+        _studentService.RosterChanged += () =>
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (!IsVisible) ResetToStartLine();
+                });
+                return;
+            }
+            if (!IsVisible) ResetToStartLine();
+        };
+
         // Closing is handled in OnClosing (hide instead of close for this DI singleton window).
         KeyDown += Window_KeyDown;
     }

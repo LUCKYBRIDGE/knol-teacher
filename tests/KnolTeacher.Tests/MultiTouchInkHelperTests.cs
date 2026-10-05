@@ -46,6 +46,24 @@ public class MultiTouchInkHelperTests
         });
     }
 
+    [Fact]
+    public void IsEnabled_DefaultsToTrue_AndCanBeToggled()
+    {
+        RunInSta(() =>
+        {
+            var canvas = new InkCanvas();
+            var helper = new MultiTouchInkHelper(canvas);
+
+            Assert.True(helper.IsEnabled);
+
+            helper.IsEnabled = false;
+            Assert.False(helper.IsEnabled);
+
+            helper.IsEnabled = true;
+            Assert.True(helper.IsEnabled);
+        });
+    }
+
     private static void RunInSta(Action action)
     {
         Exception? threadEx = null;

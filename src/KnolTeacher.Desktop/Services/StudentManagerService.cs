@@ -16,6 +16,8 @@ public interface IStudentManagerService
     bool UseNamesInPicker { get; set; }
     bool PersistPersonalDetails { get; set; }
 
+    event Action? RosterChanged;
+
     void LoadRoster();
     StudentItem? PickRandom(bool excludePicked = true);
     void ResetPicked();
@@ -48,6 +50,7 @@ public class StudentManagerService : IStudentManagerService
     public HashSet<int> PickedStudentNumbers { get; } = new();
     public bool UseNamesInPicker { get; set; }
     public bool PersistPersonalDetails { get; set; }
+    public event Action? RosterChanged;
 
     public StudentManagerService(IConfigService configService)
     {
@@ -139,6 +142,8 @@ public class StudentManagerService : IStudentManagerService
         UseNamesInPicker = hasUseNamesFlag
             ? container.UseNamesInPicker
             : false;
+
+        RosterChanged?.Invoke();
     }
 
     public StudentItem? PickRandom(bool excludePicked = true)
@@ -201,6 +206,7 @@ public class StudentManagerService : IStudentManagerService
         UseNamesInPicker = false;
         PersistPersonalDetails = false;
         _preserveBackupOnNextSave = false;
+        RosterChanged?.Invoke();
     }
 
     public void SaveRoster()
@@ -226,6 +232,7 @@ public class StudentManagerService : IStudentManagerService
                 preserveExistingBackup: _preserveBackupOnNextSave,
                 scrubPreviousContent: !PersistPersonalDetails);
             _preserveBackupOnNextSave = false;
+            RosterChanged?.Invoke();
         }
         catch (Exception ex)
         {
