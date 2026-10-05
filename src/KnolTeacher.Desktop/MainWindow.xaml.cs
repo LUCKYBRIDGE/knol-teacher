@@ -1244,42 +1244,54 @@ public partial class MainWindow : FluentWindow
         if (sender is System.Windows.Controls.Button btn && btn.Tag is string tagStr && int.TryParse(tagStr, out int index))
         {
             MainTabs.SelectedIndex = index;
-            if (DrawerOverlay != null) DrawerOverlay.Visibility = Visibility.Collapsed;
+            UpdateNavigationSelection(index);
+        }
+    }
 
-            var accentBrush = (SolidColorBrush)FindResource("BeigeAccent");
-            var transparentBrush = Brushes.Transparent;
-            var textMainBrush = (SolidColorBrush)FindResource("BeigeTextMain");
+    private void UpdateNavigationSelection(int index)
+    {
+        if (NavBtnToday == null || NavBtnTools == null || NavBtnSchedule == null ||
+            NavBtnZen == null || NavBtnSites == null || NavBtnNeis == null) return;
 
-            NavBtnToday.Background = transparentBrush;
-            NavBtnToday.Foreground = textMainBrush;
-            NavBtnTools.Background = transparentBrush;
-            NavBtnTools.Foreground = textMainBrush;
-            NavBtnSchedule.Background = transparentBrush;
-            NavBtnSchedule.Foreground = textMainBrush;
-            NavBtnZen.Background = transparentBrush;
-            NavBtnZen.Foreground = textMainBrush;
-            NavBtnSites.Background = transparentBrush;
-            NavBtnSites.Foreground = textMainBrush;
-            NavBtnNeis.Background = transparentBrush;
-            NavBtnNeis.Foreground = textMainBrush;
+        var accentBrush = (SolidColorBrush)FindResource("BeigeAccent");
+        var transparentBrush = Brushes.Transparent;
+        var textSubBrush = (SolidColorBrush)FindResource("BeigeTextSub");
+        var accentSoftBrush = (Brush)FindResource("BeigeAccentSoft");
 
-            if (index == 0)
+        Button[] navButtons = { NavBtnToday, NavBtnTools, NavBtnSchedule, NavBtnZen, NavBtnSites, NavBtnNeis };
+        for (int i = 0; i < navButtons.Length; i++)
+        {
+            if (i == index)
             {
-                NavBtnToday.Background = (Brush)FindResource("BeigeAccentSoft");
-                NavBtnToday.Foreground = accentBrush;
-                if (BtnReturnDashboard != null) BtnReturnDashboard.Visibility = Visibility.Collapsed;
-                TxtViewTitle.Text = "📅 오늘의 일과 & 급식";
+                navButtons[i].Background = accentSoftBrush;
+                navButtons[i].Foreground = accentBrush;
+                navButtons[i].FontWeight = FontWeights.Bold;
             }
             else
             {
-                if (BtnReturnDashboard != null) BtnReturnDashboard.Visibility = Visibility.Visible;
-
-                if (index == 1) { NavBtnTools.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnTools.Foreground = accentBrush; TxtViewTitle.Text = "🧰 수업 & 교실 도구"; }
-                else if (index == 2) { NavBtnSchedule.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnSchedule.Foreground = accentBrush; TxtViewTitle.Text = "⏰ 예약 실행 & 알림"; }
-                else if (index == 3) { NavBtnZen.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnZen.Foreground = accentBrush; TxtViewTitle.Text = "🧹 바탕화면 & PC 정리"; }
-                else if (index == 4) { NavBtnSites.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnSites.Foreground = accentBrush; TxtViewTitle.Text = "🌐 유용한 교육 사이트"; }
-                else if (index == 5) { NavBtnNeis.Background = (Brush)FindResource("BeigeAccentSoft"); NavBtnNeis.Foreground = accentBrush; TxtViewTitle.Text = "📝 나이스 평어 일괄입력"; }
+                navButtons[i].Background = transparentBrush;
+                navButtons[i].Foreground = textSubBrush;
+                navButtons[i].FontWeight = FontWeights.SemiBold;
             }
+        }
+
+        if (BtnReturnDashboard != null)
+        {
+            BtnReturnDashboard.Visibility = index == 0 ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        if (TxtViewTitle != null)
+        {
+            TxtViewTitle.Text = index switch
+            {
+                0 => "📅 오늘의 일과 & 급식",
+                1 => "🧰 수업 & 교실 도구",
+                2 => "⏰ 시간표 & 알림",
+                3 => "🧹 바탕화면 & PC 정리",
+                4 => "🌐 유용한 교육 사이트",
+                5 => "📝 나이스 평어 일괄입력",
+                _ => "메인화면"
+            };
         }
     }
 
@@ -1288,6 +1300,7 @@ public partial class MainWindow : FluentWindow
         if (e.Source == MainTabs)
         {
             UpdateWindowTitle(MainTabs.SelectedIndex);
+            UpdateNavigationSelection(MainTabs.SelectedIndex);
             if (BtnToggleWidgetEdit != null)
             {
                 BtnToggleWidgetEdit.Visibility = MainTabs.SelectedIndex == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -2847,7 +2860,22 @@ public partial class MainWindow : FluentWindow
 
     private void BtnToggleDrawer_Click(object sender, RoutedEventArgs e)
     {
-        if (DrawerOverlay != null)
+        if (LeftSidebar != null && ColSidebar != null)
+        {
+            if (LeftSidebar.Visibility == Visibility.Visible)
+            {
+                LeftSidebar.Visibility = Visibility.Collapsed;
+                ColSidebar.Width = new GridLength(0);
+                ColSidebar.MinWidth = 0;
+            }
+            else
+            {
+                LeftSidebar.Visibility = Visibility.Visible;
+                ColSidebar.Width = new GridLength(230);
+                ColSidebar.MinWidth = 180;
+            }
+        }
+        else if (DrawerOverlay != null)
         {
             DrawerOverlay.Visibility = (DrawerOverlay.Visibility == Visibility.Visible) ? Visibility.Collapsed : Visibility.Visible;
         }
@@ -2866,9 +2894,7 @@ public partial class MainWindow : FluentWindow
     private void BtnReturnDashboard_Click(object sender, RoutedEventArgs e)
     {
         MainTabs.SelectedIndex = 0;
-        if (BtnReturnDashboard != null) BtnReturnDashboard.Visibility = Visibility.Collapsed;
-        NavBtnToday.Background = (Brush)FindResource("BeigeAccentSoft");
-        NavBtnToday.Foreground = (Brush)FindResource("BeigeAccent");
+        UpdateNavigationSelection(0);
     }
 
     private void BtnOpenWeeklyTimetable_Click(object sender, RoutedEventArgs e)

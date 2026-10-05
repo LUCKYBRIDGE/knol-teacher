@@ -151,6 +151,10 @@ public partial class MainWindow
             }
 
             int targetMonitor = window._displayManager.IsDualMonitor ? 1 : 0;
+            if (!window._displayManager.IsDualMonitor)
+            {
+                HudNotificationWindow.Instance.ShowToast("🖥️", "단일 모니터 환경: 기본 화면에 창을 엽니다.");
+            }
             var visibleBefore = SnapshotVisibleWindows();
             _pendingPopupMonitorIndex = targetMonitor;
             e.Handled = true;

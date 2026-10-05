@@ -1,10 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using Microsoft.Win32;
 
 namespace KnolTeacher.Desktop.Services;
+
+public class DesktopOrganizeRecord
+{
+    public string Source { get; set; } = string.Empty;
+    public string Dest { get; set; } = string.Empty;
+}
 
 public interface IDesktopCleanerService
 {
@@ -17,6 +25,8 @@ public interface IDesktopCleanerService
 public class DesktopCleanerService : IDesktopCleanerService
 {
     private readonly List<(string Source, string Dest)> _lastOrganizedRecords = new();
+    private readonly string _historyFilePath;
+    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
     private string DesktopPath => Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
     private string DownloadsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
@@ -24,8 +34,70 @@ public class DesktopCleanerService : IDesktopCleanerService
     [DllImport("shell32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern void SHChangeNotify(uint wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr FindWindow(string lpClassName, string? lpWindowName);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string? lpszWindow);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
     private const uint SHCNE_ASSOCCHANGED = 0x08000000;
     private const uint SHCNF_FLUSH = 0x1000;
+    private const uint WM_COMMAND = 0x0111;
+
+    public DesktopCleanerService(IConfigService? configService = null)
+    {
+        string dir = configService?.ConfigDir ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KnolTeacher");
+        Directory.CreateDirectory(dir);
+        _historyFilePath = Path.Combine(dir, "desktop_organize_history.json");
+
+        LoadHistoryFromDisk();
+    }
+
+    private void LoadHistoryFromDisk()
+    {
+        try
+        {
+            if (File.Exists(_historyFilePath) &&
+                SafeLocalJsonStore.TryLoad<List<DesktopOrganizeRecord>>(_historyFilePath, _jsonOptions, out var loaded) &&
+                loaded != null && loaded.Count > 0)
+            {
+                _lastOrganizedRecords.Clear();
+                foreach (var item in loaded)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.Source) && !string.IsNullOrWhiteSpace(item.Dest))
+                    {
+                        _lastOrganizedRecords.Add((item.Source, item.Dest));
+                    }
+                }
+            }
+        }
+        catch { }
+    }
+
+    private void SaveHistoryToDisk()
+    {
+        try
+        {
+            var list = _lastOrganizedRecords.Select(r => new DesktopOrganizeRecord { Source = r.Source, Dest = r.Dest }).ToList();
+            SafeLocalJsonStore.TrySave(_historyFilePath, list, _jsonOptions);
+        }
+        catch { }
+    }
+
+    private void ClearHistoryDisk()
+    {
+        try
+        {
+            if (File.Exists(_historyFilePath))
+            {
+                File.Delete(_historyFilePath);
+            }
+        }
+        catch { }
+    }
 
     public (bool Success, string Message, int MovedCount) OrganizeDesktop()
     {
@@ -92,6 +164,7 @@ public class DesktopCleanerService : IDesktopCleanerService
 
             if (movedCount > 0)
             {
+                SaveHistoryToDisk();
                 return (true, $"총 {movedCount}개의 파일을 성격별 폴더로 깔끔하게 정리했습니다!", movedCount);
             }
             return (true, "정리할 대상 파일이 없습니다. 이미 바탕화면이 깨끗합니다!", 0);
@@ -104,6 +177,11 @@ public class DesktopCleanerService : IDesktopCleanerService
 
     public (bool Success, string Message, int RestoredCount) UndoOrganize()
     {
+        if (_lastOrganizedRecords.Count == 0)
+        {
+            LoadHistoryFromDisk();
+        }
+
         if (_lastOrganizedRecords.Count == 0)
         {
             return (false, "되돌릴 직전 정리 기록이 없습니다.", 0);
@@ -123,6 +201,7 @@ public class DesktopCleanerService : IDesktopCleanerService
             }
 
             _lastOrganizedRecords.Clear();
+            ClearHistoryDisk();
             return (true, $"총 {restoredCount}개의 파일을 원래 자리로 복원했습니다!", restoredCount);
         }
         catch (Exception ex)
@@ -148,8 +227,23 @@ public class DesktopCleanerService : IDesktopCleanerService
 
             key.SetValue("HideIcons", newVal, RegistryValueKind.DWord);
 
-            // Explorer Refresh
+            // Explorer Refresh via SHChangeNotify
             SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_FLUSH, IntPtr.Zero, IntPtr.Zero);
+
+            // Send refresh command to desktop window if available
+            try
+            {
+                IntPtr hProgman = FindWindow("Progman", null);
+                if (hProgman != IntPtr.Zero)
+                {
+                    IntPtr hShellView = FindWindowEx(hProgman, IntPtr.Zero, "SHELLDLL_DefView", null);
+                    if (hShellView != IntPtr.Zero)
+                    {
+                        SendMessage(hShellView, WM_COMMAND, (IntPtr)0x7103, IntPtr.Zero); // F5 Refresh
+                    }
+                }
+            }
+            catch { }
 
             bool isVisible = (newVal == 0);
             string msg = isVisible ? "바탕화면 아이콘이 다시 표시되었습니다." : "수업 집중 모드: 바탕화면 아이콘이 모두 숨겨졌습니다.";
@@ -167,7 +261,7 @@ public class DesktopCleanerService : IDesktopCleanerService
         long freedBytes = 0;
         var thresholdDate = DateTime.Now.AddDays(-daysOld);
 
-        // 1. Temp Directory
+        // Temp Directory Clean
         string tempDir = Path.GetTempPath();
         try
         {
@@ -192,7 +286,7 @@ public class DesktopCleanerService : IDesktopCleanerService
             }
 
             double freedMb = Math.Round(freedBytes / (1024.0 * 1024.0), 2);
-            return (true, $"임시 파일 {deletedCount}개 정리 완료! (총 {freedMb}MB 확보)", deletedCount, freedMb);
+            return (true, $"PC 시스템 임시 파일 {deletedCount}개 정리 완료! (총 {freedMb}MB 용량 확보)", deletedCount, freedMb);
         }
         catch (Exception ex)
         {
