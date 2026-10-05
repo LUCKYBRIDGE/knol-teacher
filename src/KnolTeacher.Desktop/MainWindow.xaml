@@ -199,6 +199,18 @@
                             <TextBlock Text="저장폴더" FontWeight="SemiBold" FontSize="11" Foreground="#475569" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
+                    <Border Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,8,0" Cursor="Hand" MouseLeftButtonUp="BtnOpenClassroomWebBrowser_Click" ToolTip="크롬/유튜브/넷플릭스 호환 전자칠판 스마트 웹 브라우저 열기">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🌐 " FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Text="스마트 웹" FontWeight="SemiBold" FontSize="11" Foreground="#1D4ED8" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#FFF7ED" BorderBrush="#FED7AA" BorderThickness="1" CornerRadius="6" Padding="8,3" Margin="0,0,8,0" Cursor="Hand" MouseLeftButtonUp="BtnOpenPowerPointShield_Click" ToolTip="교탁 PC 작업 중에도 소리·영상이 끊기지 않는 무간섭 파워포인트 슬라이드 쇼 열기">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📊 " FontSize="11" VerticalAlignment="Center"/>
+                            <TextBlock Text="무간섭 PPT" FontWeight="SemiBold" FontSize="11" Foreground="#C2410C" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ui:TitleBar.Header>
         </ui:TitleBar>
@@ -800,13 +812,16 @@
 
                                         <!-- Header: Segmented Switcher & Options -->
                                         <DockPanel Grid.Row="0" Margin="0,0,0,10" LastChildFill="True">
-                                            <Button DockPanel.Dock="Right" Content="···" Click="BtnTodoMore_Click" Width="26" Height="22" Background="Transparent" Foreground="{DynamicResource BeigeTextMuted}" BorderThickness="0" FontSize="15" FontWeight="Bold" Cursor="Hand" ToolTip="할 일 및 알림장 옵션">
+                                            <Button DockPanel.Dock="Right" Content="···" Click="BtnTodoMore_Click" Width="26" Height="22" Background="Transparent" Foreground="{DynamicResource BeigeTextMuted}" BorderThickness="0" FontSize="15" FontWeight="Bold" Cursor="Hand" ToolTip="과제 및 알림장 옵션">
                                                 <Button.ContextMenu>
                                                     <ContextMenu>
-                                                        <MenuItem Header="🧹 완료된 할 일 모두 정리" Click="MenuClearCompletedTodos_Click"/>
+                                                        <MenuItem Header="🧹 완료된 과제/할 일 모두 정리" Click="MenuClearCompletedTasks_Click"/>
+                                                        <MenuItem Header="🔄 기본 교실 과제/할 일 불러오기" Click="MenuResetSampleTasks_Click"/>
+                                                        <Separator/>
+                                                        <MenuItem Header="🧹 선생님 개인 할 일 완료 정리" Click="MenuClearCompletedTodos_Click"/>
                                                         <MenuItem Header="🔄 기본 교실 체크리스트 불러오기" Click="MenuResetSampleTodos_Click"/>
                                                         <Separator/>
-                                                        <MenuItem Header="📺 학생 화면(모니터 2) 놀보드 알림장 열기 (F2)" Click="BtnLaunchBoard_Click"/>
+                                                        <MenuItem Header="📺 학생 화면(모니터 2) 놀보드 대시보드 열기 (F2)" Click="BtnLaunchBoard_Click"/>
                                                         <MenuItem Header="🔍 알림장 크게 보기 (확대 창)" Click="BtnZoomNoticeFromMain_Click"/>
                                                     </ContextMenu>
                                                 </Button.ContextMenu>
@@ -815,16 +830,186 @@
                                             <!-- Segmented Pill Switcher -->
                                             <Border Background="#F1F5F9" CornerRadius="10" Padding="3" HorizontalAlignment="Left" VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <RadioButton x:Name="RbTabTeacherTodo" Content="🔒 선생님 할 일" IsChecked="True" Checked="RbMemoTab_Checked"
+                                                    <RadioButton x:Name="RbTabTodayTasks" Content="📌 오늘 제출·할일" IsChecked="True" Checked="RbMemoTab_Checked"
+                                                                 Style="{StaticResource SegmentTabRadioStyle}"/>
+                                                    <RadioButton x:Name="RbTabWeeklyTasks" Content="🗓️ 이번주 제출·할일" Checked="RbMemoTab_Checked"
                                                                  Style="{StaticResource SegmentTabRadioStyle}"/>
                                                     <RadioButton x:Name="RbTabStudentNotice" Content="📢 학급 알림장" Checked="RbMemoTab_Checked"
+                                                                 Style="{StaticResource SegmentTabRadioStyle}"/>
+                                                    <RadioButton x:Name="RbTabTeacherTodo" Content="🔒 교사 메모" Checked="RbMemoTab_Checked"
                                                                  Style="{StaticResource SegmentTabRadioStyle}"/>
                                                 </StackPanel>
                                             </Border>
                                         </DockPanel>
 
-                                        <!-- 1-A: Teacher Todo Panel (교사 비공개 업무/체크리스트) -->
-                                        <Grid x:Name="PanelTeacherTodo" Grid.Row="1" Visibility="Visible">
+                                        <!-- 1-A: Today Tasks Panel (학생 화면 실시간 연동) -->
+                                        <Grid x:Name="PanelTodayTasks" Grid.Row="1" Visibility="Visible">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Margin="0,0,0,6">
+                                                <ItemsControl x:Name="ListTodayTasks">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Margin="0,0,0,5" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="6,4">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <CheckBox IsChecked="{Binding IsCompleted}" Click="ClassroomTaskCheckbox_Click" Tag="{Binding}" VerticalAlignment="Center" Margin="0,0,6,0" Cursor="Hand"/>
+                                                                    <Border Grid.Column="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0" VerticalAlignment="Center" Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1">
+                                                                        <TextBlock Text="{Binding Tag}" FontSize="10" FontWeight="Bold" Foreground="#1D4ED8"/>
+                                                                    </Border>
+                                                                    <TextBlock Grid.Column="2" Text="{Binding Text}" FontSize="12" Foreground="{DynamicResource BeigeTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                                        <Setter Property="TextDecorations" Value="Strikethrough"/>
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource BeigeTextMuted}"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                    <Border Grid.Column="3" CornerRadius="4" Padding="4,1" Margin="4,0,4,0" VerticalAlignment="Center" Background="#F1F5F9">
+                                                                        <Border.Style>
+                                                                            <Style TargetType="Border">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding DueDateText}" Value="">
+                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                    </DataTrigger>
+                                                                                    <DataTrigger Binding="{Binding DueDateText}" Value="{x:Null}">
+                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Border.Style>
+                                                                        <TextBlock Text="{Binding DueDateText}" FontSize="9.5" Foreground="#64748B"/>
+                                                                    </Border>
+                                                                    <Button Grid.Column="4" Content="✕" Click="BtnDeleteClassroomTask_Click" Tag="{Binding}" Width="18" Height="18" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" FontSize="9" Cursor="Hand" ToolTip="삭제"/>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+
+                                            <!-- Quick Add Box for Today -->
+                                            <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" CornerRadius="8" Padding="6,3">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <ComboBox x:Name="CbNewTodayTaskTag" SelectedIndex="0" Width="68" Height="26" FontSize="11" Margin="0,0,4,0" VerticalContentAlignment="Center">
+                                                        <ComboBoxItem Content="과제"/>
+                                                        <ComboBoxItem Content="준비물"/>
+                                                        <ComboBoxItem Content="제출"/>
+                                                        <ComboBoxItem Content="안내"/>
+                                                    </ComboBox>
+                                                    <TextBox x:Name="TbNewTodayTask" Grid.Column="1" BorderThickness="0" Background="Transparent" FontSize="11.5" Foreground="{DynamicResource BeigeTextMain}" Padding="4,4" VerticalAlignment="Center" KeyDown="TbNewTodayTask_KeyDown"/>
+                                                    <TextBox x:Name="TbNewTodayDue" Grid.Column="2" BorderThickness="1" BorderBrush="#E2E8F0" Background="White" FontSize="10.5" Foreground="#64748B" Padding="4,2" Margin="4,0" VerticalAlignment="Center" ToolTip="마감 시간/안내 (예: 4교시 전)" KeyDown="TbNewTodayTask_KeyDown"/>
+                                                    <Button Grid.Column="3" Content="추가" Click="BtnAddTodayTask_Click" Background="{DynamicResource BeigeAccent}" Foreground="White" BorderThickness="0" FontSize="11" FontWeight="Bold" Padding="8,4" Cursor="Hand">
+                                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="5"/></Style></Button.Resources>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- 1-B: Weekly Tasks Panel (학생 화면 실시간 연동) -->
+                                        <Grid x:Name="PanelWeeklyTasks" Grid.Row="1" Visibility="Collapsed">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Margin="0,0,0,6">
+                                                <ItemsControl x:Name="ListWeeklyTasks">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Margin="0,0,0,5" Background="#FFFFFF" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="6,4">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <CheckBox IsChecked="{Binding IsCompleted}" Click="ClassroomTaskCheckbox_Click" Tag="{Binding}" VerticalAlignment="Center" Margin="0,0,6,0" Cursor="Hand"/>
+                                                                    <Border Grid.Column="1" CornerRadius="4" Padding="5,1" Margin="0,0,6,0" VerticalAlignment="Center" Background="#FEF3C7" BorderBrush="#FDE68A" BorderThickness="1">
+                                                                        <TextBlock Text="{Binding Tag}" FontSize="10" FontWeight="Bold" Foreground="#B45309"/>
+                                                                    </Border>
+                                                                    <TextBlock Grid.Column="2" Text="{Binding Text}" FontSize="12" Foreground="{DynamicResource BeigeTextMain}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                                                        <TextBlock.Style>
+                                                                            <Style TargetType="TextBlock">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                                        <Setter Property="TextDecorations" Value="Strikethrough"/>
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource BeigeTextMuted}"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </TextBlock.Style>
+                                                                    </TextBlock>
+                                                                    <Border Grid.Column="3" CornerRadius="4" Padding="4,1" Margin="4,0,4,0" VerticalAlignment="Center" Background="#F1F5F9">
+                                                                        <Border.Style>
+                                                                            <Style TargetType="Border">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding DueDateText}" Value="">
+                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                    </DataTrigger>
+                                                                                    <DataTrigger Binding="{Binding DueDateText}" Value="{x:Null}">
+                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Border.Style>
+                                                                        <TextBlock Text="{Binding DueDateText}" FontSize="9.5" Foreground="#64748B"/>
+                                                                    </Border>
+                                                                    <Button Grid.Column="4" Content="✕" Click="BtnDeleteClassroomTask_Click" Tag="{Binding}" Width="18" Height="18" Background="Transparent" Foreground="#94A3B8" BorderThickness="0" FontSize="9" Cursor="Hand" ToolTip="삭제"/>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+
+                                            <!-- Quick Add Box for Weekly -->
+                                            <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="{DynamicResource BeigeCardBorder}" BorderThickness="1" CornerRadius="8" Padding="6,3">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <ComboBox x:Name="CbNewWeeklyTaskTag" SelectedIndex="0" Width="68" Height="26" FontSize="11" Margin="0,0,4,0" VerticalContentAlignment="Center">
+                                                        <ComboBoxItem Content="과제"/>
+                                                        <ComboBoxItem Content="준비물"/>
+                                                        <ComboBoxItem Content="제출"/>
+                                                        <ComboBoxItem Content="안내"/>
+                                                    </ComboBox>
+                                                    <TextBox x:Name="TbNewWeeklyTask" Grid.Column="1" BorderThickness="0" Background="Transparent" FontSize="11.5" Foreground="{DynamicResource BeigeTextMain}" Padding="4,4" VerticalAlignment="Center" KeyDown="TbNewWeeklyTask_KeyDown"/>
+                                                    <TextBox x:Name="TbNewWeeklyDue" Grid.Column="2" BorderThickness="1" BorderBrush="#E2E8F0" Background="White" FontSize="10.5" Foreground="#64748B" Padding="4,2" Margin="4,0" VerticalAlignment="Center" ToolTip="마감 요일/안내 (예: 금요일까지)" KeyDown="TbNewWeeklyTask_KeyDown"/>
+                                                    <Button Grid.Column="3" Content="추가" Click="BtnAddWeeklyTask_Click" Background="{DynamicResource BeigeAccent}" Foreground="White" BorderThickness="0" FontSize="11" FontWeight="Bold" Padding="8,4" Cursor="Hand">
+                                                        <Button.Resources><Style TargetType="Border"><Setter Property="CornerRadius" Value="5"/></Style></Button.Resources>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- 1-C: Teacher Todo Panel (교사 비공개 업무/체크리스트) -->
+                                        <Grid x:Name="PanelTeacherTodo" Grid.Row="1" Visibility="Collapsed">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="*"/>
                                                 <RowDefinition Height="Auto"/>

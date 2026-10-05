@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
@@ -22,6 +24,7 @@ public partial class StudentDisplayWindow : Window
     private readonly INeisService _neisService;
     private readonly IConfigService _configService;
     private readonly IQrCodeService _qrCodeService;
+    private readonly IClassroomTaskService? _taskService;
     private readonly ITtsService? _ttsService;
     private readonly IDisplayManager? _displayManager;
     private readonly IWeatherService? _weatherService;
@@ -29,6 +32,7 @@ public partial class StudentDisplayWindow : Window
 
     private readonly DrawingUndoManager _undoManager = new();
     private DrawingEraserHelper? _eraserHelper;
+    private MultiTouchInkHelper? _multiTouchHelper;
     private readonly DispatcherTimer _clockTimer;
     private readonly List<BoardWidgetHost> _widgets = new();
     private bool _isWidgetsLocked = false;
@@ -45,7 +49,8 @@ public partial class StudentDisplayWindow : Window
         IQrCodeService qrCodeService,
         ITtsService? ttsService = null,
         IDisplayManager? displayManager = null,
-        IWeatherService? weatherService = null)
+        IWeatherService? weatherService = null,
+        IClassroomTaskService? taskService = null)
     {
         _soundService = soundService;
         _studentService = studentService;
@@ -53,11 +58,18 @@ public partial class StudentDisplayWindow : Window
         _neisService = neisService;
         _configService = configService;
         _qrCodeService = qrCodeService;
+        _taskService = taskService ?? (Application.Current as App)?.Services?.GetService(typeof(IClassroomTaskService)) as IClassroomTaskService;
         _ttsService = ttsService ?? (Application.Current as App)?.Services?.GetService(typeof(ITtsService)) as ITtsService;
         _displayManager = displayManager ?? (Application.Current as App)?.Services?.GetService(typeof(IDisplayManager)) as IDisplayManager;
         _weatherService = weatherService ?? (Application.Current as App)?.Services?.GetService(typeof(IWeatherService)) as IWeatherService;
 
         InitializeComponent();
+
+        // 전자칠판 터치 시 윈도우 우클릭 딜레이 및 제스처 렉 방지
+        Stylus.SetIsPressAndHoldEnabled(this, false);
+        Stylus.SetIsFlicksEnabled(this, false);
+        Stylus.SetIsTapFeedbackEnabled(this, false);
+        Stylus.SetIsTouchFeedbackEnabled(this, false);
 
         BoardInkCanvas.DefaultDrawingAttributes = new DrawingAttributes
         {
@@ -76,12 +88,22 @@ public partial class StudentDisplayWindow : Window
         // 지우개 시스템 헬퍼 초기화 (부분/획/구역/영역 및 Undo 통합 관리)
         _eraserHelper = new DrawingEraserHelper(BoardInkCanvas, BoardEraserPreviewCanvas, _undoManager);
 
+        // 전자칠판 선별적 멀티터치 판서 헬퍼 연결 (2명 이상 동시 필기 지원)
+        _multiTouchHelper = new MultiTouchInkHelper(BoardInkCanvas);
+        _multiTouchHelper.StrokeCollected += stroke =>
+        {
+            _undoManager.PushAdded(stroke);
+        };
+        _multiTouchHelper.IsEnabled = false; // 기본 잉크 비활성 (ToggleInkMode 켜질 때 활성화)
+
         _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _clockTimer.Tick += (s, e) => TxtClock.Text = DateTime.Now.ToString("HH:mm:ss");
         _clockTimer.Start();
         TxtClock.Text = DateTime.Now.ToString("HH:mm:ss");
 
         WidgetCanvas.SizeChanged += OnWidgetCanvasSizeChanged;
+
+        InitDashboard();
 
         _isReady = true;
         Loaded += (s, e) =>
@@ -127,6 +149,11 @@ public partial class StudentDisplayWindow : Window
     public void UpdateEmptyHint()
     {
         if (EmptyBoardHint == null) return;
+        if (RbBoardModeDashboard?.IsChecked == true)
+        {
+            EmptyBoardHint.Visibility = Visibility.Collapsed;
+            return;
+        }
         EmptyBoardHint.Visibility = _widgets.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -996,6 +1023,8 @@ public partial class StudentDisplayWindow : Window
         PanelInkTools.Visibility = Visibility.Visible;
         BoardInkCanvas.Visibility = Visibility.Visible;
         BoardInkCanvas.IsHitTestVisible = true;
+        BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = true;
         _eraserHelper?.SetToolMode(EraserToolMode.Pen);
         if (RbPen != null) RbPen.IsChecked = true;
     }
@@ -1005,31 +1034,38 @@ public partial class StudentDisplayWindow : Window
         PanelInkTools.Visibility = Visibility.Collapsed;
         BoardInkCanvas.IsHitTestVisible = false;
         BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
+        if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.CancelInteraction();
     }
 
     private void RbPen_Checked(object sender, RoutedEventArgs e)
     {
+        if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = true;
+        BoardInkCanvas.EditingMode = InkCanvasEditingMode.None;
         _eraserHelper?.SetToolMode(EraserToolMode.Pen);
     }
 
     private void RbEraserPoint_Checked(object sender, RoutedEventArgs e)
     {
+        if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.SetToolMode(EraserToolMode.Point);
     }
 
     private void RbEraserStroke_Checked(object sender, RoutedEventArgs e)
     {
+        if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.SetToolMode(EraserToolMode.Stroke);
     }
 
     private void RbEraserBox_Checked(object sender, RoutedEventArgs e)
     {
+        if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.SetToolMode(EraserToolMode.Box);
     }
 
     private void RbEraserLasso_Checked(object sender, RoutedEventArgs e)
     {
+        if (_multiTouchHelper != null) _multiTouchHelper.IsEnabled = false;
         _eraserHelper?.SetToolMode(EraserToolMode.Lasso);
     }
 
@@ -1114,6 +1150,438 @@ public partial class StudentDisplayWindow : Window
         {
             widget.CardOpacity = _currentCardOpacity;
         }
+    }
+
+    #endregion
+
+    #region Smart Classroom Dashboard Handlers (스마트 학급 대시보드 모드)
+
+    private DateTime _dashboardMealDate = DateTime.Today;
+
+    private void InitDashboard()
+    {
+        // 1. 과제/할 일 실시간 변경 구독
+        if (_taskService != null)
+        {
+            _taskService.TasksChanged += () =>
+            {
+                Dispatcher.Invoke(RefreshDashboardTasks);
+            };
+        }
+
+        // 2. 시간표 변경 구독
+        if (_timetableService != null)
+        {
+            _timetableService.OnTimetableChanged += () =>
+            {
+                Dispatcher.Invoke(RefreshDashboardTimetable);
+            };
+        }
+
+        // 3. 알림장 실시간 메모 변경 구독
+        MemoWidgetView.OnNoticeChanged += (newText, sender) =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (TxtDashboardNotice != null) TxtDashboardNotice.Text = newText;
+            });
+        };
+
+        // 4. 시계 타이머에 대시보드 시계 및 교시 상태 연동
+        _clockTimer.Tick += (s, e) =>
+        {
+            if (TxtDashboardClock != null) TxtDashboardClock.Text = DateTime.Now.ToString("HH:mm:ss");
+            UpdateDashboardPeriodStatus();
+        };
+
+        RefreshDashboardData();
+    }
+
+    public void RefreshDashboardData()
+    {
+        if (TxtDashboardClock != null) TxtDashboardClock.Text = DateTime.Now.ToString("HH:mm:ss");
+        if (TxtDashboardDate != null) TxtDashboardDate.Text = DateTime.Now.ToString("yyyy년 M월 d일 dddd");
+
+        UpdateDashboardPeriodStatus();
+        RefreshDashboardTimetable();
+        RefreshDashboardTasks();
+        _ = LoadDashboardMealAsync(_dashboardMealDate);
+        RefreshDashboardDDayAndNotice();
+    }
+
+    private void RefreshDashboardTimetable()
+    {
+        if (_timetableService == null) return;
+        var schedule = _timetableService.GetTodaySchedule();
+        if (DashboardListPeriods != null)
+        {
+            DashboardListPeriods.ItemsSource = null;
+            DashboardListPeriods.ItemsSource = schedule;
+        }
+        if (TxtDashboardDayOfWeek != null)
+        {
+            TxtDashboardDayOfWeek.Text = $"({DateTime.Today:ddd})";
+        }
+        if (TxtDashboardPeriodSummary != null)
+        {
+            int count = schedule?.Count ?? 0;
+            TxtDashboardPeriodSummary.Text = count > 0 ? $"총 {count}교시 수업 진행 예정" : "오늘 등록된 수업이 없습니다.";
+        }
+    }
+
+    private void UpdateDashboardPeriodStatus()
+    {
+        if (TxtDashboardPeriod == null) return;
+
+        var now = DateTime.Now.TimeOfDay;
+        var schedule = _timetableService?.GetTodaySchedule();
+
+        if (schedule != null && schedule.Count > 0)
+        {
+            PeriodItem? active = null;
+            foreach (var item in schedule)
+            {
+                if (TimeSpan.TryParse(item.Start, out var start) && TimeSpan.TryParse(item.End, out var end))
+                {
+                    if (now >= start && now <= end)
+                    {
+                        active = item;
+                        item.IsCurrentPeriod = true;
+                    }
+                    else
+                    {
+                        item.IsCurrentPeriod = false;
+                    }
+                }
+            }
+
+            if (active != null)
+            {
+                TxtDashboardPeriod.Text = $"🔔 {active.Period}교시 {active.Subject} 수업 중 ({active.TimeRange})";
+                if (BdDashboardPeriod != null) BdDashboardPeriod.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0284C7"));
+                return;
+            }
+
+            // 수업 전후 또는 쉬는 시간 체크
+            if (TimeSpan.TryParse(schedule[0].Start, out var firstStart) && now < firstStart)
+            {
+                TxtDashboardPeriod.Text = $"🌅 아침 조회 및 1교시 수업 준비 중";
+                if (BdDashboardPeriod != null) BdDashboardPeriod.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#059669"));
+                return;
+            }
+
+            if (TimeSpan.TryParse(schedule[^1].End, out var lastEnd) && now > lastEnd)
+            {
+                TxtDashboardPeriod.Text = $"🏡 오늘의 정규 수업이 종료되었습니다";
+                if (BdDashboardPeriod != null) BdDashboardPeriod.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#475569"));
+                return;
+            }
+
+            TxtDashboardPeriod.Text = "☕ 쉬는 시간 (다음 교시 준비)";
+            if (BdDashboardPeriod != null) BdDashboardPeriod.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#D97706"));
+        }
+        else
+        {
+            TxtDashboardPeriod.Text = "🏫 즐거운 학교생활";
+            if (BdDashboardPeriod != null) BdDashboardPeriod.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0284C7"));
+        }
+    }
+
+    private void RefreshDashboardTasks()
+    {
+        if (_taskService == null) return;
+
+        var today = _taskService.GetTodayTasks();
+        if (DashboardListTodayTasks != null)
+        {
+            DashboardListTodayTasks.ItemsSource = null;
+            DashboardListTodayTasks.ItemsSource = today;
+        }
+        if (TxtDashboardTodayCount != null)
+        {
+            int pending = today.Count(t => !t.IsCompleted);
+            int done = today.Count(t => t.IsCompleted);
+            TxtDashboardTodayCount.Text = $"진행 {pending}건 / 완료 {done}건";
+        }
+        if (TxtDashboardTodayEmpty != null)
+        {
+            TxtDashboardTodayEmpty.Visibility = today.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        var weekly = _taskService.GetWeeklyTasks();
+        if (DashboardListWeeklyTasks != null)
+        {
+            DashboardListWeeklyTasks.ItemsSource = null;
+            DashboardListWeeklyTasks.ItemsSource = weekly;
+        }
+        if (TxtDashboardWeeklyCount != null)
+        {
+            int pending = weekly.Count(t => !t.IsCompleted);
+            int done = weekly.Count(t => t.IsCompleted);
+            TxtDashboardWeeklyCount.Text = $"진행 {pending}건 / 완료 {done}건";
+        }
+        if (TxtDashboardWeeklyEmpty != null)
+        {
+            TxtDashboardWeeklyEmpty.Visibility = weekly.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private async Task LoadDashboardMealAsync(DateTime date)
+    {
+        _dashboardMealDate = date;
+        if (_neisService == null || TxtDashboardMealMenu == null) return;
+
+        bool isToday = date.Date == DateTime.Today;
+        string dateLabel = isToday ? $"오늘 ({date:M.d} {date:ddd})" : $"{date:M.d} ({date:ddd})";
+
+        TxtDashboardMealMenu.Text = $"{dateLabel} 급식 식단을 가져오는 중...";
+        if (TxtDashboardMealCalorie != null) TxtDashboardMealCalorie.Text = "열량 계산 중";
+
+        try
+        {
+            var meal = await _neisService.GetMealAsync(date);
+            if (meal != null && !string.IsNullOrWhiteSpace(meal.MenuText))
+            {
+                TxtDashboardMealMenu.Text = meal.MenuText;
+                if (TxtDashboardMealCalorie != null)
+                {
+                    TxtDashboardMealCalorie.Text = string.IsNullOrEmpty(meal.Calorie) ? $"{dateLabel}" : $"{meal.Calorie}";
+                }
+            }
+            else
+            {
+                TxtDashboardMealMenu.Text = $"{dateLabel}\n등록된 급식 식단이 없습니다.\n(주말, 휴업일 또는 미등록)";
+                if (TxtDashboardMealCalorie != null) TxtDashboardMealCalorie.Text = "- kcal";
+            }
+        }
+        catch
+        {
+            TxtDashboardMealMenu.Text = "급식 정보를 불러올 수 없습니다.\n나이스 학교 설정 또는 인터넷 상태를 확인해 주세요.";
+            if (TxtDashboardMealCalorie != null) TxtDashboardMealCalorie.Text = "- kcal";
+        }
+    }
+
+    private void RefreshDashboardDDayAndNotice()
+    {
+        // 1. D-Day
+        var cfg = _configService.DDayConfig;
+        if (cfg != null)
+        {
+            if (TxtDashboardDDayTitle != null)
+            {
+                TxtDashboardDDayTitle.Text = string.IsNullOrWhiteSpace(cfg.Title) ? "학기 목표" : cfg.Title;
+            }
+            if (TxtDashboardDDayCount != null)
+            {
+                int diff = (cfg.TargetDate.Date - DateTime.Today).Days;
+                if (diff == 0) TxtDashboardDDayCount.Text = "D-Day";
+                else if (diff > 0) TxtDashboardDDayCount.Text = $"D-{diff}";
+                else TxtDashboardDDayCount.Text = $"D+{Math.Abs(diff)}";
+            }
+        }
+
+        // 2. 알림장
+        try
+        {
+            string noticePath = Path.Combine(_configService.ConfigDir, "board_memo.txt");
+            if (SafeLocalFileStore.TryReadAllTextWithBackup(noticePath, out string text))
+            {
+                if (TxtDashboardNotice != null) TxtDashboardNotice.Text = text;
+            }
+        }
+        catch { }
+    }
+
+    private void RbBoardMode_Checked(object sender, RoutedEventArgs e)
+    {
+        if (PanelStudentDashboard == null || WidgetCanvas == null) return;
+
+        if (RbBoardModeDashboard?.IsChecked == true)
+        {
+            PanelStudentDashboard.Visibility = Visibility.Visible;
+            WidgetCanvas.Visibility = Visibility.Collapsed;
+            EmptyBoardHint.Visibility = Visibility.Collapsed;
+            if (DockBody != null) DockBody.Visibility = Visibility.Collapsed;
+            RefreshDashboardData();
+        }
+        else
+        {
+            PanelStudentDashboard.Visibility = Visibility.Collapsed;
+            WidgetCanvas.Visibility = Visibility.Visible;
+            if (DockBody != null) DockBody.Visibility = Visibility.Visible;
+            UpdateEmptyHint();
+        }
+    }
+
+    private void StudentTaskCheckbox_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is ClassroomTaskItem item)
+        {
+            _taskService?.ToggleTaskCompletion(item.Id);
+        }
+    }
+
+    private void BtnDashboardEditTimetable_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var win = new WeeklyTimetableWindow(_timetableService);
+            win.Owner = this;
+            win.ShowDialog();
+            RefreshDashboardTimetable();
+        }
+        catch { }
+    }
+
+    private async void BtnDashboardPrevMeal_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadDashboardMealAsync(_dashboardMealDate.AddDays(-1));
+    }
+
+    private async void BtnDashboardTodayMeal_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadDashboardMealAsync(DateTime.Today);
+    }
+
+    private async void BtnDashboardNextMeal_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadDashboardMealAsync(_dashboardMealDate.AddDays(1));
+    }
+
+    private void StudentTaskCheckbox_PreviewTouchDown(object sender, TouchEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is ClassroomTaskItem item)
+        {
+            _taskService?.ToggleTaskCompletion(item.Id);
+            e.Handled = true; // 터치 승격(마우스 변환) 차단하여 교탁 PC 마우스 커서 보호
+        }
+    }
+
+    private ClassroomWebBrowserWindow? _browserWindow;
+
+    private void BtnOpenWebBrowser_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_browserWindow == null || !_browserWindow.IsLoaded)
+            {
+                _browserWindow = new ClassroomWebBrowserWindow(_configService, _displayManager);
+                _browserWindow.Owner = this;
+                _browserWindow.Closed += (s, ev) => _browserWindow = null;
+                _browserWindow.Show();
+            }
+            else
+            {
+                _browserWindow.Activate();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"웹 브라우저를 열 수 없습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void BtnOpenPowerPoint_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "무간섭 파워포인트 슬라이드 쇼 파일 선택",
+                Filter = "PowerPoint 파일 (*.pptx;*.ppt;*.ppsx;*.pps)|*.pptx;*.ppt;*.ppsx;*.pps|모든 파일 (*.*)|*.*"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                Rect? targetBounds = null;
+                var screens = System.Windows.Forms.Screen.AllScreens;
+                if (screens.Length > 1)
+                {
+                    var s2 = screens[1].Bounds;
+                    targetBounds = new Rect(s2.X, s2.Y, s2.Width, s2.Height);
+                }
+
+                var (success, msg) = PowerPointPresentationHelper.StartNonIntrusiveSlideShow(dlg.FileName, targetBounds);
+                MessageBox.Show(msg, success ? "무간섭 PPT 재생" : "PPT 실행 안내", MessageBoxButton.OK, success ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"파워포인트를 실행할 수 없습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    #endregion
+
+    #region Win32 NoActivate Shield (교탁 PC 마우스 납치 및 키보드 포커스 스틸 원천 차단)
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        EnableNoActivateStyle();
+    }
+
+    private void EnableNoActivateStyle()
+    {
+        try
+        {
+            var helper = new System.Windows.Interop.WindowInteropHelper(this);
+            if (helper.Handle != IntPtr.Zero)
+            {
+                int exStyle = GetWindowLong(helper.Handle, GWL_EXSTYLE);
+                SetWindowLong(helper.Handle, GWL_EXSTYLE, exStyle | WS_EX_NOACTIVATE);
+
+                var source = System.Windows.Interop.HwndSource.FromHwnd(helper.Handle);
+                source?.AddHook(WndProcNoActivateHook);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[StudentDisplayWindow] EnableNoActivateStyle failed: {ex.Message}");
+        }
+    }
+
+    private IntPtr WndProcNoActivateHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WM_MOUSEACTIVATE = 0x0021;
+        const int MA_NOACTIVATE = 3;
+
+        if (msg == WM_MOUSEACTIVATE)
+        {
+            handled = true;
+            return new IntPtr(MA_NOACTIVATE);
+        }
+        return IntPtr.Zero;
+    }
+
+    private const int GWL_EXSTYLE = -20;
+    private const int WS_EX_NOACTIVATE = 0x08000000;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "GetWindowLong")]
+    private static extern int GetWindowLong32(IntPtr hWnd, int nIndex);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+    private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "SetWindowLong")]
+    private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+    private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+    private static int GetWindowLong(IntPtr hWnd, int nIndex)
+    {
+        return IntPtr.Size == 8
+            ? unchecked((int)GetWindowLongPtr64(hWnd, nIndex).ToInt64())
+            : GetWindowLong32(hWnd, nIndex);
+    }
+
+    private static void SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong)
+    {
+        if (IntPtr.Size == 8)
+            SetWindowLongPtr64(hWnd, nIndex, new IntPtr(dwNewLong));
+        else
+            SetWindowLong32(hWnd, nIndex, dwNewLong);
     }
 
     #endregion

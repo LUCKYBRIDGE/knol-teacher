@@ -119,6 +119,7 @@ public partial class MainWindow : FluentWindow
     private readonly IStartupService _startupService;
     private readonly IDataShareService _dataShareService;
     private readonly IStudentManagerService _studentManagerService;
+    private readonly IClassroomTaskService _classroomTaskService;
     private int _tutorialStep = 1;
 
     public MainWindow(
@@ -143,7 +144,8 @@ public partial class MainWindow : FluentWindow
         ISiteBookmarkService siteBookmarkService,
         IStartupService startupService,
         IDataShareService dataShareService,
-        IStudentManagerService studentManagerService)
+        IStudentManagerService studentManagerService,
+        IClassroomTaskService? classroomTaskService = null)
     {
         _services = services;
         DataContext = viewModel;
@@ -167,9 +169,12 @@ public partial class MainWindow : FluentWindow
         _startupService = startupService;
         _dataShareService = dataShareService;
         _studentManagerService = studentManagerService;
+        _classroomTaskService = classroomTaskService ?? (_services.GetService(typeof(IClassroomTaskService)) as IClassroomTaskService)!;
 
         InitializeComponent();
         UpdateWindowTitle(0);
+
+        InitClassroomTasks();
 
         _statusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
         _statusTimer.Tick += (s, e) => UpdatePeriodStatus();
@@ -1662,6 +1667,60 @@ public partial class MainWindow : FluentWindow
         dlg.ShowDialog();
     }
 
+    private ClassroomWebBrowserWindow? _classroomBrowserWindow;
+
+    private void BtnOpenClassroomWebBrowser_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (_classroomBrowserWindow == null || !_classroomBrowserWindow.IsLoaded)
+            {
+                _classroomBrowserWindow = new ClassroomWebBrowserWindow(_configService, _displayManager);
+                _classroomBrowserWindow.Owner = this;
+                _classroomBrowserWindow.Closed += (s, ev) => _classroomBrowserWindow = null;
+                _classroomBrowserWindow.Show();
+            }
+            else
+            {
+                _classroomBrowserWindow.Activate();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"웹 브라우저를 열 수 없습니다: {ex.Message}", "스마트 웹 브라우저 오류", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void BtnOpenPowerPointShield_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "무간섭 파워포인트 슬라이드 쇼 파일 선택",
+                Filter = "PowerPoint 파일 (*.pptx;*.ppt;*.ppsx;*.pps)|*.pptx;*.ppt;*.ppsx;*.pps|모든 파일 (*.*)|*.*"
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                Rect? targetBounds = null;
+                var screens = System.Windows.Forms.Screen.AllScreens;
+                if (screens.Length > 1)
+                {
+                    var s2 = screens[1].Bounds;
+                    targetBounds = new Rect(s2.X, s2.Y, s2.Width, s2.Height);
+                }
+
+                var (success, msg) = PowerPointPresentationHelper.StartNonIntrusiveSlideShow(dlg.FileName, targetBounds);
+                MessageBox.Show(msg, success ? "무간섭 PPT 재생" : "PPT 실행 안내", MessageBoxButton.OK, success ? MessageBoxImage.Information : MessageBoxImage.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"파워포인트를 실행할 수 없습니다: {ex.Message}", "오류", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void BtnOpenHotkeySettings_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new HotkeySettingsDialog(_configService, _hotkeyService)
@@ -2694,19 +2753,118 @@ public partial class MainWindow : FluentWindow
 
     private void RbMemoTab_Checked(object sender, RoutedEventArgs e)
     {
-        if (PanelTeacherTodo == null || PanelStudentNotice == null) return;
+        if (PanelTodayTasks == null || PanelWeeklyTasks == null || PanelTeacherTodo == null || PanelStudentNotice == null) return;
 
-        if (RbTabTeacherTodo?.IsChecked == true)
+        PanelTodayTasks.Visibility = (RbTabTodayTasks?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+        PanelWeeklyTasks.Visibility = (RbTabWeeklyTasks?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+        PanelStudentNotice.Visibility = (RbTabStudentNotice?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+        PanelTeacherTodo.Visibility = (RbTabTeacherTodo?.IsChecked == true) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    #region Classroom Tasks Handlers (오늘 제출&할일 및 이번주 제출&할일)
+
+    private void InitClassroomTasks()
+    {
+        if (_classroomTaskService != null)
         {
-            PanelTeacherTodo.Visibility = Visibility.Visible;
-            PanelStudentNotice.Visibility = Visibility.Collapsed;
+            _classroomTaskService.TasksChanged += () =>
+            {
+                Dispatcher.Invoke(RefreshClassroomTasksUi);
+            };
         }
-        else
+        RefreshClassroomTasksUi();
+    }
+
+    private void RefreshClassroomTasksUi()
+    {
+        if (_classroomTaskService == null) return;
+        if (ListTodayTasks != null)
         {
-            PanelTeacherTodo.Visibility = Visibility.Collapsed;
-            PanelStudentNotice.Visibility = Visibility.Visible;
+            ListTodayTasks.ItemsSource = null;
+            ListTodayTasks.ItemsSource = _classroomTaskService.GetTodayTasks();
+        }
+        if (ListWeeklyTasks != null)
+        {
+            ListWeeklyTasks.ItemsSource = null;
+            ListWeeklyTasks.ItemsSource = _classroomTaskService.GetWeeklyTasks();
         }
     }
+
+    private void BtnAddTodayTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (TbNewTodayTask != null && !string.IsNullOrWhiteSpace(TbNewTodayTask.Text))
+        {
+            string text = TbNewTodayTask.Text.Trim();
+            string tag = (CbNewTodayTaskTag?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "과제";
+            string due = TbNewTodayDue?.Text?.Trim() ?? string.Empty;
+            _classroomTaskService.AddTask(text, "Today", tag, due);
+            TbNewTodayTask.Text = string.Empty;
+            if (TbNewTodayDue != null) TbNewTodayDue.Text = string.Empty;
+        }
+    }
+
+    private void TbNewTodayTask_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            BtnAddTodayTask_Click(sender, e);
+        }
+    }
+
+    private void BtnAddWeeklyTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (TbNewWeeklyTask != null && !string.IsNullOrWhiteSpace(TbNewWeeklyTask.Text))
+        {
+            string text = TbNewWeeklyTask.Text.Trim();
+            string tag = (CbNewWeeklyTaskTag?.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "과제";
+            string due = TbNewWeeklyDue?.Text?.Trim() ?? string.Empty;
+            _classroomTaskService.AddTask(text, "Weekly", tag, due);
+            TbNewWeeklyTask.Text = string.Empty;
+            if (TbNewWeeklyDue != null) TbNewWeeklyDue.Text = string.Empty;
+        }
+    }
+
+    private void TbNewWeeklyTask_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            BtnAddWeeklyTask_Click(sender, e);
+        }
+    }
+
+    private void ClassroomTaskCheckbox_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is ClassroomTaskItem item)
+        {
+            _classroomTaskService.ToggleTaskCompletion(item.Id);
+        }
+    }
+
+    private void BtnDeleteClassroomTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is ClassroomTaskItem item)
+        {
+            _classroomTaskService.RemoveTask(item.Id);
+        }
+    }
+
+    private void MenuClearCompletedTasks_Click(object sender, RoutedEventArgs e)
+    {
+        string? category = null;
+        if (RbTabTodayTasks?.IsChecked == true) category = "Today";
+        else if (RbTabWeeklyTasks?.IsChecked == true) category = "Weekly";
+
+        int cleared = _classroomTaskService.ClearCompletedTasks(category);
+        HudNotificationWindow.Instance.ShowToast("🧹", cleared > 0 ? $"완료된 과제·할 일 {cleared}건을 정리했습니다." : "정리할 완료 항목이 없습니다.");
+    }
+
+    private void MenuResetSampleTasks_Click(object sender, RoutedEventArgs e)
+    {
+        _classroomTaskService.ResetSampleTasks();
+        HudNotificationWindow.Instance.ShowToast("🔄", "기본 교실 예시 과제·할 일을 불러왔습니다.");
+    }
+
+    #endregion
 
     private void TbMainNotice_TextChanged(object sender, TextChangedEventArgs e)
     {

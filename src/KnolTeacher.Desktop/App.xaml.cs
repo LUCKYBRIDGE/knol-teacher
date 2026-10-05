@@ -69,6 +69,7 @@ public partial class App : Application
                 services.AddSingleton<IStartupService, StartupService>();
                 services.AddSingleton<IDataShareService, DataShareService>();
                 services.AddSingleton<IClassroomRecordService, ClassroomRecordService>();
+                services.AddSingleton<IClassroomTaskService, ClassroomTaskService>();
 
                 // ViewModels
                 services.AddSingleton<MainViewModel>();

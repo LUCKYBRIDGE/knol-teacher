@@ -21,9 +21,28 @@ public class MultiTouchInkHelper
     private Point? _lastMouseEraserPoint;
     private Stroke? _mouseStroke;
     private bool _isEraserMode;
+    private bool _isEnabled = true;
 
     public event Action<Stroke>? StrokeCollected;
     public event Action<StrokeCollection>? StrokesErased;
+
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        set
+        {
+            _isEnabled = value;
+            if (!value)
+            {
+                _activeTouchStrokes.Clear();
+                _activeStylusStrokes.Clear();
+                _lastTouchEraserPoints.Clear();
+                _lastStylusEraserPoints.Clear();
+                _lastMouseEraserPoint = null;
+                _mouseStroke = null;
+            }
+        }
+    }
 
     public bool IsEraserMode
     {
@@ -67,6 +86,8 @@ public class MultiTouchInkHelper
 
     private void OnTouchDown(object? sender, TouchEventArgs e)
     {
+        if (!_isEnabled) return;
+
         var touch = e.TouchDevice;
         var point = touch.GetTouchPoint(_inkCanvas);
         var pos = point.Position;
@@ -91,6 +112,8 @@ public class MultiTouchInkHelper
 
     private void OnTouchMove(object? sender, TouchEventArgs e)
     {
+        if (!_isEnabled) return;
+
         var touch = e.TouchDevice;
         var intermediatePoints = e.GetIntermediateTouchPoints(_inkCanvas);
 
@@ -151,6 +174,8 @@ public class MultiTouchInkHelper
 
     private void OnStylusDown(object? sender, StylusDownEventArgs e)
     {
+        if (!_isEnabled) return;
+
         // 손가락 터치스크린 입력은 TouchDown에서 처리하므로 중복 방지
         if (e.StylusDevice.TabletDevice?.Type == TabletDeviceType.Touch)
         {
@@ -181,6 +206,8 @@ public class MultiTouchInkHelper
 
     private void OnStylusMove(object? sender, StylusEventArgs e)
     {
+        if (!_isEnabled) return;
+
         if (e.StylusDevice.TabletDevice?.Type == TabletDeviceType.Touch)
         {
             return;
@@ -255,6 +282,7 @@ public class MultiTouchInkHelper
 
     private void OnMouseDown(object? sender, MouseButtonEventArgs e)
     {
+        if (!_isEnabled) return;
         if (e.LeftButton != MouseButtonState.Pressed) return;
 
         // 현재 물리 터치나 펜이 직접 드로잉 중이라면 중복 마우스 합성 이벤트는 건너뜀
@@ -285,6 +313,8 @@ public class MultiTouchInkHelper
 
     private void OnMouseMove(object? sender, MouseEventArgs e)
     {
+        if (!_isEnabled) return;
+
         if (e.LeftButton != MouseButtonState.Pressed)
         {
             if (_mouseStroke != null || _lastMouseEraserPoint != null)
