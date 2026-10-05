@@ -307,23 +307,32 @@ public partial class ClassroomWebBrowserWindow : Window
         {
             BrowserWebView.ZoomFactor = _zoomFactor;
         }
-        TxtZoomLevel.Text = $"{(_zoomFactor * 100):0}%";
+        if (TxtZoomLevel != null)
+        {
+            TxtZoomLevel.Text = $"{(_zoomFactor * 100):0}%";
+        }
     }
 
     private void ToggleShieldMode_Checked(object sender, RoutedEventArgs e)
     {
         _isShieldActive = true;
         ApplyShieldMode(true);
-        TxtShieldStatus.Text = "🛡️ 교탁 PC 마우스 보호 중 (비간섭 모드)";
-        TxtShieldStatus.Foreground = System.Windows.Media.Brushes.DeepSkyBlue;
+        if (TxtShieldStatus != null)
+        {
+            TxtShieldStatus.Text = "🛡️ 교탁 PC 마우스 보호 중 (비간섭 모드)";
+            TxtShieldStatus.Foreground = System.Windows.Media.Brushes.DeepSkyBlue;
+        }
     }
 
     private void ToggleShieldMode_Unchecked(object sender, RoutedEventArgs e)
     {
         _isShieldActive = false;
         ApplyShieldMode(false);
-        TxtShieldStatus.Text = "⚠️ 보호 모드 해제됨 (일반 입력)";
-        TxtShieldStatus.Foreground = System.Windows.Media.Brushes.LightGray;
+        if (TxtShieldStatus != null)
+        {
+            TxtShieldStatus.Text = "⚠️ 보호 모드 해제됨 (일반 입력)";
+            TxtShieldStatus.Foreground = System.Windows.Media.Brushes.LightGray;
+        }
     }
 
     #endregion
